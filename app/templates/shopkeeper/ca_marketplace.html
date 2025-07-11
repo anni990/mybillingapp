@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}CA Marketplace | MyBillingApp{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
+<script src="https://unpkg.com/feather-icons"></script>
+<aside class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
+    <div>
+        <!-- <div class="flex items-center justify-center h-20 border-b border-orange-200">
+            <div class="bg-white rounded-full w-12 h-12 flex items-center justify-center text-[#ed6a3e] font-bold text-2xl shadow">{{ current_user.username[0]|upper }}</div>
+            <span class="ml-3 text-white text-xl font-bold text-">MyBillingApp</span>
+        </div> -->
+        <nav class="mt-5 flex-1">
+            <ul class="space-y-2">
+                <li><a href="{{ url_for('shopkeeper.dashboard') }}" class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/30 transition duration-300"><i data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
+                <li><a href="{{ url_for('shopkeeper.create_bill') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
+                <li><a href="{{ url_for('shopkeeper.manage_bills') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
+                <li><a href="{{ url_for('shopkeeper.products_stock') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="box" class="mr-3"></i>Products & Stock</a></li>
+                <li><a href="{{ url_for('shopkeeper.sales_reports') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
+                <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}" class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
+                <!-- <li><a href="#" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file" class="mr-3"></i>Documents</a></li> -->
+                <li><a href="{{ url_for('shopkeeper.settings') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="settings" class="mr-3"></i>Settings</a></li>
+                <!-- <li><a href="/auth/logout" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="log-out" class="mr-3"></i>Logout</a></li> -->
+            </ul>
+        </nav>
+    </div>
+    <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
+</aside>
+<div class="max-w-5xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10">
+    <h2 class="text-2xl font-bold text-[#ed6a3e] mb-6">CA Marketplace</h2>
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white rounded-lg shadow">
+            <thead>
+                <tr class="bg-[#f8bfa0] text-[#ed6a3e] text-left">
+                    <th class="py-3 px-4 font-semibold">Firm Name</th>
+                    <th class="py-3 px-4 font-semibold">Area</th>
+                    <th class="py-3 px-4 font-semibold">Contact Number</th>
+                    <th class="py-3 px-4 font-semibold">Boost Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ca in cas %}
+                <tr class="border-b hover:bg-orange-50 transition duration-200">
+                    <td class="py-3 px-4">{{ ca.firm_name }}</td>
+                    <td class="py-3 px-4">{{ ca.area or '-' }}</td>
+                    <td class="py-3 px-4">{{ ca.contact_number or '-' }}</td>
+                    <td class="py-3 px-4">
+                        {% if ca.boost_status %}
+                            <span class="inline-block px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Boosted</span>
+                        {% else %}
+                            <span class="inline-block px-3 py-1 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold">Normal</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center text-gray-400 py-6">No CAs found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>feather.replace()</script>
+{% endblock %} 

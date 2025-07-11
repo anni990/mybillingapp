@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Manage Bills | MyBillingApp{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
+<script src="https://unpkg.com/feather-icons"></script>
+<!-- Sidebar -->
+<aside
+    class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
+    <div>
+        <!-- <div class="flex items-center justify-center h-20 border-b border-orange-200">
+                <div class="bg-white rounded-full w-12 h-12 flex items-center justify-center text-[#ed6a3e] font-bold text-2xl shadow">{{ current_user.username[0]|upper }}</div>
+                <span class="ml-3 text-white text-xl font-bold text-">MyBillingApp</span>
+            </div> -->
+        <nav class="mt-5 flex-1">
+            <ul class="space-y-2">
+                <li><a href="{{ url_for('shopkeeper.dashboard') }}"
+                        class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/20 transition duration-300"><i
+                            data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
+                <li><a href="{{ url_for('shopkeeper.create_bill') }}"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
+                <li><a href="{{ url_for('shopkeeper.manage_bills') }}"
+                        class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i
+                            data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
+                <li><a href="{{ url_for('shopkeeper.products_stock') }}"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="box" class="mr-3"></i>Products & Stock</a></li>
+                <li><a href="{{ url_for('shopkeeper.sales_reports') }}"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
+                <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
+                <!-- <li><a href="#"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="file" class="mr-3"></i>Documents</a></li> -->
+                <li><a href="{{ url_for('shopkeeper.settings') }}"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="settings" class="mr-3"></i>Settings</a></li>
+                <!-- <li><a href="/auth/logout" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="log-out" class="mr-3"></i>Logout</a></li> -->
+            </ul>
+        </nav>
+    </div>
+    <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
+</aside>
+<div class="max-w-6xl mx-auto bg-white p-10 rounded-2xl shadow-lg mt-12 ml-80">
+    <h2 class="text-3xl font-bold text-[#ed6a3e] mb-8">Manage Bills</h2>
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+        <input type="text" placeholder="Search by customer or bill #" class="border rounded px-4 py-2 w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
+        <select class="border rounded px-4 py-2 w-full md:w-48 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
+            <option>All Status</option>
+            <option>Paid</option>
+            <option>Unpaid</option>
+            <option>Partial</option>
+        </select>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-base rounded-xl overflow-hidden shadow-md">
+            <thead>
+                <tr class="bg-[#f8bfa0] text-[#ed6a3e]">
+                    <th class="py-4 px-4 text-left font-semibold">Bill #</th>
+                    <th class="py-4 px-4 text-left font-semibold">Customer</th>
+                    <th class="py-4 px-4 text-left font-semibold">Date</th>
+                    <th class="py-4 px-4 text-left font-semibold">Amount</th>
+                    <th class="py-4 px-4 text-left font-semibold">Status</th>
+                    <th class="py-4 px-4 text-left font-semibold">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bill in bills %}
+                <tr class="border-b hover:bg-orange-50 transition duration-200">
+                    <td class="py-4 px-4">{{ bill.bill_number }}</td>
+                    <td class="py-4 px-4">{{ bill.customer_name }}</td>
+                    <td class="py-4 px-4">{{ bill.bill_date }}</td>
+                    <td class="py-4 px-4 font-bold">₹{{ bill.total_amount }}</td>
+                    <td class="py-4 px-4">
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold {% if bill.payment_status == 'Paid' %}bg-green-100 text-green-700{% elif bill.payment_status == 'Unpaid' %}bg-yellow-100 text-yellow-700{% else %}bg-orange-100 text-orange-700{% endif %}">
+                            {{ bill.payment_status }}
+                        </span>
+                    </td>
+                    <td class="py-4 px-4 flex gap-2">
+                        <a href="{{ url_for('shopkeeper.view_bill', bill_id=bill.bill_id) }}" class="bg-[#ed6a3e] text-white px-4 py-2 rounded shadow hover:bg-orange-700 transition duration-300">View</a>
+                        <form action="{{ url_for('shopkeeper.delete_bill', bill_id=bill.bill_id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="bg-red-100 text-red-600 px-4 py-2 rounded shadow hover:bg-red-200 transition duration-300">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-gray-400 py-8 text-center text-lg">No bills found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>feather.replace()</script>
+{% endblock %}

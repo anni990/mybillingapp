@@ -1,0 +1,17 @@
+{% extends 'ca/ca_base.html' %}
+{% block title %}Client Profile | MyBillingApp{% endblock %}
+{% block ca_content %}
+<h2 class="text-2xl font-bold text-[#ed6a3e] mb-8">Client Profile</h2>
+<div class="bg-white rounded-xl shadow-md p-6 mb-8 max-w-2xl">
+  <div class="mb-2"><span class="font-semibold">Shop Name:</span> {{ client.shop_name }}</div>
+  <div class="mb-2"><span class="font-semibold">Domain:</span> {{ client.domain }}</div>
+  <div class="mb-2"><span class="font-semibold">Contact:</span> {{ client.contact_number }}</div>
+  <div class="mb-2"><span class="font-semibold">GST Number:</span> {{ client.gst_number }}</div>
+</div>
+<div class="bg-white rounded-xl shadow-md p-6 max-w-2xl">
+  <h3 class="font-semibold text-lg mb-4">Shared Bills</h3>
+  <ul class="space-y-2">
+    <li class="text-gray-400">Bills list coming soon...</li>
+  </ul>
+</div>
+{% endblock %} 

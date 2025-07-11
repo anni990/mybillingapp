@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Employee Dashboard | MyBillingApp{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-bold text-[#ed6a3e] mb-6">Welcome, {{ current_user.username }}!</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white p-6 rounded shadow">
+        <h3 class="font-semibold text-lg mb-2">Assigned Clients</h3>
+        <p>View your assigned shopkeepers and their bills.</p>
+    </div>
+    <div class="bg-white p-6 rounded shadow">
+        <h3 class="font-semibold text-lg mb-2">Tasks</h3>
+        <p>Check your pending and completed tasks.</p>
+    </div>
+</div>
+{% endblock %} 

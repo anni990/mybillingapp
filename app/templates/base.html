@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MyBillingApp{% endblock %}</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-[#ed6a3e] text-white px-6 py-4 flex justify-between items-center fixed top-0 left-0 w-full z-10">
+        <a href="/" class="font-bold text-xl">MyBillingApp</a>
+        <div>
+            {% if current_user.is_authenticated %}
+                {% if current_user.role == 'shopkeeper' %}
+                    <a href="/shopkeeper/dashboard" class="mx-2 hover:underline">Dashboard</a>
+                    
+                {% elif current_user.role == 'CA' %}
+                    <a href="/ca/dashboard" class="mx-2 hover:underline">CA Dashboard</a>
+                {% elif current_user.role == 'employee' %}
+                    <a href="/ca/employee_dashboard" class="mx-2 hover:underline">Employee Dashboard</a>
+                {% endif %}
+                <a href="/auth/logout" class="mx-2 hover:underline">Logout</a>
+            {% else %}
+                <a href="/auth/login" class="mx-2 hover:underline">Login</a>
+                <a href="/auth/register" class="mx-2 hover:underline">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+    <main class="container mx-auto py-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="max-w-2xl mx-auto mt-10">
+                    {% for category, message in messages %}
+                        <div class="mb-2 px-4 py-3 rounded shadow text-sm
+                            {% if category == 'success' %}bg-green-100 text-green-800 border border-green-300{% elif category == 'danger' %}bg-red-100 text-red-800 border border-red-300{% else %}bg-gray-100 text-gray-800 border border-gray-300{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

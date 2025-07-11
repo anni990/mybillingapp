@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Shopkeeper Dashboard | MyBillingApp{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
+<script src="https://unpkg.com/feather-icons"></script>
+<div class="flex min-h-[80vh] mt-10">
+    <!-- Sidebar -->
+    <aside
+        class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
+        <div>
+            <!-- <div class="flex items-center justify-center h-20 border-b border-orange-200">
+                <div class="bg-white rounded-full w-12 h-12 flex items-center justify-center text-[#ed6a3e] font-bold text-2xl shadow">{{ current_user.username[0]|upper }}</div>
+                <span class="ml-3 text-white text-xl font-bold text-">MyBillingApp</span>
+            </div> -->
+            <nav class="mt-5 flex-1">
+                <ul class="space-y-2">
+                    <li><a href="{{ url_for('shopkeeper.dashboard') }}"
+                            class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full bg-white/20 hover:bg-white/30 transition duration-300"><i
+                                data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
+                    <li><a href="{{ url_for('shopkeeper.create_bill') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
+                    <li><a href="{{ url_for('shopkeeper.manage_bills') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
+                    <li><a href="{{ url_for('shopkeeper.products_stock') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="box" class="mr-3"></i>Products & Stock</a></li>
+                    <li><a href="{{ url_for('shopkeeper.sales_reports') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
+                    <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
+                    <!-- <li><a href="#"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="file" class="mr-3"></i>Documents</a></li> -->
+                    <li><a href="{{ url_for('shopkeeper.settings') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="settings" class="mr-3"></i>Settings</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
+    </aside>
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 p-8 bg-gray-50 min-h-screen">
+        <!-- Top Bar -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-[#ed6a3e]">Dashboard</h1>
+                <p class="text-gray-500">Welcome, {{ current_user.username }}!</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="relative bg-white p-2 rounded-full shadow hover:bg-orange-100 transition duration-300">
+                    <i data-feather="bell" class="text-[#ed6a3e]"></i>
+                    <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+                <a href="{{ url_for('shopkeeper.profile') }}"
+                    class="flex items-center space-x-2 bg-white px-3 py-2 rounded shadow hover:bg-orange-100 transition duration-300">
+                    <span class="font-semibold text-[#ed6a3e]">{{ current_user.username }}</span>
+                    <div
+                        class="bg-[#ed6a3e] text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                        {{ current_user.username[0]|upper }}</div>
+                </a>
+            </div>
+        </div>
+        <!-- Dashboard Widgets -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Today's Sales Summary -->
+            <div class="bg-white rounded-xl shadow-md p-6 flex flex-col justify-between">
+                <div class="flex items-center mb-2"><i data-feather="dollar-sign" class="text-[#ed6a3e] mr-2"></i><span
+                        class="font-bold text-lg">Today's Sales</span></div>
+                <div class="text-2xl font-bold text-[#ed6a3e]">₹{{ total_amount|default(0.00) }}</div>
+                <div class="flex space-x-2 mt-2">
+                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">Paid: {{ paid|default(0)
+                        }}</span>
+                    <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">Unpaid: {{ unpaid|default(0)
+                        }}</span>
+                    <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs">Partial: {{ partial|default(0)
+                        }}</span>
+                </div>
+            </div>
+            <!-- Low Stock Alerts -->
+            <div class="bg-white rounded-xl shadow-md p-6 flex flex-col justify-between">
+                <div class="flex items-center mb-2"><i data-feather="alert-triangle"
+                        class="text-[#ed6a3e] mr-2"></i><span class="font-bold text-lg">Low Stock Alerts</span></div>
+                <ul class="mt-2 space-y-1">
+                    {% if low_stock and low_stock|length > 0 %}
+                    {% for product in low_stock %}
+                    <li class="text-red-600">{{ product.product_name }} (Stock: {{ product.stock_qty }})</li>
+                    {% endfor %}
+                    {% else %}
+                    <li class="text-gray-500">No low stock products.</li>
+                    {% endif %}
+                </ul>
+                <a href="{{ url_for('shopkeeper.products_stock') }}"
+                    class="mt-4 bg-[#ed6a3e] text-white px-4 py-2 rounded shadow hover:bg-orange-700 transition duration-300 text-center">Update
+                    Stock</a>
+            </div>
+            <!-- Recent Bills -->
+            <!-- <div class="bg-white rounded-xl shadow-md p-6 flex flex-col justify-between col-span-1 md:col-span-2 lg:col-span-1">
+                <div class="flex items-center mb-2"><i data-feather="file-text" class="text-[#ed6a3e] mr-2"></i><span class="font-bold text-lg">Recent Bills</span></div>
+                <table class="w-full text-sm mt-2">
+                    <thead>
+                        <tr class="text-gray-500">
+                            <th class="text-left">Bill #</th>
+                            <th class="text-left">Customer</th>
+                            <th class="text-left">Amount</th>
+                            <th class="text-left">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recent_bills and recent_bills|length > 0 %}
+                            {% for bill in recent_bills %}
+                            <tr>
+                                <td>{{ bill.bill_number }}</td>
+                                <td>{{ bill.customer_name }}</td>
+                                <td>₹{{ bill.total_amount }}</td>
+                                <td>
+                                    <span class="px-2 py-1 rounded {% if bill.payment_status == 'Paid' %}bg-green-100 text-green-700{% elif bill.payment_status == 'Unpaid' %}bg-yellow-100 text-yellow-700{% else %}bg-orange-100 text-orange-700{% endif %}">
+                                        {{ bill.payment_status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-gray-400 py-2">No recent bills.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div> -->
+            <!-- Connect with CA -->
+            <div class="bg-white rounded-xl shadow-md p-6 flex flex-col justify-between">
+                {% if ca %}
+                <div class="flex items-center mb-2"><i data-feather="user-check" class="text-[#ed6a3e] mr-2"></i><span
+                        class="font-bold text-lg">Connected CA</span></div>
+                <div class="text-gray-700 font-semibold">{{ ca.firm_name }}<br><span class="text-xs text-gray-500">{{
+                        ca.area }}</span></div>
+                <div class="text-gray-500 mt-2">Contact: {{ ca.contact_number }}</div>
+                {% else %}
+                <div class="flex items-center mb-2"><i data-feather="user-check" class="text-[#ed6a3e] mr-2"></i><span
+                        class="font-bold text-lg">Connect with CA</span></div>
+                <div class="text-gray-500">No CA connected.</div>
+                <a href="{{ url_for('shopkeeper.ca_marketplace') }}"
+                    class="mt-4 bg-[#ed6a3e] text-white px-4 py-2 rounded shadow hover:bg-orange-700 transition duration-300 text-center">Find
+                    a CA</a>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Reports & Charts -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <div class="flex items-center mb-4"><i data-feather="bar-chart-2" class="text-[#ed6a3e] mr-2"></i><span
+                    class="font-bold text-lg">Sales Trends</span></div>
+            <div class="h-40 flex items-center justify-center text-gray-400" id="chart-area">[Chart Placeholder]</div>
+        </div>
+    </main>
+</div>
+<script>feather.replace()</script>
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'ca/ca_base.html' %}
+{% block title %}Clients List | MyBillingApp{% endblock %}
+{% block ca_content %}
+<h2 class="text-2xl font-bold text-[#ed6a3e] mb-8">Clients List</h2>
+<div class="bg-white rounded-xl shadow-md p-6">
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead>
+        <tr class="text-left text-gray-500">
+          <th class="py-2 px-3">Shop Name</th>
+          <th class="py-2 px-3">Domain</th>
+          <th class="py-2 px-3">Contact</th>
+          <th class="py-2 px-3">Status</th>
+          <th class="py-2 px-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for client in clients %}
+        <tr class="border-t">
+          <td class="py-2 px-3 font-semibold">{{ client.shop_name }}</td>
+          <td class="py-2 px-3">{{ client.domain }}</td>
+          <td class="py-2 px-3">{{ client.contact_number }}</td>
+          <td class="py-2 px-3">
+            <span class="inline-block px-2 py-1 rounded text-xs font-semibold {% if client.status == 'approved' %}bg-green-100 text-green-700{% elif client.status == 'pending' %}bg-yellow-100 text-yellow-700{% else %}bg-gray-100 text-gray-700{% endif %}">{{ client.status|capitalize }}</span>
+          </td>
+          <td class="py-2 px-3 space-x-2">
+            <a href="/ca/clients/{{ client.shopkeeper_id }}" class="text-blue-500 hover:underline">Profile</a>
+            <a href="/ca/bills?shopkeeper_id={{ client.shopkeeper_id }}" class="text-[#ed6a3e] hover:underline">Bills</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="py-4 text-center text-gray-400">No clients found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} 

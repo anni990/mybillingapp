@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Register | MyBillingApp{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded shadow mt-15">
+    <h2 class="text-2xl font-bold mb-6 text-[#ed6a3e] text-center">Register</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-4">
+            {{ form.username.label(class_="block mb-1 text-gray-700") }}
+            {{ form.username(class_="w-full px-3 py-2 border rounded") }}
+            {% for error in form.username.errors %}
+                <span class="text-red-500 text-sm">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="mb-4">
+            {{ form.email.label(class_="block mb-1 text-gray-700") }}
+            {{ form.email(class_="w-full px-3 py-2 border rounded") }}
+            {% for error in form.email.errors %}
+                <span class="text-red-500 text-sm">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="mb-4">
+            {{ form.password.label(class_="block mb-1 text-gray-700") }}
+            {{ form.password(class_="w-full px-3 py-2 border rounded") }}
+            {% for error in form.password.errors %}
+                <span class="text-red-500 text-sm">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="mb-4">
+            {{ form.confirm_password.label(class_="block mb-1 text-gray-700") }}
+            {{ form.confirm_password(class_="w-full px-3 py-2 border rounded") }}
+            {% for error in form.confirm_password.errors %}
+                <span class="text-red-500 text-sm">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="mb-4">
+            {{ form.role.label(class_="block mb-1 text-gray-700") }}
+            {{ form.role(class_="w-full px-3 py-2 border rounded") }}
+            {% for error in form.role.errors %}
+                <span class="text-red-500 text-sm">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <button type="submit" class="w-full bg-[#ed6a3e] text-white py-2 rounded hover:bg-orange-700">Register</button>
+    </form>
+    <p class="mt-4 text-center text-sm">Already have an account? <a href="{{ url_for('auth.login') }}" class="text-[#ed6a3e] underline">Login</a></p>
+</div>
+{% endblock %} 
