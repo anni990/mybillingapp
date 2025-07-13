@@ -97,7 +97,7 @@ def create_bill():
         db.session.commit()
         flash('Bill created successfully.', 'success')
         return redirect(url_for('shopkeeper.manage_bills'))
-    return render_template('shopkeeper/create_bill.html', products=products)
+    return render_template('shopkeeper/create_bill.html', products=products, shopkeeper=shopkeeper)
 
 # Manage Bills
 @shopkeeper_bp.route('/manage_bills')
@@ -105,8 +105,18 @@ def create_bill():
 @shopkeeper_required
 def manage_bills():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    bills = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).order_by(Bill.bill_date.desc()).all() if shopkeeper else []
-    return render_template('shopkeeper/manage_bills.html', bills=bills)
+    search = request.args.get('search', '').strip()
+    selected_statuses = request.args.getlist('status')
+    query = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
+    if search:
+        query = query.filter(
+            (Bill.bill_number.ilike(f'%{search}%')) |
+            (Bill.customer_name.ilike(f'%{search}%'))
+        )
+    if selected_statuses:
+        query = query.filter(Bill.payment_status.in_(selected_statuses))
+    bills = query.order_by(Bill.bill_date.desc()).all() if shopkeeper else []
+    return render_template('shopkeeper/manage_bills.html', bills=bills, selected_statuses=selected_statuses)
 
 @shopkeeper_bp.route('/bill/<int:bill_id>')
 @login_required
@@ -366,57 +376,105 @@ def generate_bill_pdf():
     products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
     customer_name = request.form.get('customer_name')
     customer_contact = request.form.get('customer_contact')
-    gst_type = request.form.get('gst_type')
+    gst_mode = request.form.get('gst_mode', 'exclusive')
+    bill_gst_type = request.form.get('bill_gst_type', 'GST')
+    bill_gst_rate = float(request.form.get('bill_gst_rate', 0))
+    per_product_gst = request.form.get('per_product_gst') == 'on'
     items = request.form.getlist('product_id')
     quantities = request.form.getlist('quantity')
     prices = request.form.getlist('price_per_unit')
+    discounts = request.form.getlist('discount')
+    product_gst_rates = request.form.getlist('product_gst_rate')
     bill_date = datetime.date.today()
-    total_amount = sum(float(q)*float(p) for q, p in zip(quantities, prices))
+    total_amount = 0
     bill_number = f"BILL{int(datetime.datetime.now().timestamp())}"
-    # Save bill to DB
     bill = Bill(
         shopkeeper_id=shopkeeper.shopkeeper_id,
         bill_number=bill_number,
         customer_name=customer_name,
         customer_contact=customer_contact,
         bill_date=bill_date,
-        gst_type=gst_type,
-        total_amount=total_amount,
+        gst_type=bill_gst_type,
+        total_amount=0,  # will update after calculation
         payment_status='Paid'
     )
     db.session.add(bill)
     db.session.flush()  # get bill_id
     bill_items = []
-    for pid, qty, price in zip(items, quantities, prices):
+    for idx, (pid, qty, price, discount) in enumerate(zip(items, quantities, prices, discounts)):
+        qty = float(qty)
+        price = float(price)
+        discount = float(discount) if discount else 0
+        # Only per-product GST rate
+        if per_product_gst:
+            gst_rate = float(product_gst_rates[idx]) if idx < len(product_gst_rates) else bill_gst_rate
+        else:
+            gst_rate = bill_gst_rate
+        gst_type = bill_gst_type  # Always bill-wide
+        # Calculation logic remains the same
+        if gst_type == 'Non-GST' or gst_rate == 0:
+            base_price = price * qty
+            discount_amount = base_price * (discount / 100)
+            discounted_price = base_price - discount_amount
+            gst_amount = 0
+            final_price = discounted_price
+        else:
+            if gst_mode == 'inclusive':
+                actual_price = price * qty
+                base_price = actual_price / (1 + gst_rate / 100)
+                discount_amount = base_price * (discount / 100)
+                discounted_price = base_price - discount_amount
+                gst_amount = discounted_price * (gst_rate / 100)
+                final_price = discounted_price + gst_amount
+            else:  # exclusive
+                base_price = price * qty
+                discount_amount = base_price * (discount / 100)
+                discounted_price = base_price - discount_amount
+                gst_amount = discounted_price * (gst_rate / 100)
+                final_price = discounted_price + gst_amount
         bill_item = BillItem(
             bill_id=bill.bill_id,
             product_id=pid,
             quantity=qty,
             price_per_unit=price,
-            total_price=float(qty)*float(price)
+            total_price=final_price
         )
+        # Attach all calculation details for template rendering
+        bill_item.discount = discount
+        bill_item.base_price = base_price
+        bill_item.discount_amount = discount_amount
+        bill_item.discounted_price = discounted_price
+        bill_item.gst_type = gst_type
+        bill_item.gst_rate = gst_rate
+        bill_item.gst_amount = gst_amount
+        bill_item.final_price = final_price
         db.session.add(bill_item)
         bill_items.append(bill_item)
         # Update product stock
         product = Product.query.get(pid)
         if product:
             product.stock_qty = product.stock_qty - int(qty)
-    # Save HTML as file
-    bills_dir = os.path.join('app', 'static', 'bills')
-    os.makedirs(bills_dir, exist_ok=True)
-    filename = f"bill_{bill_date}_{bill_number}.html"
-    filepath = os.path.join(bills_dir, filename)
+        total_amount += final_price
+    bill.total_amount = total_amount
+    db.session.commit()
     # Prepare data for receipt
     bill_data = {
         'bill': bill,
         'bill_items': bill_items,
         'shopkeeper': shopkeeper,
         'products': {str(p.product_id): p for p in products},
+        'gst_mode': gst_mode,
+        'bill_gst_type': bill_gst_type,
+        'bill_gst_rate': bill_gst_rate,
+        'per_product_gst': per_product_gst
     }
     rendered = render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
+    bills_dir = os.path.join('app', 'static', 'bills')
+    os.makedirs(bills_dir, exist_ok=True)
+    filename = f"bill_{bill_date}_{bill_number}.html"
+    filepath = os.path.join(bills_dir, filename)
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(rendered)
-    # Save file path in DB
     bill.pdf_file_path = f'static/bills/{filename}'
     db.session.commit()
     return render_template('shopkeeper/bill_receipt.html', **bill_data, bill_file=filename, back_url=url_for('shopkeeper.manage_bills'))
@@ -478,8 +536,27 @@ def upload_document(doc_type):
             shopkeeper.pan_doc_path = rel_path
         elif doc_type == 'address_proof':
             shopkeeper.address_proof_path = rel_path
+        elif doc_type == 'logo':
+            shopkeeper.logo_path = rel_path
         db.session.commit()
         flash(f'{doc_type.replace("_", " ").title()} uploaded successfully.', 'success')
     else:
         flash('No file selected.', 'danger')
+    return redirect(url_for('shopkeeper.profile'))
+
+@shopkeeper_bp.route('/delete_document/<doc_type>', methods=['POST'])
+@login_required
+@shopkeeper_required
+def delete_document(doc_type):
+    shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+    if doc_type == 'gst' and shopkeeper.gst_doc_path:
+        shopkeeper.gst_doc_path = None
+    elif doc_type == 'pan' and shopkeeper.pan_doc_path:
+        shopkeeper.pan_doc_path = None
+    elif doc_type == 'address_proof' and shopkeeper.address_proof_path:
+        shopkeeper.address_proof_path = None
+    elif doc_type == 'logo' and shopkeeper.logo_path:
+        shopkeeper.logo_path = None
+    db.session.commit()
+    flash(f'{doc_type.replace("_", " ").title()} deleted successfully.', 'success')
     return redirect(url_for('shopkeeper.profile'))

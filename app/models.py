@@ -35,6 +35,7 @@ class Shopkeeper(db.Model):
     gst_doc_path = db.Column(db.String(255))
     pan_doc_path = db.Column(db.String(255))
     address_proof_path = db.Column(db.String(255))
+    logo_path = db.Column(db.String(255))
     # Relationships
     products = db.relationship('Product', backref='shopkeeper', cascade='all, delete-orphan')
     bills = db.relationship('Bill', backref='shopkeeper', cascade='all, delete-orphan')
