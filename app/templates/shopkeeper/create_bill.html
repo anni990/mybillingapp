@@ -45,11 +45,11 @@
         <div class="mb-8">
             <label class="block text-gray-700 font-semibold mb-3">Products</label>
             <div class="flex space-x-2 mb-2 font-semibold text-gray-600 items-center">
-                <div class="w-40">Product Name</div>
-                <div class="w-16 text-center">Quantity</div>
-                <div class="w-24 text-center">Price/qty.</div>
-                <div class="flex-1"></div>
-                <div class="w-8"></div>
+                <div style="width:10rem;">Product Name</div>
+                <div style="width:4rem;" class="text-center">Quantity</div>
+                <div style="width:6rem;" class="text-center">Price/qty</div>
+                <div style="width:6rem;"></div>
+                <div style="width:2rem;"></div>
             </div>
             <div id="product-rows">
                 <!-- JS will add product rows here -->
@@ -72,8 +72,12 @@
         </div>
     </form>
 </div>
-<script>
-const PRODUCTS = {{ products|tojson }};
+<script type="text/javascript">
+const PRODUCTS = [
+    {% for p in products %}
+    {id: '{{ p.product_id }}', name: '{{ p.product_name }}', price: {{ p.price }}, stock: {{ p.stock_qty }}},
+    {% endfor %}
+];
 </script>
 <script src="/static/js/create_bill.js"></script>
 <script>feather.replace()</script>

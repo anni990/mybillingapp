@@ -97,15 +97,7 @@ def create_bill():
         db.session.commit()
         flash('Bill created successfully.', 'success')
         return redirect(url_for('shopkeeper.manage_bills'))
-    products_data = [
-        {
-            'product_id': p.product_id,
-            'product_name': p.product_name,
-            'price': float(p.price),
-            'stock_qty': p.stock_qty
-        } for p in products
-    ]
-    return render_template('shopkeeper/create_bill.html', products=products_data, shopkeeper=shopkeeper)
+    return render_template('shopkeeper/create_bill.html', products=products, shopkeeper=shopkeeper)
 
 # Manage Bills
 @shopkeeper_bp.route('/manage_bills')
