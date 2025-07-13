@@ -10,7 +10,12 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.product-row').forEach(row => {
             const qty = parseFloat(row.querySelector('.qty').value) || 0;
             const price = parseFloat(row.querySelector('.price').value) || 0;
-            total += qty * price;
+            const discount = parseFloat(row.querySelector('.discount').value) || 0;
+            let rowTotal = qty * price;
+            if (discount > 0) {
+                rowTotal = rowTotal * (1 - discount / 100);
+            }
+            total += rowTotal;
         });
         billTotal.textContent = total.toFixed(2);
     }
@@ -51,12 +56,14 @@ document.addEventListener('DOMContentLoaded', function () {
             ${createProductDropdown('')}
             <input name="quantity" type="number" min="1" value="1" class="qty border rounded px-2 py-1 w-16" required>
             <input name="price_per_unit" type="number" min="0" step="0.01" value="0.00" class="price border rounded px-2 py-1 w-24" required>
+            <input name="discount" type="number" min="0" max="100" step="0.01" value="0" class="discount border rounded px-2 py-1 w-20" placeholder="0">
             <span class="stock text-xs text-gray-500"></span>
             <button type="button" class="remove-product bg-red-100 text-red-600 px-2 rounded hover:bg-red-200">&times;</button>
         `;
         row.querySelector('.product-select').addEventListener('change', onProductChange);
         row.querySelector('.qty').addEventListener('input', updateTotal);
         row.querySelector('.price').addEventListener('input', updateTotal);
+        row.querySelector('.discount').addEventListener('input', updateTotal);
         row.querySelector('.remove-product').addEventListener('click', removeRow);
         productRows.appendChild(row);
         updateTotal();

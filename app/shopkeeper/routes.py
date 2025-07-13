@@ -380,10 +380,10 @@ def generate_bill_pdf():
     items = request.form.getlist('product_id')
     quantities = request.form.getlist('quantity')
     prices = request.form.getlist('price_per_unit')
+    discounts = request.form.getlist('discount')
     bill_date = datetime.date.today()
-    total_amount = sum(float(q)*float(p) for q, p in zip(quantities, prices))
+    total_amount = 0
     bill_number = f"BILL{int(datetime.datetime.now().timestamp())}"
-    # Save bill to DB
     bill = Bill(
         shopkeeper_id=shopkeeper.shopkeeper_id,
         bill_number=bill_number,
@@ -391,31 +391,37 @@ def generate_bill_pdf():
         customer_contact=customer_contact,
         bill_date=bill_date,
         gst_type=gst_type,
-        total_amount=total_amount,
+        total_amount=0,  # will update after calculation
         payment_status='Paid'
     )
     db.session.add(bill)
     db.session.flush()  # get bill_id
     bill_items = []
-    for pid, qty, price in zip(items, quantities, prices):
+    for pid, qty, price, discount in zip(items, quantities, prices, discounts):
+        qty = float(qty)
+        price = float(price)
+        discount = float(discount) if discount else 0
+        discounted_price = price * (1 - discount / 100)
+        total_price = qty * discounted_price
         bill_item = BillItem(
             bill_id=bill.bill_id,
             product_id=pid,
             quantity=qty,
             price_per_unit=price,
-            total_price=float(qty)*float(price)
+            total_price=total_price
         )
+        # Attach discount and discounted_price for template rendering
+        bill_item.discount = discount
+        bill_item.discounted_price = discounted_price
         db.session.add(bill_item)
         bill_items.append(bill_item)
         # Update product stock
         product = Product.query.get(pid)
         if product:
             product.stock_qty = product.stock_qty - int(qty)
-    # Save HTML as file
-    bills_dir = os.path.join('app', 'static', 'bills')
-    os.makedirs(bills_dir, exist_ok=True)
-    filename = f"bill_{bill_date}_{bill_number}.html"
-    filepath = os.path.join(bills_dir, filename)
+        total_amount += total_price
+    bill.total_amount = total_amount
+    db.session.commit()
     # Prepare data for receipt
     bill_data = {
         'bill': bill,
@@ -424,9 +430,12 @@ def generate_bill_pdf():
         'products': {str(p.product_id): p for p in products},
     }
     rendered = render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
+    bills_dir = os.path.join('app', 'static', 'bills')
+    os.makedirs(bills_dir, exist_ok=True)
+    filename = f"bill_{bill_date}_{bill_number}.html"
+    filepath = os.path.join(bills_dir, filename)
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(rendered)
-    # Save file path in DB
     bill.pdf_file_path = f'static/bills/{filename}'
     db.session.commit()
     return render_template('shopkeeper/bill_receipt.html', **bill_data, bill_file=filename, back_url=url_for('shopkeeper.manage_bills'))
