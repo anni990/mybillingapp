@@ -97,7 +97,15 @@ def create_bill():
         db.session.commit()
         flash('Bill created successfully.', 'success')
         return redirect(url_for('shopkeeper.manage_bills'))
-    return render_template('shopkeeper/create_bill.html', products=products)
+    products_data = [
+        {
+            'product_id': p.product_id,
+            'product_name': p.product_name,
+            'price': float(p.price),
+            'stock_qty': p.stock_qty
+        } for p in products
+    ]
+    return render_template('shopkeeper/create_bill.html', products=products_data, shopkeeper=shopkeeper)
 
 # Manage Bills
 @shopkeeper_bp.route('/manage_bills')
@@ -105,8 +113,18 @@ def create_bill():
 @shopkeeper_required
 def manage_bills():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    bills = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).order_by(Bill.bill_date.desc()).all() if shopkeeper else []
-    return render_template('shopkeeper/manage_bills.html', bills=bills)
+    search = request.args.get('search', '').strip()
+    selected_statuses = request.args.getlist('status')
+    query = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
+    if search:
+        query = query.filter(
+            (Bill.bill_number.ilike(f'%{search}%')) |
+            (Bill.customer_name.ilike(f'%{search}%'))
+        )
+    if selected_statuses:
+        query = query.filter(Bill.payment_status.in_(selected_statuses))
+    bills = query.order_by(Bill.bill_date.desc()).all() if shopkeeper else []
+    return render_template('shopkeeper/manage_bills.html', bills=bills, selected_statuses=selected_statuses)
 
 @shopkeeper_bp.route('/bill/<int:bill_id>')
 @login_required
@@ -484,4 +502,21 @@ def upload_document(doc_type):
         flash(f'{doc_type.replace("_", " ").title()} uploaded successfully.', 'success')
     else:
         flash('No file selected.', 'danger')
+    return redirect(url_for('shopkeeper.profile'))
+
+@shopkeeper_bp.route('/delete_document/<doc_type>', methods=['POST'])
+@login_required
+@shopkeeper_required
+def delete_document(doc_type):
+    shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+    if doc_type == 'gst' and shopkeeper.gst_doc_path:
+        shopkeeper.gst_doc_path = None
+    elif doc_type == 'pan' and shopkeeper.pan_doc_path:
+        shopkeeper.pan_doc_path = None
+    elif doc_type == 'address_proof' and shopkeeper.address_proof_path:
+        shopkeeper.address_proof_path = None
+    elif doc_type == 'logo' and shopkeeper.logo_path:
+        shopkeeper.logo_path = None
+    db.session.commit()
+    flash(f'{doc_type.replace("_", " ").title()} deleted successfully.', 'success')
     return redirect(url_for('shopkeeper.profile'))

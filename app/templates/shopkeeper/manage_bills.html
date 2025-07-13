@@ -46,13 +46,21 @@
 <div class="max-w-6xl mx-auto bg-white p-10 rounded-2xl shadow-lg mt-12 ml-80">
     <h2 class="text-3xl font-bold text-[#ed6a3e] mb-8">Manage Bills</h2>
     <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-        <input type="text" placeholder="Search by customer or bill #" class="border rounded px-4 py-2 w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-        <select class="border rounded px-4 py-2 w-full md:w-48 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-            <option>All Status</option>
-            <option>Paid</option>
-            <option>Unpaid</option>
-            <option>Partial</option>
-        </select>
+        <form method="get" class="flex flex-col md:flex-row gap-4 w-full">
+            <input type="text" name="search" value="{{ request.args.get('search', '') }}" placeholder="Search by customer or bill #" class="border rounded px-4 py-2 w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
+            <div class="relative">
+                <button type="button" onclick="document.getElementById('status-dropdown').classList.toggle('hidden')" class="border rounded px-4 py-2 w-full md:w-48 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] flex items-center justify-between">
+                    Filter Status
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div id="status-dropdown" class="absolute left-0 mt-2 w-48 bg-white border rounded shadow-lg z-10 hidden">
+                    <label class="block px-4 py-2"><input type="checkbox" name="status" value="Paid" {% if 'Paid' in selected_statuses %}checked{% endif %}> Paid</label>
+                    <label class="block px-4 py-2"><input type="checkbox" name="status" value="Unpaid" {% if 'Unpaid' in selected_statuses %}checked{% endif %}> Unpaid</label>
+                    <label class="block px-4 py-2"><input type="checkbox" name="status" value="Partial" {% if 'Partial' in selected_statuses %}checked{% endif %}> Partial</label>
+                    <div class="px-4 py-2"><button type="submit" class="bg-[#ed6a3e] text-white px-4 py-1 rounded">Apply</button></div>
+                </div>
+            </div>
+        </form>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-base rounded-xl overflow-hidden shadow-md">
@@ -94,5 +102,13 @@
         </table>
     </div>
 </div>
+<script>
+document.addEventListener('click', function(event) {
+    var dropdown = document.getElementById('status-dropdown');
+    if (dropdown && !dropdown.contains(event.target) && !event.target.closest('button')) {
+        dropdown.classList.add('hidden');
+    }
+});
+</script>
 <script>feather.replace()</script>
 {% endblock %}
