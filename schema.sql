@@ -8,7 +8,8 @@ CREATE TABLE users (
     email VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('shopkeeper', 'CA', 'employee') NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    plain_password VARCHAR(255),
 );
 
 -- 2. Shopkeeper Profile
@@ -20,15 +21,13 @@ CREATE TABLE shopkeepers (
     address VARCHAR(255),
     gst_number VARCHAR(20),
     contact_number VARCHAR(20),
+    gst_doc_path VARCHAR(255),
+    pan_doc_path VARCHAR(255),
+    address_proof_path VARCHAR(255),
+    logo_path VARCHAR(255),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- Add document path columns to shopkeepers table
-ALTER TABLE shopkeepers ADD COLUMN gst_doc_path VARCHAR(255);
-ALTER TABLE shopkeepers ADD COLUMN pan_doc_path VARCHAR(255);
-ALTER TABLE shopkeepers ADD COLUMN address_proof_path VARCHAR(255);
-
-ALTER TABLE users ADD COLUMN plain_password VARCHAR(255);
 -- 3. Chartered Accountant Profile
 CREATE TABLE chartered_accountants (
     ca_id INT AUTO_INCREMENT PRIMARY KEY,
