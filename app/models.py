@@ -13,6 +13,7 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.Enum('shopkeeper', 'CA', 'employee'), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    plain_password = db.Column(db.String(255), nullable=True)  # Only for employees
     # Relationships
     shopkeeper = db.relationship('Shopkeeper', backref='user', uselist=False)
     ca = db.relationship('CharteredAccountant', backref='user', uselist=False)
@@ -47,9 +48,11 @@ class CharteredAccountant(db.Model):
     ca_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
     firm_name = db.Column(db.String(100), nullable=False)
-    area = db.Column(db.String(100))
-    boost_status = db.Column(db.Boolean, default=False)
-    contact_number = db.Column(db.String(20))
+    area = db.Column(db.String(100), nullable=False)
+    contact_number = db.Column(db.String(20), nullable=False)
+    gst_number = db.Column(db.String(20))
+    pan_number = db.Column(db.String(20))
+    address = db.Column(db.String(255))
     # Relationships
     employees = db.relationship('CAEmployee', backref='ca', cascade='all, delete-orphan')
     ca_connections = db.relationship('CAConnection', backref='ca', cascade='all, delete-orphan')
