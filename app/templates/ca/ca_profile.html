@@ -1,0 +1,69 @@
+{% extends 'ca/ca_base.html' %}
+{% block title %}CA Profile | MyBillingApp{% endblock %}
+{% block firm_name %} {{ firm_name }} {% endblock %}
+{% block ca_content %}
+<h2 class="text-2xl font-bold text-[#ed6a3e] mb-8">CA Profile</h2>
+{% if not edit_mode %}
+  <div class="bg-white rounded-xl shadow-md p-8 max-w-xl mx-auto mb-6">
+    <div class="mb-4 flex justify-between items-center">
+      <span class="text-xl font-semibold text-[#ed6a3e]">{{ ca.firm_name }}</span>
+      <a href="?edit=1" class="bg-gradient-to-r from-[#ed6a3e] to-[#ed6a3e] text-white px-4 py-2 rounded-xl shadow hover:bg-opacity-90 transition duration-300">Edit Profile</a>
+    </div>
+    <div class="mb-2"><span class="font-semibold">Area/Location:</span> {{ ca.area }}</div>
+    <div class="mb-2"><span class="font-semibold">Contact Number:</span> {{ ca.contact_number }}</div>
+    <div class="mb-2"><span class="font-semibold">GST Number:</span> {{ ca.gst_number or '-' }}</div>
+    <div class="mb-2"><span class="font-semibold">PAN Number:</span> {{ ca.pan_number or '-' }}</div>
+    <div class="mb-2"><span class="font-semibold">Address:</span> {{ ca.address or '-' }}</div>
+  </div>
+{% else %}
+  <form method="post" class="bg-white rounded-xl shadow-md p-6 max-w-xl mx-auto">
+    {{ form.hidden_tag() }}
+    <div class="mb-4">
+      {{ form.firm_name.label(class_="block text-gray-700 font-semibold mb-2") }}
+      {{ form.firm_name(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter firm name") }}
+      {% for error in form.firm_name.errors %}
+        <span class="text-red-500 text-xs">{{ error }}</span>
+      {% endfor %}
+    </div>
+    <div class="mb-4">
+      {{ form.area.label(class_="block text-gray-700 font-semibold mb-2") }}
+      {{ form.area(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter area/location") }}
+      {% for error in form.area.errors %}
+        <span class="text-red-500 text-xs">{{ error }}</span>
+      {% endfor %}
+    </div>
+    <div class="mb-4">
+      {{ form.contact_number.label(class_="block text-gray-700 font-semibold mb-2") }}
+      {{ form.contact_number(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter contact number") }}
+      {% for error in form.contact_number.errors %}
+        <span class="text-red-500 text-xs">{{ error }}</span>
+      {% endfor %}
+    </div>
+    <div class="mb-4">
+      {{ form.gst_number.label(class_="block text-gray-700 font-semibold mb-2") }}
+      {{ form.gst_number(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter GST number (optional)") }}
+      {% for error in form.gst_number.errors %}
+        <span class="text-red-500 text-xs">{{ error }}</span>
+      {% endfor %}
+    </div>
+    <div class="mb-4">
+      {{ form.pan_number.label(class_="block text-gray-700 font-semibold mb-2") }}
+      {{ form.pan_number(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter PAN number (optional)") }}
+      {% for error in form.pan_number.errors %}
+        <span class="text-red-500 text-xs">{{ error }}</span>
+      {% endfor %}
+    </div>
+    <div class="mb-4">
+      {{ form.address.label(class_="block text-gray-700 font-semibold mb-2") }}
+      {{ form.address(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter address (optional)") }}
+      {% for error in form.address.errors %}
+        <span class="text-red-500 text-xs">{{ error }}</span>
+      {% endfor %}
+    </div>
+    <div class="flex gap-4">
+      <button type="submit" class="bg-gradient-to-r from-[#ed6a3e] to-[#ed6a3e] text-white px-6 py-2 rounded-xl shadow hover:bg-opacity-90 transition duration-300">Save</button>
+      <a href="?edit=0" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl shadow hover:bg-gray-300 transition duration-300">Cancel</a>
+    </div>
+  </form>
+{% endif %}
+{% endblock %} 

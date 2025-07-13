@@ -28,14 +28,17 @@ ALTER TABLE shopkeepers ADD COLUMN gst_doc_path VARCHAR(255);
 ALTER TABLE shopkeepers ADD COLUMN pan_doc_path VARCHAR(255);
 ALTER TABLE shopkeepers ADD COLUMN address_proof_path VARCHAR(255);
 
+ALTER TABLE users ADD COLUMN plain_password VARCHAR(255);
 -- 3. Chartered Accountant Profile
 CREATE TABLE chartered_accountants (
     ca_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     firm_name VARCHAR(100) NOT NULL,
     area VARCHAR(100),
-    boost_status BOOLEAN DEFAULT FALSE,
     contact_number VARCHAR(20),
+    gst_number VARCHAR(20),
+    pan_number VARCHAR(20),
+    address VARCHAR(255),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 

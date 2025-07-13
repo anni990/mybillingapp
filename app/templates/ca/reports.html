@@ -1,0 +1,69 @@
+{% extends 'ca/ca_base.html' %}
+{% block title %}Export Reports | MyBillingApp{% endblock %}
+{% block firm_name %} {{ firm_name }} {% endblock %}
+{% block ca_content %}
+<h2 class="text-2xl font-bold text-[#ed6a3e] mb-8">Export Bills (Tally Compatible)</h2>
+<div class="bg-white rounded-xl shadow-md p-8 max-w-3xl mx-auto">
+  <form method="post" action="/ca/reports">
+    <div class="mb-4">
+      <label class="block text-gray-700 font-semibold mb-2">Shopkeeper</label>
+      <select name="shopkeeper_id" class="w-full border border-gray-300 rounded px-3 py-2">
+        <option value="">All Shopkeepers</option>
+        {% for sk in shopkeepers %}
+        <option value="{{ sk.shopkeeper_id }}" {% if selected_shopkeeper_id == sk.shopkeeper_id|string %}selected{% endif %}>{{ sk.shop_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-4 flex gap-4">
+      <div class="flex-1">
+        <label class="block text-gray-700 font-semibold mb-2">Start Date</label>
+        <input type="date" name="start_date" class="w-full border border-gray-300 rounded px-3 py-2" value="{{ selected_start_date or '' }}">
+      </div>
+      <div class="flex-1">
+        <label class="block text-gray-700 font-semibold mb-2">End Date</label>
+        <input type="date" name="end_date" class="w-full border border-gray-300 rounded px-3 py-2" value="{{ selected_end_date or '' }}">
+      </div>
+    </div>
+    <div class="flex gap-4">
+      <button type="submit" name="preview" value="1" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl shadow hover:bg-gray-300 transition duration-300">Preview</button>
+      <button type="submit" formaction="/ca/export_bills" formmethod="post" class="bg-gradient-to-r from-[#ed6a3e] to-[#ed6a3e] text-white px-6 py-2 rounded-xl shadow hover:bg-opacity-90 transition duration-300">Export Bills</button>
+    </div>
+  </form>
+  {% if preview_bills %}
+    <div class="mt-8">
+      <h3 class="font-semibold text-lg text-[#ed6a3e] mb-4">Preview (First 5 Bills)</h3>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-gray-500">
+              <th class="py-2 px-3">Date</th>
+              <th class="py-2 px-3">Voucher Type</th>
+              <th class="py-2 px-3">Party Name</th>
+              <th class="py-2 px-3">Bill No</th>
+              <th class="py-2 px-3">GST Type</th>
+              <th class="py-2 px-3">Total Amount</th>
+              <th class="py-2 px-3">Payment Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in preview_bills %}
+            <tr class="border-t">
+              <td class="py-2 px-3">{{ row['Date'] }}</td>
+              <td class="py-2 px-3">{{ row['Voucher Type'] }}</td>
+              <td class="py-2 px-3">{{ row['Party Name'] }}</td>
+              <td class="py-2 px-3">{{ row['Bill No'] }}</td>
+              <td class="py-2 px-3">{{ row['GST Type'] }}</td>
+              <td class="py-2 px-3">₹{{ row['Total Amount'] }}</td>
+              <td class="py-2 px-3">{{ row['Payment Status'] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+  <div class="mt-8 text-gray-600 text-sm">
+    <p><b>Note:</b> The downloaded Excel file is formatted for Tally import. You can filter by shopkeeper and date range as needed.</p>
+  </div>
+</div>
+{% endblock %} 
