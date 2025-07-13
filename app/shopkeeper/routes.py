@@ -478,6 +478,8 @@ def upload_document(doc_type):
             shopkeeper.pan_doc_path = rel_path
         elif doc_type == 'address_proof':
             shopkeeper.address_proof_path = rel_path
+        elif doc_type == 'logo':
+            shopkeeper.logo_path = rel_path
         db.session.commit()
         flash(f'{doc_type.replace("_", " ").title()} uploaded successfully.', 'success')
     else:
