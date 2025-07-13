@@ -1,17 +1,33 @@
 {% extends 'ca/ca_base.html' %}
 {% block title %}Client Profile | MyBillingApp{% endblock %}
+{% block firm_name %} {{ firm_name }} {% endblock %}
 {% block ca_content %}
 <h2 class="text-2xl font-bold text-[#ed6a3e] mb-8">Client Profile</h2>
-<div class="bg-white rounded-xl shadow-md p-6 mb-8 max-w-2xl">
-  <div class="mb-2"><span class="font-semibold">Shop Name:</span> {{ client.shop_name }}</div>
-  <div class="mb-2"><span class="font-semibold">Domain:</span> {{ client.domain }}</div>
-  <div class="mb-2"><span class="font-semibold">Contact:</span> {{ client.contact_number }}</div>
-  <div class="mb-2"><span class="font-semibold">GST Number:</span> {{ client.gst_number }}</div>
+<div class="bg-white rounded-xl shadow-md p-8 max-w-2xl mx-auto mb-8">
+  <div class="mb-2 flex items-center justify-between">
+    <span class="text-xl font-semibold text-[#ed6a3e]">{{ client.shop_name }}</span>
+  </div>
+  <div class="mb-2"><span class="font-semibold">Domain:</span> {{ client.domain or '-' }}</div>
+  <div class="mb-2"><span class="font-semibold">Contact Number:</span> {{ client.contact_number or '-' }}</div>
+  <div class="mb-2"><span class="font-semibold">GST Number:</span> {{ client.gst_number or '-' }}</div>
+  <div class="mb-2"><span class="font-semibold">Address:</span> {{ client.address or '-' }}</div>
+  <div class="mb-2"><span class="font-semibold">GST Document:</span> {% if client.gst_doc_path %}<a href="{{ url_for('static', filename='uploads/' + client.gst_doc_path.split('/')[-1]) }}" class="text-blue-600 hover:underline" target="_blank">View Uploaded Document</a>{% else %}-{% endif %}</div>
+  <div class="mb-2"><span class="font-semibold">PAN Document:</span> {% if client.pan_doc_path %}<a href="{{ url_for('static', filename='uploads/' + client.pan_doc_path.split('/')[-1]) }}" class="text-blue-600 hover:underline" target="_blank">View Uploaded Document</a>{% else %}-{% endif %}</div>
+  <div class="mb-2"><span class="font-semibold">Address Proof:</span> {% if client.address_proof_path %}<a href="{{ url_for('static', filename='uploads/' + client.address_proof_path.split('/')[-1]) }}" class="text-blue-600 hover:underline" target="_blank">View Uploaded Document</a>{% else %}-{% endif %}</div>
 </div>
-<div class="bg-white rounded-xl shadow-md p-6 max-w-2xl">
-  <h3 class="font-semibold text-lg mb-4">Shared Bills</h3>
-  <ul class="space-y-2">
-    <li class="text-gray-400">Bills list coming soon...</li>
-  </ul>
+<div class="bg-white rounded-xl shadow-md p-8 max-w-2xl mx-auto">
+  <h3 class="font-semibold text-lg text-[#ed6a3e] mb-4">Uploaded Documents</h3>
+  {% if documents %}
+    <ul class="divide-y divide-gray-200">
+      {% for doc in documents %}
+        <li class="py-2 flex justify-between items-center">
+          <span>{{ doc.document_name }}</span>
+          <a href="{{ url_for('static', filename='uploads/' + client.gst_doc_path.split('/')[-1]) }}" class="text-blue-600 hover:underline" target="_blank">View PDF</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-gray-400">No documents uploaded.</p>
+  {% endif %}
 </div>
 {% endblock %} 

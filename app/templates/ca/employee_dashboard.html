@@ -1,15 +1,66 @@
-{% extends 'base.html' %}
-{% block title %}Employee Dashboard | MyBillingApp{% endblock %}
-{% block content %}
-<h2 class="text-2xl font-bold text-[#ed6a3e] mb-6">Welcome, {{ current_user.username }}!</h2>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div class="bg-white p-6 rounded shadow">
-        <h3 class="font-semibold text-lg mb-2">Assigned Clients</h3>
-        <p>View your assigned shopkeepers and their bills.</p>
-    </div>
-    <div class="bg-white p-6 rounded shadow">
-        <h3 class="font-semibold text-lg mb-2">Tasks</h3>
-        <p>Check your pending and completed tasks.</p>
-    </div>
-</div>
-{% endblock %} 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Dashboard | MyBillingApp</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-[#fff7f2] min-h-screen">
+  <nav class="bg-gradient-to-r from-[#ed6a3e] to-[#ed6a3e] py-4 px-8 flex items-center justify-between shadow">
+    <span class="text-xl font-bold text-white">MyBillingApp</span>
+    <span class="text-white">Welcome, {{ current_user.username }}</span>
+    <a href="/auth/logout" class="text-white hover:underline">Logout</a>
+  </nav>
+  <main class="max-w-4xl mx-auto py-10">
+    <h2 class="text-3xl font-bold text-[#ed6a3e] mb-8">Assigned Shop Dashboard</h2>
+    {% if shop %}
+      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h3 class="text-xl font-semibold text-[#ed6a3e] mb-2">Shop: {{ shop.shop_name }}</h3>
+        <p class="text-gray-600 mb-2">Domain: {{ shop.domain }}</p>
+        <p class="text-gray-600 mb-2">Address: {{ shop.address }}</p>
+        <p class="text-gray-600 mb-2">Contact: {{ shop.contact_number }}</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h4 class="font-semibold text-lg text-[#ed6a3e] mb-4">Products</h4>
+          {% if products %}
+            <ul class="divide-y divide-gray-200">
+              {% for product in products %}
+                <li class="py-2 flex justify-between">
+                  <span>{{ product.product_name }}</span>
+                  <span class="text-gray-500">Stock: {{ product.stock_qty }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-gray-400">No products found.</p>
+          {% endif %}
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h4 class="font-semibold text-lg text-[#ed6a3e] mb-4">Recent Bills</h4>
+          {% if bills %}
+            <ul class="divide-y divide-gray-200">
+              {% for bill in bills %}
+                <li class="py-2">
+                  <div class="flex justify-between">
+                    <span>Bill #: <span class="font-semibold">{{ bill.bill_number }}</span></span>
+                    <span class="text-gray-500">{{ bill.bill_date }}</span>
+                  </div>
+                  <div class="text-sm text-gray-600">Total: ₹{{ bill.total_amount }} | Status: {{ bill.payment_status }}</div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-gray-400">No bills found.</p>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <p class="text-gray-500">No shop assigned to you. Please contact your CA.</p>
+      </div>
+    {% endif %}
+  </main>
+</body>
+</html> 

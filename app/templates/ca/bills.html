@@ -1,5 +1,6 @@
 {% extends 'ca/ca_base.html' %}
 {% block title %}Bills Panel | MyBillingApp{% endblock %}
+{% block firm_name %} {{ firm_name }} {% endblock %}
 {% block ca_content %}
 <h2 class="text-2xl font-bold text-[#ed6a3e] mb-8">Bills Panel</h2>
 <div class="mb-4 flex flex-wrap gap-4 items-center">
@@ -7,15 +8,18 @@
     <select name="shopkeeper_id" class="rounded border-gray-300 px-3 py-2">
       <option value="">All Shopkeepers</option>
       {% for sk in shopkeepers %}
-      <option value="{{ sk.shopkeeper_id }}" {% if request.args.get('shopkeeper_id') == sk.shopkeeper_id|string %}selected{% endif %}>{{ sk.shop_name }}</option>
+      <option value="{{ sk.shopkeeper_id }}" {% if request.args.get('shopkeeper_id')==sk.shopkeeper_id|string
+        %}selected{% endif %}>{{ sk.shop_name }}</option>
       {% endfor %}
     </select>
-    <input type="date" name="start_date" class="rounded border-gray-300 px-3 py-2" value="{{ request.args.get('start_date', '') }}">
-    <input type="date" name="end_date" class="rounded border-gray-300 px-3 py-2" value="{{ request.args.get('end_date', '') }}">
-    <button type="submit" class="bg-[#ed6a3e] text-white px-4 py-2 rounded-xl shadow hover:bg-opacity-90 transition duration-300">Filter</button>
+    <input type="date" name="start_date" class="rounded border-gray-300 px-3 py-2"
+      value="{{ request.args.get('start_date', '') }}">
+    <input type="date" name="end_date" class="rounded border-gray-300 px-3 py-2"
+      value="{{ request.args.get('end_date', '') }}">
+    <button type="submit"
+      class="bg-[#ed6a3e] text-white px-4 py-2 rounded-xl shadow hover:bg-opacity-90 transition duration-300">Filter</button>
   </form>
   <form method="post" action="/ca/bills/export_bulk">
-    <button type="submit" class="bg-gradient-to-r from-[#ed6a3e] to-[#ed6a3e] text-white px-4 py-2 rounded-xl shadow hover:bg-opacity-90 transition duration-300">Bulk Export</button>
   </form>
 </div>
 <div class="bg-white rounded-xl shadow-md p-6">
@@ -39,19 +43,22 @@
           <td class="py-2 px-3">{{ bill.bill_date.strftime('%Y-%m-%d') }}</td>
           <td class="py-2 px-3">₹{{ bill.total_amount }}</td>
           <td class="py-2 px-3">
-            <span class="inline-block px-2 py-1 rounded text-xs font-semibold {% if bill.payment_status == 'Paid' %}bg-green-100 text-green-700{% elif bill.payment_status == 'Unpaid' %}bg-red-100 text-red-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">{{ bill.payment_status }}</span>
+            <span
+              class="inline-block px-2 py-1 rounded text-xs font-semibold {% if bill.payment_status == 'Paid' %}bg-green-100 text-green-700{% elif bill.payment_status == 'Unpaid' %}bg-red-100 text-red-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">{{
+              bill.payment_status }}</span>
           </td>
           <td class="py-2 px-3 space-x-2">
             <a href="/bills/view/{{ bill.bill_id }}" class="text-blue-500 hover:underline">View</a>
             <a href="/bills/download/{{ bill.bill_id }}" class="text-[#ed6a3e] hover:underline">Download</a>
-            <a href="/bills/export/{{ bill.bill_id }}" class="text-green-500 hover:underline">Export</a>
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="py-4 text-center text-gray-400">No bills found.</td></tr>
+        <tr>
+          <td colspan="6" class="py-4 text-center text-gray-400">No bills found.</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
-{% endblock %} 
+{% endblock %}
