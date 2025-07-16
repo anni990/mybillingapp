@@ -122,7 +122,9 @@ class CAConnection(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     shopkeeper_id = db.Column(db.Integer, db.ForeignKey('shopkeepers.shopkeeper_id', ondelete='CASCADE'), nullable=False)
     ca_id = db.Column(db.Integer, db.ForeignKey('chartered_accountants.ca_id', ondelete='CASCADE'), nullable=False)
-    status = db.Column(db.Enum('pending', 'approved'), nullable=False, default='pending')
+    status = db.Column(db.Enum('pending', 'approved', 'rejected'), nullable=False, default='pending')
+    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
 class Document(db.Model):
     """Documents shared between shopkeepers and CAs."""
@@ -133,3 +135,13 @@ class Document(db.Model):
     document_name = db.Column(db.String(100), nullable=False)
     file_path = db.Column(db.String(255), nullable=False)
     uploaded_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+
+class ShopConnection(db.Model):
+    """Connection requests from shopkeepers to CAs."""
+    __tablename__ = 'shop_connections'
+    id = db.Column(db.Integer, primary_key=True)
+    shopkeeper_id = db.Column(db.Integer, db.ForeignKey('shopkeepers.shopkeeper_id', ondelete='CASCADE'), nullable=False)
+    ca_id = db.Column(db.Integer, db.ForeignKey('chartered_accountants.ca_id', ondelete='CASCADE'), nullable=False)
+    status = db.Column(db.Enum('pending', 'approved', 'rejected'), nullable=False, default='pending')
+    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())

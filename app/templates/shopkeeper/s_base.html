@@ -9,12 +9,43 @@
 <body class="bg-gray-50 min-h-screen">
     <nav class="bg-[#ed6a3e] text-white px-6 py-4 flex justify-between items-center fixed top-0 left-0 w-full z-10">
         <a href="/" class="font-bold text-xl">MyBillingApp</a>
-        <div>
+        <div class="flex items-center space-x-6">
             {% if current_user.is_authenticated %}
                 {% if current_user.role == 'shopkeeper' %}
-                    <a href="/shopkeeper/dashboard" class="mx-2 hover:underline">Dashboard</a>
-                    
-                {% elif current_user.role == 'CA' %}
+                    <div class="relative group">
+                        <button class="relative focus:outline-none" id="notificationDropdownBtn">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            {% if shopkeeper_pending_requests|length > 0 %}
+                            <span class="absolute top-0 right-0 inline-block w-2 h-2 bg-red-500 rounded-full"></span>
+                            {% endif %}
+                        </button>
+                        <div class="hidden group-hover:block absolute right-0 mt-2 w-80 bg-white rounded shadow-lg z-50 border border-gray-200" id="notificationDropdown">
+                            <div class="p-4 border-b font-semibold text-[#ed6a3e]">Pending Connection Requests</div>
+                            <div class="max-h-80 overflow-y-auto">
+                                {% if shopkeeper_pending_requests %}
+                                    {% for req in shopkeeper_pending_requests %}
+                                    <div class="flex items-center justify-between px-4 py-2 hover:bg-orange-50">
+                                        <div>
+                                            <div class="font-bold">{{ req.ca_firm_name }}</div>
+                                            <div class="text-xs text-gray-500">{{ req.ca_area }} | {{ req.ca_contact_number }}</div>
+                                        </div>
+                                        <form method="POST" action="{{ url_for('shopkeeper.handle_connection_request') }}" class="flex space-x-1">
+                                            <input type="hidden" name="conn_id" value="{{ req.conn_id }}">
+                                            <button name="action" value="accept" class="bg-green-500 text-white px-2 py-1 rounded text-xs">Accept</button>
+                                            <button name="action" value="reject" class="bg-red-500 text-white px-2 py-1 rounded text-xs">Reject</button>
+                                        </form>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="px-4 py-4 text-gray-400 text-center">No pending requests.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if current_user.role == 'CA' %}
                     <a href="/ca/dashboard" class="mx-2 hover:underline">CA Dashboard</a>
                 {% elif current_user.role == 'employee' %}
                     <a href="/ca/employee_dashboard" class="mx-2 hover:underline">Employee Dashboard</a>
@@ -41,5 +72,24 @@
         {% endwith %}
         {% block content %}{% endblock %}
     </main>
+    <script>
+// Notification dropdown toggle logic
+const notifBtn = document.getElementById('notificationDropdownBtn');
+const notifDropdown = document.getElementById('notificationDropdown');
+if (notifBtn && notifDropdown) {
+  notifBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    notifDropdown.classList.toggle('hidden');
+  });
+  document.addEventListener('click', function(e) {
+    if (!notifDropdown.classList.contains('hidden')) {
+      notifDropdown.classList.add('hidden');
+    }
+  });
+  notifDropdown.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+}
+</script>
 </body>
 </html>

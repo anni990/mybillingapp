@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file, send_from_directory
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file, send_from_directory, g
 from flask_login import login_required, current_user
-from app.models import Product, Shopkeeper, Bill, BillItem, CharteredAccountant, CAConnection, Document, User
+from app.models import Product, Shopkeeper, Bill, BillItem, CharteredAccountant, CAConnection, ShopConnection, Document, User
 from app.extensions import db
 from sqlalchemy import func
 import datetime
@@ -194,6 +194,7 @@ def sales_reports():
 @login_required
 @shopkeeper_required
 def ca_marketplace():
+    shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
     cas = []
     if request.method == 'POST':
         area = request.form.get('area')
@@ -204,21 +205,30 @@ def ca_marketplace():
         cas = query.all()
     else:
         cas = CharteredAccountant.query.all()
-    return render_template('shopkeeper/ca_marketplace.html', cas=cas)
+    # Get connection status for each CA (shopkeeper-initiated)
+    connections = {c.ca_id: c for c in ShopConnection.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()}
+    return render_template('shopkeeper/ca_marketplace.html', cas=cas, connections=connections)
 
 @shopkeeper_bp.route('/connect_ca/<int:ca_id>', methods=['POST'])
 @login_required
 @shopkeeper_required
 def connect_ca(ca_id):
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    existing = CAConnection.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id, ca_id=ca_id).first()
+    existing = ShopConnection.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id, ca_id=ca_id).first()
     if not existing:
-        conn = CAConnection(shopkeeper_id=shopkeeper.shopkeeper_id, ca_id=ca_id, status='pending')
+        conn = ShopConnection(shopkeeper_id=shopkeeper.shopkeeper_id, ca_id=ca_id, status='pending')
         db.session.add(conn)
         db.session.commit()
         flash('Connection request sent.', 'success')
     else:
-        flash('Already connected or pending.', 'info')
+        if existing.status == 'pending':
+            flash('Request already sent and pending approval.', 'info')
+        elif existing.status == 'approved':
+            flash('You are already connected with this CA.', 'info')
+        elif existing.status == 'rejected':
+            existing.status = 'pending'
+            db.session.commit()
+            flash('Connection request resent.', 'success')
     return redirect(url_for('shopkeeper.ca_marketplace'))
 
 # # Documents
@@ -560,3 +570,56 @@ def delete_document(doc_type):
     db.session.commit()
     flash(f'{doc_type.replace("_", " ").title()} deleted successfully.', 'success')
     return redirect(url_for('shopkeeper.profile'))
+
+def get_shopkeeper_pending_requests():
+    if hasattr(g, 'shopkeeper_pending_requests'):
+        return g.shopkeeper_pending_requests
+    from flask_login import current_user
+    if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated and getattr(current_user, 'role', None) == 'shopkeeper':
+        shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        if shopkeeper:
+            pending = CAConnection.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id, status='pending').all()
+            requests = []
+            for conn in pending:
+                ca = CharteredAccountant.query.get(conn.ca_id)
+                requests.append({
+                    'conn_id': conn.id,
+                    'ca_id': ca.ca_id,
+                    'ca_firm_name': ca.firm_name,
+                    'ca_area': ca.area,
+                    'ca_contact_number': ca.contact_number
+                })
+            g.shopkeeper_pending_requests = requests
+            return requests
+    g.shopkeeper_pending_requests = []
+    return []
+
+@shopkeeper_bp.app_context_processor
+def inject_shopkeeper_pending_requests():
+    return {'shopkeeper_pending_requests': get_shopkeeper_pending_requests()}
+
+@shopkeeper_bp.route('/handle_connection_request', methods=['POST'])
+@login_required
+@shopkeeper_required
+def handle_connection_request():
+    shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+    conn_id = request.form.get('conn_id')
+    action = request.form.get('action')
+    conn = CAConnection.query.get(conn_id)
+    if conn and conn.shopkeeper_id == shopkeeper.shopkeeper_id and conn.status == 'pending':
+        # Find or create the corresponding ShopConnection
+        shop_conn = ShopConnection.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id, ca_id=conn.ca_id).first()
+        if not shop_conn:
+            shop_conn = ShopConnection(shopkeeper_id=shopkeeper.shopkeeper_id, ca_id=conn.ca_id, status='pending')
+            db.session.add(shop_conn)
+        if action == 'accept':
+            conn.status = 'approved'
+            shop_conn.status = 'approved'
+            db.session.commit()
+            flash('Connection approved.', 'success')
+        elif action == 'reject':
+            conn.status = 'rejected'
+            shop_conn.status = 'rejected'
+            db.session.commit()
+            flash('Connection rejected.', 'info')
+    return redirect(request.referrer or url_for('shopkeeper.dashboard'))
