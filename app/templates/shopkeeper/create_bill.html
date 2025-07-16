@@ -42,19 +42,19 @@
                 <input type="text" name="customer_contact" class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
             </div>
         </div>
-        <div class="mb-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div id="gst-type-row" class="mb-8">
+            <label class="block text-gray-700 font-semibold mb-1">GST Type:</label>
+            <select name="bill_gst_type" id="bill_gst_type" class="border rounded px-2 py-1 max-w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
+                <option value="GST">GST</option>
+                <option value="Non-GST">Non-GST</option>
+            </select>
+        </div>
+        <div id="gst-section-container" class="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
                 <label class="block text-gray-700 font-semibold mb-1">GST Mode:</label>
                 <select name="gst_mode" id="gst_mode" class="border rounded px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
                     <option value="exclusive">GST Exclusive (add GST on top)</option>
                     <option value="inclusive">GST Inclusive (price includes GST)</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-gray-700 font-semibold mb-1">GST Type:</label>
-                <select name="bill_gst_type" id="bill_gst_type" class="border rounded px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-                    <option value="GST">GST</option>
-                    <option value="Non-GST">Non-GST</option>
                 </select>
             </div>
             <div>
@@ -92,7 +92,27 @@
         </div>
         <div class="mb-8 text-right">
             <span class="text-2xl font-bold text-[#ed6a3e]">Total: ₹<span id="bill-total">0.00</span></span>
+            <div class="mt-2 text-gray-700">
+                <span>Paid: ₹<span id="paid-amount-display">0.00</span></span> |
+                <span>Unpaid: ₹<span id="unpaid-amount-display">0.00</span></span>
+            </div>
         </div>
+        <div class="mb-8 flex flex-col md:flex-row gap-6 items-center">
+    <div>
+        <label class="block text-gray-700 font-semibold mb-1">Bill Status:</label>
+        <select name="bill_status" id="bill_status" class="border rounded px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
+            <option value="paid">Paid</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="partial">Partial</option>
+        </select>
+    </div>
+    <div id="amount-paid-section" style="display:none;">
+        <label class="block text-gray-700 font-semibold mb-1">Amount Paid:</label>
+        <input type="number" min="0" step="0.01" name="amount_paid" id="amount_paid" class="border rounded px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
+    </div>
+    <input type="hidden" name="calculated_paid_amount" id="calculated_paid_amount">
+    <input type="hidden" name="calculated_unpaid_amount" id="calculated_unpaid_amount">
+</div>
         <div class="flex flex-col md:flex-row gap-4 justify-end">
             <button type="submit" name="action" value="save" class="bg-[#ed6a3e] text-white px-8 py-3 rounded shadow hover:bg-orange-700 transition duration-300">Save</button>
             <button type="submit" name="action" value="generate_pdf" class="bg-gray-200 text-[#ed6a3e] px-8 py-3 rounded shadow hover:bg-orange-100 transition duration-300">Generate PDF</button>
@@ -100,12 +120,60 @@
     </form>
 </div>
 <script type="text/javascript">
-const PRODUCTS = [
-    {% for p in products %}
-    {id: '{{ p.product_id }}', name: '{{ p.product_name }}', price: {{ p.price }}, stock: {{ p.stock_qty }}},
-    {% endfor %}
-];
+const PRODUCTS = [{% for p in products %}{{ {"id": p.product_id, "name": p.product_name, "price": p.price, "stock": p.stock_qty } | tojson }}{% if not loop.last %},{% endif %}{% endfor %}];
 </script>
 <script src="/static/js/create_bill.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const gstSectionContainer = document.getElementById('gst-section-container');
+    const billGstType = document.getElementById('bill_gst_type');
+    const billStatus = document.getElementById('bill_status');
+    const amountPaidSection = document.getElementById('amount-paid-section');
+    const amountPaidInput = document.getElementById('amount_paid');
+    const billTotal = document.getElementById('bill-total');
+    const paidAmountDisplay = document.getElementById('paid-amount-display');
+    const unpaidAmountDisplay = document.getElementById('unpaid-amount-display');
+    const calculatedPaidAmount = document.getElementById('calculated_paid_amount');
+    const calculatedUnpaidAmount = document.getElementById('calculated_unpaid_amount');
+
+    function updateGSTSectionVisibility() {
+        if (billGstType.value === 'GST') {
+            gstSectionContainer.style.display = '';
+        } else {
+            gstSectionContainer.style.display = 'none';
+        }
+    }
+
+    billGstType.addEventListener('change', updateGSTSectionVisibility);
+    updateGSTSectionVisibility(); // Initial call on page load
+
+    function updatePaymentFields() {
+        const total = parseFloat(billTotal.textContent) || 0;
+        let paid = 0, unpaid = 0;
+        if (billStatus.value === 'paid') {
+            paid = total;
+            unpaid = 0;
+            amountPaidSection.style.display = 'none';
+        } else if (billStatus.value === 'unpaid') {
+            paid = 0;
+            unpaid = total;
+            amountPaidSection.style.display = 'none';
+        } else if (billStatus.value === 'partial') {
+            amountPaidSection.style.display = '';
+            paid = parseFloat(amountPaidInput.value) || 0;
+            unpaid = total - paid;
+            if (unpaid < 0) unpaid = 0;
+        }
+        paidAmountDisplay.textContent = paid.toFixed(2);
+        unpaidAmountDisplay.textContent = unpaid.toFixed(2);
+        calculatedPaidAmount.value = paid;
+        calculatedUnpaidAmount.value = unpaid;
+    }
+    billStatus.addEventListener('change', updatePaymentFields);
+    amountPaidInput.addEventListener('input', updatePaymentFields);
+    // Call on page load
+    updatePaymentFields();
+});
+</script>
 <script>feather.replace()</script>
 {% endblock %} 

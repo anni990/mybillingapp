@@ -30,3 +30,7 @@ CREATE TABLE shop_connections (
     FOREIGN KEY (ca_id) REFERENCES chartered_accountants (ca_id) ON DELETE CASCADE,
     UNIQUE KEY unique_connection (shopkeeper_id, ca_id)
 );
+
+ALTER TABLE bills
+ADD COLUMN amount_paid NUMERIC(12,2) DEFAULT 0 NULL,
+ADD COLUMN amount_unpaid NUMERIC(12,2) DEFAULT 0 NULL;
