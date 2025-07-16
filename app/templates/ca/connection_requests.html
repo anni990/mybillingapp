@@ -1,0 +1,37 @@
+{% extends 'ca/ca_base.html' %}
+{% block title %}Connection Requests | MyBillingApp{% endblock %}
+{% block ca_content %}
+<h2 class="text-2xl font-bold text-[#ed6a3e] mb-8">Connection Requests</h2>
+<div class="bg-white rounded-xl shadow-md p-6">
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead>
+        <tr class="text-left text-gray-500">
+          <th class="py-2 px-3">Shop Name</th>
+          <th class="py-2 px-3">Domain</th>
+          <th class="py-2 px-3">Contact</th>
+          <th class="py-2 px-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr class="border-t">
+          <td class="py-2 px-3 font-semibold">{{ req.shop_name }}</td>
+          <td class="py-2 px-3">{{ req.domain }}</td>
+          <td class="py-2 px-3">{{ req.contact_number }}</td>
+          <td class="py-2 px-3 space-x-2">
+            <form method="POST" style="display:inline;">
+              <input type="hidden" name="conn_id" value="{{ req.conn_id }}">
+              <button name="action" value="accept" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-xs">Accept</button>
+              <button name="action" value="reject" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs ml-2">Reject</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="py-4 text-center text-gray-400">No pending requests.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} 

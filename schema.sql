@@ -103,9 +103,10 @@ CREATE TABLE ca_connections (
     id INT AUTO_INCREMENT PRIMARY KEY,
     shopkeeper_id INT NOT NULL,
     ca_id INT NOT NULL,
-    status ENUM('pending', 'approved') NOT NULL DEFAULT 'pending',
-    FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id) ON DELETE CASCADE,
-    FOREIGN KEY (ca_id) REFERENCES chartered_accountants(ca_id) ON DELETE CASCADE
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'rejected',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_connection (shopkeeper_id, ca_id)
 );
 
 -- 8. Documents
@@ -127,3 +128,15 @@ CREATE INDEX idx_product_id ON bill_items(product_id);
 CREATE INDEX idx_ca_id ON ca_employees(ca_id);
 CREATE INDEX idx_employee_id ON employee_clients(employee_id);
 CREATE INDEX idx_shopkeeper_id_bills ON bills(shopkeeper_id); 
+
+CREATE TABLE shop_connections (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shopkeeper_id INT NOT NULL,
+    ca_id INT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id) ON DELETE CASCADE,
+    FOREIGN KEY (ca_id) REFERENCES chartered_accountants(ca_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_connection (shopkeeper_id, ca_id)
+); 
