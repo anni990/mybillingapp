@@ -72,6 +72,18 @@
                     <span class="text-gray-700">GST Type</span>
                     <span class="font-semibold">{{ bill.gst_type }}</span>
                 </div>
+                <div class="flex justify-between py-1">
+                    <span class="text-gray-700">Bill Status</span>
+                    <span class="font-semibold">{{ bill.payment_status|capitalize }}</span>
+                </div>
+                <div class="flex justify-between py-1">
+                    <span class="text-gray-700">Paid</span>
+                    <span class="font-semibold">₹{{ bill.amount_paid|round(2) }}</span>
+                </div>
+                <div class="flex justify-between py-1">
+                    <span class="text-gray-700">Remaining</span>
+                    <span class="font-semibold">₹{{ bill.amount_unpaid|round(2) }}</span>
+                </div>
                 <div class="flex justify-between py-1 border-t mt-2 pt-2">
                     <span class="text-lg font-bold text-[#ed6a3e]">Total</span>
                     <span class="text-lg font-bold text-[#ed6a3e]">₹{{ bill.total_amount }}</span>
