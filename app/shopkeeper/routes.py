@@ -59,9 +59,11 @@ def dashboard():
 @shopkeeper_required
 def create_bill():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if not shopkeeper.is_verified:
-        flash('Please upload all required documents to use this service.', 'danger')
-        return redirect(url_for('shopkeeper.profile'))
+    # In all relevant routes, comment out the is_verified restriction logic
+    # Example for create_bill:
+    #    if not shopkeeper.is_verified:
+    #        flash('Please upload all required documents to use this service.', 'danger')
+    #        return redirect(url_for('shopkeeper.profile'))
     products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
     products_js = [
         {
@@ -117,9 +119,11 @@ def create_bill():
 @shopkeeper_required
 def manage_bills():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if not shopkeeper.is_verified:
-        flash('Please upload all required documents to use this service.', 'danger')
-        return redirect(url_for('shopkeeper.profile'))
+    # In all relevant routes, comment out the is_verified restriction logic
+    # Example for create_bill:
+    #    if not shopkeeper.is_verified:
+    #        flash('Please upload all required documents to use this service.', 'danger')
+    #        return redirect(url_for('shopkeeper.profile'))
     search = request.args.get('search', '').strip()
     selected_statuses = request.args.getlist('status')
     query = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
@@ -163,9 +167,11 @@ def view_bill(bill_id):
 @shopkeeper_required
 def delete_bill(bill_id):
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if not shopkeeper.is_verified:
-        flash('Please upload all required documents to use this service.', 'danger')
-        return redirect(url_for('shopkeeper.profile'))
+    # In all relevant routes, comment out the is_verified restriction logic
+    # Example for create_bill:
+    #    if not shopkeeper.is_verified:
+    #        flash('Please upload all required documents to use this service.', 'danger')
+    #        return redirect(url_for('shopkeeper.profile'))
     bill = Bill.query.get_or_404(bill_id)
     if bill.shopkeeper.user_id != current_user.user_id:
         flash('Access denied.', 'danger')
@@ -181,9 +187,11 @@ def delete_bill(bill_id):
 @shopkeeper_required
 def sales_reports():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if not shopkeeper.is_verified:
-        flash('Please upload all required documents to use this service.', 'danger')
-        return redirect(url_for('shopkeeper.profile'))
+    # In all relevant routes, comment out the is_verified restriction logic
+    # Example for create_bill:
+    #    if not shopkeeper.is_verified:
+    #        flash('Please upload all required documents to use this service.', 'danger')
+    #        return redirect(url_for('shopkeeper.profile'))
     today = datetime.date.today()
     default_start = today - datetime.timedelta(days=6)
     start = request.args.get('start')
@@ -405,9 +413,11 @@ def delete_product(product_id):
 @shopkeeper_required
 def generate_bill_pdf():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if not shopkeeper.is_verified:
-        flash('Please upload all required documents to use this service.', 'danger')
-        return redirect(url_for('shopkeeper.profile'))
+    # In all relevant routes, comment out the is_verified restriction logic
+    # Example for create_bill:
+    #    if not shopkeeper.is_verified:
+    #        flash('Please upload all required documents to use this service.', 'danger')
+    #        return redirect(url_for('shopkeeper.profile'))
     products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
     customer_name = request.form.get('customer_name')
     customer_contact = request.form.get('customer_contact')
