@@ -36,6 +36,12 @@ class Shopkeeper(db.Model):
     pan_doc_path = db.Column(db.String(255))
     address_proof_path = db.Column(db.String(255))
     logo_path = db.Column(db.String(255))
+    aadhaar_dl_path = db.Column(db.String(255))
+    selfie_path = db.Column(db.String(255))
+    gumasta_path = db.Column(db.String(255))
+    udyam_path = db.Column(db.String(255))
+    bank_statement_path = db.Column(db.String(255))
+    is_verified = db.Column(db.Boolean, default=False)
     # Relationships
     products = db.relationship('Product', backref='shopkeeper', cascade='all, delete-orphan')
     bills = db.relationship('Bill', backref='shopkeeper', cascade='all, delete-orphan')
@@ -99,6 +105,7 @@ class Product(db.Model):
     price = db.Column(db.Numeric(10,2), nullable=False)
     stock_qty = db.Column(db.Integer, default=0)
     low_stock_threshold = db.Column(db.Integer, default=0)
+    gst_rate = db.Column(db.Numeric(5,2), default=0)  # New field for GST rate
     # Relationships
     bill_items = db.relationship('BillItem', backref='product', cascade='all, delete-orphan')
 

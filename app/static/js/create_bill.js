@@ -4,8 +4,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const addBtn = document.getElementById('add-product-btn');
     const productRows = document.getElementById('product-rows');
     const billTotal = document.getElementById('bill-total');
-    const perProductGST = document.getElementById('per_product_gst');
-    const gstSectionContainer = document.getElementById('gst-section-container');
     const billGstType = document.getElementById('bill_gst_type');
 
     function updateTotal() {
@@ -45,47 +43,20 @@ document.addEventListener('DOMContentLoaded', function () {
         if (product) {
             row.querySelector('.price').value = product.price;
             row.querySelector('.stock').textContent = `Stock: ${product.stock}`;
+            row.querySelector('.gst-rate').textContent = `${product.gst_rate}%`;
         } else {
             row.querySelector('.price').value = '';
             row.querySelector('.stock').textContent = '';
+            row.querySelector('.gst-rate').textContent = '';
         }
         updateTotal();
     }
 
-    function createGSTFields() {
-        return `
-            <select name="product_gst_type" class="product-gst-type border rounded px-2 py-1 w-20">
-                <option value="GST">GST</option>
-                <option value="Non-GST">Non-GST</option>
-            </select>
-            <select name="product_gst_rate" class="product-gst-rate border rounded px-2 py-1 w-20">
-                <option value="0">0%</option>
-                <option value="5">5%</option>
-                <option value="12">12%</option>
-                <option value="18">18%</option>
-                <option value="28">28%</option>
-            </select>
-        `;
-    }
-    function toggleGSTFields() {
-        const show = perProductGST.checked;
-        document.querySelectorAll('.gst-col').forEach(col => col.style.display = show ? '' : 'none');
-        document.querySelectorAll('.product-row').forEach(row => {
-            row.querySelector('.product-gst-rate').style.display = show ? '' : 'none';
-            // Set default value if showing and empty
-            if (show) {
-                const billRate = document.getElementById('bill_gst_rate').value;
-                if (!row.querySelector('.product-gst-rate').value) row.querySelector('.product-gst-rate').value = billRate;
-            }
-        });
-    }
-    perProductGST.addEventListener('change', toggleGSTFields);
-
     function updateGSTSectionVisibility() {
         if (billGstType.value === 'GST') {
-            gstSectionContainer.style.display = '';
+            // gstSectionContainer.style.display = ''; // This line is removed
         } else {
-            gstSectionContainer.style.display = 'none';
+            // gstSectionContainer.style.display = 'none'; // This line is removed
         }
     }
 
@@ -100,13 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <input name="quantity" type="number" min="1" value="1" class="qty border rounded px-2 py-1 w-16" required>
             <input name="price_per_unit" type="number" min="0" step="0.01" value="0.00" class="price border rounded px-2 py-1 w-24" required>
             <input name="discount" type="number" min="0" max="100" step="0.01" value="0" class="discount border rounded px-2 py-1 w-20" placeholder="0">
-            <select name="product_gst_rate" class="product-gst-rate border rounded px-2 py-1 w-20">
-                <option value="0">0%</option>
-                <option value="5">5%</option>
-                <option value="12">12%</option>
-                <option value="18">18%</option>
-                <option value="28">28%</option>
-            </select>
+            <span class="gst-rate w-20 text-center"></span>
             <span class="stock text-xs text-gray-500"></span>
             <button type="button" class="remove-product bg-red-100 text-red-600 px-2 rounded hover:bg-red-200">&times;</button>
         `;
@@ -115,13 +80,10 @@ document.addEventListener('DOMContentLoaded', function () {
         row.querySelector('.price').addEventListener('input', updateTotal);
         row.querySelector('.discount').addEventListener('input', updateTotal);
         row.querySelector('.remove-product').addEventListener('click', removeRow);
-        // GST rate dropdown listener
-        row.querySelector('.product-gst-rate').addEventListener('change', updateTotal);
         productRows.appendChild(row);
         updateTotal();
     }
     addBtn.addEventListener('click', addProductRow);
     // Initial row
     addProductRow();
-    toggleGSTFields();
 }); 
