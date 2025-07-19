@@ -67,12 +67,7 @@
                     <option value="28">28%</option>
                 </select>
             </div>
-            <div class="flex items-center mt-6">
-                <label class="inline-flex items-center">
-                    <input type="checkbox" id="per_product_gst" name="per_product_gst" class="form-checkbox h-4 w-4 text-[#ed6a3e] focus:ring-[#ed6a3e]">
-                    <span class="ml-2 text-gray-700 text-sm">Set GST per product</span>
-                </label>
-            </div>
+            <!-- Removed per-product GST checkbox -->
         </div>
 
         <div class="mb-8">
@@ -82,7 +77,7 @@
                 <div style="width:4rem;" class="text-center">Quantity</div>
                 <div style="width:6rem;" class="text-center">Price/qty</div>
                 <div style="width:6rem;" class="text-center">Discount %</div>
-                <div style="width:6rem;" class="text-center gst-col">GST Rate</div>
+                <div style="width:6rem;" class="text-center gst-col">GST Rate (from database)</div>
                 <div style="width:2rem;"></div>
             </div>
             <div id="product-rows">
@@ -120,7 +115,7 @@
     </form>
 </div>
 <script type="text/javascript">
-const PRODUCTS = [{% for p in products %}{{ {"id": p.product_id, "name": p.product_name, "price": p.price, "stock": p.stock_qty } | tojson }}{% if not loop.last %},{% endif %}{% endfor %}];
+const PRODUCTS = {{ products_js|tojson }};
 </script>
 <script src="/static/js/create_bill.js"></script>
 <script>

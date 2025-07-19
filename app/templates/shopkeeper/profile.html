@@ -39,6 +39,11 @@
 </aside>
 <main class="flex-1 ml-64 p-8 bg-gray-50 min-h-screen">
     <div class="max-w-5xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10">
+        {% if not shopkeeper.is_verified %}
+        <div class="mb-6 p-4 bg-red-100 border border-red-300 text-red-700 rounded text-center text-base font-semibold">
+            Please upload all required documents to start using the services.
+        </div>
+        {% endif %}
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-3xl font-bold text-[#ed6a3e]">Profile</h2>
             <a href="{{ url_for('shopkeeper.profile_edit') }}"
@@ -72,7 +77,7 @@
             <!-- GST Certificate -->
             <div
                 class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center">
-                <div class="font-semibold text-gray-800 mb-3">GST Certificate</div>
+                <div class="font-semibold text-gray-800 mb-3">GST Certificate <span class="text-xs text-red-500">(Required)</span></div>
                 {% if shopkeeper.gst_doc_path %}
                 <a href="{{ url_for('static', filename=shopkeeper.gst_doc_path) }}" target="_blank" class="mb-4">
                     {% if shopkeeper.gst_doc_path.endswith('.pdf') %}
@@ -114,7 +119,7 @@
             <!-- PAN Card -->
             <div
                 class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center">
-                <div class="font-semibold text-gray-800 mb-3">PAN Card</div>
+                <div class="font-semibold text-gray-800 mb-3">PAN Card <span class="text-xs text-red-500">(Required)</span></div>
                 {% if shopkeeper.pan_doc_path %}
                 <a href="{{ url_for('static', filename=shopkeeper.pan_doc_path) }}" target="_blank" class="mb-4">
                     {% if shopkeeper.pan_doc_path.endswith('.pdf') %}
@@ -156,7 +161,7 @@
             <!-- Address Proof -->
             <div
                 class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center">
-                <div class="font-semibold text-gray-800 mb-3">Address Proof</div>
+                <div class="font-semibold text-gray-800 mb-3">Address Proof <span class="text-xs text-red-500">(Required)</span></div>
                 {% if shopkeeper.address_proof_path %}
                 <a href="{{ url_for('static', filename=shopkeeper.address_proof_path) }}" target="_blank" class="mb-4">
                     {% if shopkeeper.address_proof_path.endswith('.pdf') %}
@@ -235,6 +240,166 @@
                         class="bg-[#ed6a3e] text-white px-4 py-2 rounded-lg shadow hover:bg-orange-700 transition-colors duration-300 text-sm w-full max-w-xs">
                         Upload Document
                     </button>
+                    <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
+                </form>
+                {% endif %}
+            </div>
+            <!-- Aadhaar / Driver’s License -->
+            <div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center">
+                <div class="font-semibold text-gray-800 mb-3">Aadhaar / Driver’s License <span class="text-xs text-red-500">(Required)</span></div>
+                {% if shopkeeper.aadhaar_dl_path %}
+                <a href="{{ url_for('static', filename=shopkeeper.aadhaar_dl_path) }}" target="_blank" class="mb-4">
+                    {% if shopkeeper.aadhaar_dl_path.endswith('.pdf') %}
+                    <div class="flex flex-col items-center">
+                        <i class="fas fa-file-pdf text-5xl text-red-500"></i>
+                        <span class="text-xs text-gray-500 mt-1">PDF</span>
+                    </div>
+                    {% else %}
+                    <img src="{{ url_for('static', filename=shopkeeper.aadhaar_dl_path) }}" alt="Aadhaar/Driver’s License" class="h-24 w-auto rounded border object-cover">
+                    {% endif %}
+                </a>
+                <form action="{{ url_for('shopkeeper.upload_document', doc_type='aadhaar_dl') }}" method="post" enctype="multipart/form-data" class="w-full flex flex-col items-center">
+                    <label for="aadhaar_dl_document" class="block text-sm text-gray-600 mb-2">Replace Aadhaar/Driver’s License</label>
+                    <input type="file" id="aadhaar_dl_document" name="document" accept="image/*,application/pdf" class="mb-3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors duration-300 text-sm w-full max-w-xs">Replace Document</button>
+                    <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
+                </form>
+                <form action="{{ url_for('shopkeeper.delete_document', doc_type='aadhaar_dl') }}" method="post" class="w-full flex flex-col items-center mt-2">
+                    <button type="submit" class="text-xs text-red-600 hover:underline">Delete Document</button>
+                </form>
+                {% else %}
+                <form action="{{ url_for('shopkeeper.upload_document', doc_type='aadhaar_dl') }}" method="post" enctype="multipart/form-data" class="w-full flex flex-col items-center">
+                    <label for="aadhaar_dl_document" class="block text-sm text-gray-600 mb-2">Upload Aadhaar/Driver’s License</label>
+                    <input type="file" id="aadhaar_dl_document" name="document" accept="image/*,application/pdf" class="mb-3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100 cursor-pointer">
+                    <button type="submit" class="bg-[#ed6a3e] text-white px-4 py-2 rounded-lg shadow hover:bg-orange-700 transition-colors duration-300 text-sm w-full max-w-xs">Upload Document</button>
+                    <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
+                </form>
+                {% endif %}
+            </div>
+            <!-- Selfie -->
+            <div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center">
+                <div class="font-semibold text-gray-800 mb-3">Selfie <span class="text-xs text-red-500">(Required)</span></div>
+                {% if shopkeeper.selfie_path %}
+                <a href="{{ url_for('static', filename=shopkeeper.selfie_path) }}" target="_blank" class="mb-4">
+                    {% if shopkeeper.selfie_path.endswith('.pdf') %}
+                    <div class="flex flex-col items-center">
+                        <i class="fas fa-file-pdf text-5xl text-red-500"></i>
+                        <span class="text-xs text-gray-500 mt-1">PDF</span>
+                    </div>
+                    {% else %}
+                    <img src="{{ url_for('static', filename=shopkeeper.selfie_path) }}" alt="Selfie" class="h-24 w-auto rounded border object-cover">
+                    {% endif %}
+                </a>
+                <form action="{{ url_for('shopkeeper.upload_document', doc_type='selfie') }}" method="post" enctype="multipart/form-data" class="w-full flex flex-col items-center">
+                    <label for="selfie_document" class="block text-sm text-gray-600 mb-2">Replace Selfie</label>
+                    <input type="file" id="selfie_document" name="document" accept="image/*,application/pdf" class="mb-3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors duration-300 text-sm w-full max-w-xs">Replace Document</button>
+                    <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
+                </form>
+                <form action="{{ url_for('shopkeeper.delete_document', doc_type='selfie') }}" method="post" class="w-full flex flex-col items-center mt-2">
+                    <button type="submit" class="text-xs text-red-600 hover:underline">Delete Document</button>
+                </form>
+                {% else %}
+                <form action="{{ url_for('shopkeeper.upload_document', doc_type='selfie') }}" method="post" enctype="multipart/form-data" class="w-full flex flex-col items-center">
+                    <label for="selfie_document" class="block text-sm text-gray-600 mb-2">Upload Selfie</label>
+                    <input type="file" id="selfie_document" name="document" accept="image/*,application/pdf" class="mb-3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100 cursor-pointer">
+                    <button type="submit" class="bg-[#ed6a3e] text-white px-4 py-2 rounded-lg shadow hover:bg-orange-700 transition-colors duration-300 text-sm w-full max-w-xs">Upload Document</button>
+                    <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
+                </form>
+                {% endif %}
+            </div>
+            <!-- Gumasta Certificate -->
+            <div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center">
+                <div class="font-semibold text-gray-800 mb-3">Gumasta Certificate <span class="text-xs text-red-500">(Required)</span></div>
+                {% if shopkeeper.gumasta_path %}
+                <a href="{{ url_for('static', filename=shopkeeper.gumasta_path) }}" target="_blank" class="mb-4">
+                    {% if shopkeeper.gumasta_path.endswith('.pdf') %}
+                    <div class="flex flex-col items-center">
+                        <i class="fas fa-file-pdf text-5xl text-red-500"></i>
+                        <span class="text-xs text-gray-500 mt-1">PDF</span>
+                    </div>
+                    {% else %}
+                    <img src="{{ url_for('static', filename=shopkeeper.gumasta_path) }}" alt="Gumasta Certificate" class="h-24 w-auto rounded border object-cover">
+                    {% endif %}
+                </a>
+                <form action="{{ url_for('shopkeeper.upload_document', doc_type='gumasta') }}" method="post" enctype="multipart/form-data" class="w-full flex flex-col items-center">
+                    <label for="gumasta_document" class="block text-sm text-gray-600 mb-2">Replace Gumasta Certificate</label>
+                    <input type="file" id="gumasta_document" name="document" accept="image/*,application/pdf" class="mb-3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors duration-300 text-sm w-full max-w-xs">Replace Document</button>
+                    <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
+                </form>
+                <form action="{{ url_for('shopkeeper.delete_document', doc_type='gumasta') }}" method="post" class="w-full flex flex-col items-center mt-2">
+                    <button type="submit" class="text-xs text-red-600 hover:underline">Delete Document</button>
+                </form>
+                {% else %}
+                <form action="{{ url_for('shopkeeper.upload_document', doc_type='gumasta') }}" method="post" enctype="multipart/form-data" class="w-full flex flex-col items-center">
+                    <label for="gumasta_document" class="block text-sm text-gray-600 mb-2">Upload Gumasta Certificate</label>
+                    <input type="file" id="gumasta_document" name="document" accept="image/*,application/pdf" class="mb-3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100 cursor-pointer">
+                    <button type="submit" class="bg-[#ed6a3e] text-white px-4 py-2 rounded-lg shadow hover:bg-orange-700 transition-colors duration-300 text-sm w-full max-w-xs">Upload Document</button>
+                    <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
+                </form>
+                {% endif %}
+            </div>
+            <!-- Udyam/MSME Certificate -->
+            <div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center">
+                <div class="font-semibold text-gray-800 mb-3">Udyam/MSME Certificate</div>
+                {% if shopkeeper.udyam_path %}
+                <a href="{{ url_for('static', filename=shopkeeper.udyam_path) }}" target="_blank" class="mb-4">
+                    {% if shopkeeper.udyam_path.endswith('.pdf') %}
+                    <div class="flex flex-col items-center">
+                        <i class="fas fa-file-pdf text-5xl text-red-500"></i>
+                        <span class="text-xs text-gray-500 mt-1">PDF</span>
+                    </div>
+                    {% else %}
+                    <img src="{{ url_for('static', filename=shopkeeper.udyam_path) }}" alt="Udyam/MSME Certificate" class="h-24 w-auto rounded border object-cover">
+                    {% endif %}
+                </a>
+                <form action="{{ url_for('shopkeeper.upload_document', doc_type='udyam') }}" method="post" enctype="multipart/form-data" class="w-full flex flex-col items-center">
+                    <label for="udyam_document" class="block text-sm text-gray-600 mb-2">Replace Udyam/MSME Certificate</label>
+                    <input type="file" id="udyam_document" name="document" accept="image/*,application/pdf" class="mb-3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors duration-300 text-sm w-full max-w-xs">Replace Document</button>
+                    <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
+                </form>
+                <form action="{{ url_for('shopkeeper.delete_document', doc_type='udyam') }}" method="post" class="w-full flex flex-col items-center mt-2">
+                    <button type="submit" class="text-xs text-red-600 hover:underline">Delete Document</button>
+                </form>
+                {% else %}
+                <form action="{{ url_for('shopkeeper.upload_document', doc_type='udyam') }}" method="post" enctype="multipart/form-data" class="w-full flex flex-col items-center">
+                    <label for="udyam_document" class="block text-sm text-gray-600 mb-2">Upload Udyam/MSME Certificate</label>
+                    <input type="file" id="udyam_document" name="document" accept="image/*,application/pdf" class="mb-3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100 cursor-pointer">
+                    <button type="submit" class="bg-[#ed6a3e] text-white px-4 py-2 rounded-lg shadow hover:bg-orange-700 transition-colors duration-300 text-sm w-full max-w-xs">Upload Document</button>
+                    <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
+                </form>
+                {% endif %}
+            </div>
+            <!-- Bank Statement/Invoice -->
+            <div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center">
+                <div class="font-semibold text-gray-800 mb-3">Bank Statement/Invoice <span class="text-xs text-red-500">(Required)</span></div>
+                {% if shopkeeper.bank_statement_path %}
+                <a href="{{ url_for('static', filename=shopkeeper.bank_statement_path) }}" target="_blank" class="mb-4">
+                    {% if shopkeeper.bank_statement_path.endswith('.pdf') %}
+                    <div class="flex flex-col items-center">
+                        <i class="fas fa-file-pdf text-5xl text-red-500"></i>
+                        <span class="text-xs text-gray-500 mt-1">PDF</span>
+                    </div>
+                    {% else %}
+                    <img src="{{ url_for('static', filename=shopkeeper.bank_statement_path) }}" alt="Bank Statement/Invoice" class="h-24 w-auto rounded border object-cover">
+                    {% endif %}
+                </a>
+                <form action="{{ url_for('shopkeeper.upload_document', doc_type='bank_statement') }}" method="post" enctype="multipart/form-data" class="w-full flex flex-col items-center">
+                    <label for="bank_statement_document" class="block text-sm text-gray-600 mb-2">Replace Bank Statement/Invoice</label>
+                    <input type="file" id="bank_statement_document" name="document" accept="image/*,application/pdf" class="mb-3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-colors duration-300 text-sm w-full max-w-xs">Replace Document</button>
+                    <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
+                </form>
+                <form action="{{ url_for('shopkeeper.delete_document', doc_type='bank_statement') }}" method="post" class="w-full flex flex-col items-center mt-2">
+                    <button type="submit" class="text-xs text-red-600 hover:underline">Delete Document</button>
+                </form>
+                {% else %}
+                <form action="{{ url_for('shopkeeper.upload_document', doc_type='bank_statement') }}" method="post" enctype="multipart/form-data" class="w-full flex flex-col items-center">
+                    <label for="bank_statement_document" class="block text-sm text-gray-600 mb-2">Upload Bank Statement/Invoice</label>
+                    <input type="file" id="bank_statement_document" name="document" accept="image/*,application/pdf" class="mb-3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100 cursor-pointer">
+                    <button type="submit" class="bg-[#ed6a3e] text-white px-4 py-2 rounded-lg shadow hover:bg-orange-700 transition-colors duration-300 text-sm w-full max-w-xs">Upload Document</button>
                     <span class="text-xs text-gray-400 mt-2">Max 2MB. JPG, PNG, PDF only.</span>
                 </form>
                 {% endif %}

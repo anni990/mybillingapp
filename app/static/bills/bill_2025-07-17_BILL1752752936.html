@@ -2,33 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bill Receipt - {{ bill.bill_number }}</title>
+    <title>Bill Receipt - BILL1752752936</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
     <div class="max-w-4xl mx-auto bg-white p-6 mt-10 rounded shadow-lg">
         <!-- Header -->
         <div class="text-center mb-6">
-            {% if shopkeeper.logo_path %}
-            <img src="{{ url_for('static', filename=shopkeeper.logo_path) }}" alt="Shop Logo" class="h-16 mx-auto mb-2">
-            {% endif %}
-            <h1 class="text-3xl font-bold text-gray-900">{{ shopkeeper.shop_name }}</h1>
-            <p class="text-gray-600">Invoice {{ bill.bill_number }}</p>
-            <p class="text-gray-600">Date: {{ bill.bill_date }}</p>
+            
+            <img src="/static/uploads/shopkeeper_1_logo.jpg" alt="Shop Logo" class="h-16 mx-auto mb-2">
+            
+            <h1 class="text-3xl font-bold text-gray-900">Grocery Mart</h1>
+            <p class="text-gray-600">Invoice BILL1752752936</p>
+            <p class="text-gray-600">Date: 2025-07-17</p>
         </div>
 
         <!-- From and To section -->
         <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
             <div class="border p-4 rounded">
                 <h2 class="font-semibold mb-2">From:</h2>
-                <p>{{ shopkeeper.shop_name }}</p>
-                <p>{{ shopkeeper.address }}</p>
-                <p>GSTIN: {{ shopkeeper.gst_number }}</p>
+                <p>Grocery Mart</p>
+                <p>123 Main St</p>
+                <p>GSTIN: GSTIN1234</p>
             </div>
             <div class="border p-4 rounded">
                 <h2 class="font-semibold mb-2">To:</h2>
-                <p>{{ bill.customer_name }}</p>
-                <p>{{ bill.customer_contact }}</p>
+                <p>Malay</p>
+                <p>7894561230</p>
             </div>
         </div>
 
@@ -50,19 +50,19 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in bill_items %}
+                    
                     <tr class="border-t">
-                        <td class="p-2 border">{{ products[item.product_id|string].product_name }}</td>
-                        <td class="p-2 border">{{ item.hsn_code or '' }}</td>
-                        <td class="p-2 border text-right">{{ item.quantity }}</td>
-                        <td class="p-2 border text-right">₹{{ item.base_price|round(2) }}</td>
-                        <td class="p-2 border text-right">₹{{ item.discount_amount|round(2) }} ({{ item.discount }}%)</td>
-                        <td class="p-2 border text-right">₹{{ item.discounted_price|round(2) }}</td>
-                        <td class="p-2 border text-right">₹{{ item.sgst_amount|default(0)|round(2) }}</td>
-                        <td class="p-2 border text-right">₹{{ item.cgst_amount|default(0)|round(2) }}</td>
-                        <td class="p-2 border text-right">₹{{ item.final_price|round(2) }}</td>
+                        <td class="p-2 border">Pulse 1kg</td>
+                        <td class="p-2 border"></td>
+                        <td class="p-2 border text-right">1</td>
+                        <td class="p-2 border text-right">₹30.0</td>
+                        <td class="p-2 border text-right">₹0.0 (0.0%)</td>
+                        <td class="p-2 border text-right">₹30.0</td>
+                        <td class="p-2 border text-right">₹0</td>
+                        <td class="p-2 border text-right">₹0</td>
+                        <td class="p-2 border text-right">₹30.0</td>
                     </tr>
-                    {% endfor %}
+                    
                 </tbody>
             </table>
         </div>
@@ -81,12 +81,12 @@
             </thead>
             <tbody>
                 <tr>
-                    <td class="p-2 border">₹{{ bill.total_amount }}</td>
-                    <td class="p-2 border">{{ bill.gst_rate|default('18') }}%</td>
-                    <td class="p-2 border">₹{{ bill.cgst_amount|default(0)|round(2) }}</td>
-                    <td class="p-2 border">₹{{ bill.sgst_amount|default(0)|round(2) }}</td>
-                    <td class="p-2 border">₹{{ (bill.cgst_amount|default(0) + bill.sgst_amount|default(0))|round(2) }}</td>
-                    <td class="p-2 border font-bold text-right">₹{{ bill.total_amount }}</td>
+                    <td class="p-2 border">₹30.00</td>
+                    <td class="p-2 border">18%</td>
+                    <td class="p-2 border">₹0</td>
+                    <td class="p-2 border">₹0</td>
+                    <td class="p-2 border">₹0</td>
+                    <td class="p-2 border font-bold text-right">₹30.00</td>
                 </tr>
             </tbody>
         </table>
@@ -94,9 +94,9 @@
         <!-- Bank details -->
         <div class="mt-6 text-sm">
             <h2 class="font-semibold mb-2">Bank Details:</h2>
-            <p>Bank Name: {{ shopkeeper.bank_name or '' }}</p>
-            <p>Account Number: {{ shopkeeper.bank_account or '' }}</p>
-            <p>IFSC Code: {{ shopkeeper.ifsc_code or '' }}</p>
+            <p>Bank Name: </p>
+            <p>Account Number: </p>
+            <p>IFSC Code: </p>
         </div>
 
         <!-- Action buttons -->

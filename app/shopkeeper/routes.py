@@ -59,7 +59,19 @@ def dashboard():
 @shopkeeper_required
 def create_bill():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+    if not shopkeeper.is_verified:
+        flash('Please upload all required documents to use this service.', 'danger')
+        return redirect(url_for('shopkeeper.profile'))
     products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
+    products_js = [
+        {
+            'id': p.product_id,
+            'name': p.product_name,
+            'price': float(p.price),
+            'stock': p.stock_qty,
+            'gst_rate': float(p.gst_rate or 0)
+        } for p in products
+    ]
     if request.method == 'POST':
         customer_name = request.form.get('customer_name')
         customer_contact = request.form.get('customer_contact')
@@ -97,7 +109,7 @@ def create_bill():
         db.session.commit()
         flash('Bill created successfully.', 'success')
         return redirect(url_for('shopkeeper.manage_bills'))
-    return render_template('shopkeeper/create_bill.html', products=products, shopkeeper=shopkeeper)
+    return render_template('shopkeeper/create_bill.html', products=products, products_js=products_js, shopkeeper=shopkeeper)
 
 # Manage Bills
 @shopkeeper_bp.route('/manage_bills')
@@ -105,6 +117,9 @@ def create_bill():
 @shopkeeper_required
 def manage_bills():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+    if not shopkeeper.is_verified:
+        flash('Please upload all required documents to use this service.', 'danger')
+        return redirect(url_for('shopkeeper.profile'))
     search = request.args.get('search', '').strip()
     selected_statuses = request.args.getlist('status')
     query = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
@@ -147,6 +162,10 @@ def view_bill(bill_id):
 @login_required
 @shopkeeper_required
 def delete_bill(bill_id):
+    shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+    if not shopkeeper.is_verified:
+        flash('Please upload all required documents to use this service.', 'danger')
+        return redirect(url_for('shopkeeper.profile'))
     bill = Bill.query.get_or_404(bill_id)
     if bill.shopkeeper.user_id != current_user.user_id:
         flash('Access denied.', 'danger')
@@ -162,6 +181,9 @@ def delete_bill(bill_id):
 @shopkeeper_required
 def sales_reports():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+    if not shopkeeper.is_verified:
+        flash('Please upload all required documents to use this service.', 'danger')
+        return redirect(url_for('shopkeeper.profile'))
     today = datetime.date.today()
     default_start = today - datetime.timedelta(days=6)
     start = request.args.get('start')
@@ -383,18 +405,21 @@ def delete_product(product_id):
 @shopkeeper_required
 def generate_bill_pdf():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+    if not shopkeeper.is_verified:
+        flash('Please upload all required documents to use this service.', 'danger')
+        return redirect(url_for('shopkeeper.profile'))
     products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
     customer_name = request.form.get('customer_name')
     customer_contact = request.form.get('customer_contact')
     gst_mode = request.form.get('gst_mode', 'exclusive')
     bill_gst_type = request.form.get('bill_gst_type', 'GST')
     bill_gst_rate = float(request.form.get('bill_gst_rate', 0))
-    per_product_gst = request.form.get('per_product_gst') == 'on'
+    # per_product_gst = request.form.get('per_product_gst') == 'on' # No longer needed
     items = request.form.getlist('product_id')
     quantities = request.form.getlist('quantity')
     prices = request.form.getlist('price_per_unit')
     discounts = request.form.getlist('discount')
-    product_gst_rates = request.form.getlist('product_gst_rate')
+    # product_gst_rates = request.form.getlist('product_gst_rate')  # No longer needed
     bill_date = datetime.date.today()
     total_amount = 0
     bill_number = f"BILL{int(datetime.datetime.now().timestamp())}"
@@ -427,11 +452,12 @@ def generate_bill_pdf():
         qty = float(qty)
         price = float(price)
         discount = float(discount) if discount else 0
-        # Only per-product GST rate
-        if per_product_gst:
-            gst_rate = float(product_gst_rates[idx]) if idx < len(product_gst_rates) else bill_gst_rate
+        # Fetch GST rate from the Product model if GST type is 'GST'
+        product = Product.query.get(pid)
+        if bill_gst_type == 'GST' and product:
+            gst_rate = float(product.gst_rate or 0)
         else:
-            gst_rate = bill_gst_rate
+            gst_rate = 0
         gst_type = bill_gst_type  # Always bill-wide
         # Calculation logic remains the same
         if gst_type == 'Non-GST' or gst_rate == 0:
@@ -473,7 +499,6 @@ def generate_bill_pdf():
         db.session.add(bill_item)
         bill_items.append(bill_item)
         # Update product stock
-        product = Product.query.get(pid)
         if product:
             product.stock_qty = product.stock_qty - int(qty)
         total_amount += final_price
@@ -488,7 +513,7 @@ def generate_bill_pdf():
         'gst_mode': gst_mode,
         'bill_gst_type': bill_gst_type,
         'bill_gst_rate': bill_gst_rate,
-        'per_product_gst': per_product_gst,
+        # 'per_product_gst': per_product_gst, # No longer needed
         'amount_paid': amount_paid,
         'amount_unpaid': amount_unpaid,
         'payment_status': payment_status
@@ -531,6 +556,18 @@ def profile_edit():
         return redirect(url_for('shopkeeper.profile'))
     return render_template('shopkeeper/profile_edit.html', shopkeeper=shopkeeper)
 
+def update_shopkeeper_verification(shopkeeper):
+    required_fields = [
+        shopkeeper.aadhaar_dl_path,
+        shopkeeper.pan_doc_path,
+        shopkeeper.address_proof_path,
+        shopkeeper.selfie_path,
+        shopkeeper.gumasta_path,
+        shopkeeper.bank_statement_path,
+    ]
+    shopkeeper.is_verified = all(required_fields)
+    db.session.commit()
+
 @shopkeeper_bp.route('/upload_document/<doc_type>', methods=['POST'])
 @login_required
 @shopkeeper_required
@@ -563,7 +600,18 @@ def upload_document(doc_type):
             shopkeeper.address_proof_path = rel_path
         elif doc_type == 'logo':
             shopkeeper.logo_path = rel_path
+        elif doc_type == 'aadhaar_dl':
+            shopkeeper.aadhaar_dl_path = rel_path
+        elif doc_type == 'selfie':
+            shopkeeper.selfie_path = rel_path
+        elif doc_type == 'gumasta':
+            shopkeeper.gumasta_path = rel_path
+        elif doc_type == 'udyam':
+            shopkeeper.udyam_path = rel_path
+        elif doc_type == 'bank_statement':
+            shopkeeper.bank_statement_path = rel_path
         db.session.commit()
+        update_shopkeeper_verification(shopkeeper)
         flash(f'{doc_type.replace("_", " ").title()} uploaded successfully.', 'success')
     else:
         flash('No file selected.', 'danger')
@@ -582,7 +630,18 @@ def delete_document(doc_type):
         shopkeeper.address_proof_path = None
     elif doc_type == 'logo' and shopkeeper.logo_path:
         shopkeeper.logo_path = None
+    elif doc_type == 'aadhaar_dl' and shopkeeper.aadhaar_dl_path:
+        shopkeeper.aadhaar_dl_path = None
+    elif doc_type == 'selfie' and shopkeeper.selfie_path:
+        shopkeeper.selfie_path = None
+    elif doc_type == 'gumasta' and shopkeeper.gumasta_path:
+        shopkeeper.gumasta_path = None
+    elif doc_type == 'udyam' and shopkeeper.udyam_path:
+        shopkeeper.udyam_path = None
+    elif doc_type == 'bank_statement' and shopkeeper.bank_statement_path:
+        shopkeeper.bank_statement_path = None
     db.session.commit()
+    update_shopkeeper_verification(shopkeeper)
     flash(f'{doc_type.replace("_", " ").title()} deleted successfully.', 'success')
     return redirect(url_for('shopkeeper.profile'))
 
