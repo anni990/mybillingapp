@@ -2,67 +2,162 @@
 {% block title %}CA Profile | MyBillingApp{% endblock %}
 {% block firm_name %} {{ firm_name }} {% endblock %}
 {% block ca_content %}
-<h2 class="text-2xl font-bold text-[#ed6a3e] mb-8">CA Profile</h2>
-{% if not edit_mode %}
-  <div class="bg-white rounded-xl shadow-md p-8 max-w-xl mx-auto mb-6">
-    <div class="mb-4 flex justify-between items-center">
-      <span class="text-xl font-semibold text-[#ed6a3e]">{{ ca.firm_name }}</span>
-      <a href="?edit=1" class="bg-gradient-to-r from-[#ed6a3e] to-[#ed6a3e] text-white px-4 py-2 rounded-xl shadow hover:bg-opacity-90 transition duration-300">Edit Profile</a>
+
+<div class="max-w-4xl mx-auto p-6 sm:p-8 md:p-10 lg:p-12 mt-6 bg-gray-50 rounded-3xl shadow-2xl border border-gray-200">
+
+  <div class="flex flex-col items-center mb-10">
+    <div class="w-36 h-36 rounded-full overflow-hidden border-4 border-orange-500 shadow-xl ring-4 ring-orange-200">
+      {% if ca.photo_file %}
+        <img src="{{ url_for('static', filename=ca.photo_file) }}" alt="Firm Photograph" class="object-cover w-full h-full transform hover:scale-105 transition-transform duration-300 ease-in-out" />
+      {% else %}
+        <div class="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-sm font-medium">No Photo</div>
+      {% endif %}
     </div>
-    <div class="mb-2"><span class="font-semibold">Area/Location:</span> {{ ca.area }}</div>
-    <div class="mb-2"><span class="font-semibold">Contact Number:</span> {{ ca.contact_number }}</div>
-    <div class="mb-2"><span class="font-semibold">GST Number:</span> {{ ca.gst_number or '-' }}</div>
-    <div class="mb-2"><span class="font-semibold">PAN Number:</span> {{ ca.pan_number or '-' }}</div>
-    <div class="mb-2"><span class="font-semibold">Address:</span> {{ ca.address or '-' }}</div>
+    <h1 class="text-4xl font-extrabold text-orange-600 mt-5 tracking-tight">{{ ca.firm_name }}</h1>
+    <p class="text-xl text-gray-700 mt-2 font-medium">{{ ca.area }}</p>
   </div>
-{% else %}
-  <form method="post" class="bg-white rounded-xl shadow-md p-6 max-w-xl mx-auto">
+
+  <div class="space-y-8">
+    <div class="bg-white rounded-2xl p-6 md:p-8 shadow-lg border border-gray-100">
+      <h2 class="text-2xl font-bold text-orange-500 mb-5 border-b-2 border-orange-100 pb-3">Contact & Identity</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 text-gray-700">
+        <div><span class="font-semibold text-gray-800">Contact Number:</span> {{ ca.contact_number }}</div>
+        <div><span class="font-semibold text-gray-800">GST Number:</span> {{ ca.gst_number or 'N/A' }}</div>
+        <div><span class="font-semibold text-gray-800">PAN Number:</span> {{ ca.pan_number or 'N/A' }}</div>
+        <div><span class="font-semibold text-gray-800">GSTIN:</span> {{ ca.gstin or 'N/A' }}</div>
+        <div class="md:col-span-2 lg:col-span-3"><span class="font-semibold text-gray-800">Address:</span> {{ ca.address or 'N/A' }}</div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 md:p-8 shadow-lg border border-gray-100">
+      <h2 class="text-2xl font-bold text-orange-500 mb-5 border-b-2 border-orange-100 pb-3">Documents</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 text-gray-700">
+        <div><span class="font-semibold text-gray-800">Aadhaar:</span> {% if ca.aadhaar_file %}<a href="{{ url_for('static', filename=ca.aadhaar_file) }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline transition duration-200">View Document</a>{% else %}<span class="text-gray-500">Not uploaded</span>{% endif %}</div>
+        <div><span class="font-semibold text-gray-800">PAN:</span> {% if ca.pan_file %}<a href="{{ url_for('static', filename=ca.pan_file) }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline transition duration-200">View Document</a>{% else %}<span class="text-gray-500">Not uploaded</span>{% endif %}</div>
+        <div><span class="font-semibold text-gray-800">ICAI Membership Certificate:</span> {% if ca.icai_certificate_file %}<a href="{{ url_for('static', filename=ca.icai_certificate_file) }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline transition duration-200">View Document</a>{% else %}<span class="text-gray-500">Not uploaded</span>{% endif %}</div>
+        <div><span class="font-semibold text-gray-800">Certificate of Practice (COP):</span> {% if ca.cop_certificate_file %}<a href="{{ url_for('static', filename=ca.cop_certificate_file) }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline transition duration-200">View Document</a>{% else %}<span class="text-gray-500">Not uploaded</span>{% endif %}</div>
+        <div><span class="font-semibold text-gray-800">Business Registration:</span> {% if ca.business_reg_file %}<a href="{{ url_for('static', filename=ca.business_reg_file) }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline transition duration-200">View Document</a>{% else %}<span class="text-gray-500">Not uploaded</span>{% endif %}</div>
+        <div><span class="font-semibold text-gray-800">Bank Details:</span> {% if ca.bank_details_file %}<a href="{{ url_for('static', filename=ca.bank_details_file) }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline transition duration-200">View Document</a>{% else %}<span class="text-gray-500">Not uploaded</span>{% endif %}</div>
+        <div><span class="font-semibold text-gray-800">Signature:</span> {% if ca.signature_file %}<a href="{{ url_for('static', filename=ca.signature_file) }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline transition duration-200">View Document</a>{% else %}<span class="text-gray-500">Not uploaded</span>{% endif %}</div>
+        <div><span class="font-semibold text-gray-800">Office Address Proof:</span> {% if ca.office_address_proof_file %}<a href="{{ url_for('static', filename=ca.office_address_proof_file) }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline transition duration-200">View Document</a>{% else %}<span class="text-gray-500">Not uploaded</span>{% endif %}</div>
+        <div><span class="font-semibold text-gray-800">Self-declaration:</span> {% if ca.self_declaration_file %}<a href="{{ url_for('static', filename=ca.self_declaration_file) }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline transition duration-200">View Document</a>{% else %}<span class="text-gray-500">Not uploaded</span>{% endif %}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-center mt-10">
+    <a href="?edit=1" class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-3 rounded-xl shadow-lg hover:from-orange-600 hover:to-orange-700 transition duration-300 ease-in-out transform hover:-translate-y-0.5">Edit Profile</a>
+  </div>
+</div>
+
+{% if edit_mode %}
+  <form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-xl p-8 max-w-4xl mx-auto mt-10 border border-gray-200">
     {{ form.hidden_tag() }}
-    <div class="mb-4">
-      {{ form.firm_name.label(class_="block text-gray-700 font-semibold mb-2") }}
-      {{ form.firm_name(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter firm name") }}
-      {% for error in form.firm_name.errors %}
-        <span class="text-red-500 text-xs">{{ error }}</span>
-      {% endfor %}
+    <h2 class="text-2xl font-bold text-orange-500 mb-6 border-b-2 border-orange-100 pb-3">Edit Profile Details</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+      <div>
+        <div class="mb-5">
+          {{ form.firm_name.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.firm_name(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter firm name") }}
+          {% for error in form.firm_name.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.area.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.area(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter area/location") }}
+          {% for error in form.area.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.contact_number.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.contact_number(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter contact number") }}
+          {% for error in form.contact_number.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.gst_number.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.gst_number(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter GST number (optional)") }}
+          {% for error in form.gst_number.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.pan_number.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.pan_number(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter PAN number (optional)") }}
+          {% for error in form.pan_number.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.gstin.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.gstin(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter GSTIN (optional)") }}
+          {% for error in form.gstin.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.address.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.address(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter address (optional)") }}
+          {% for error in form.address.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+      <div>
+        <div class="mb-5">
+          {{ form.photo_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.photo_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.photo_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.photo_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.signature_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.signature_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.signature_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.signature_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.aadhaar_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.aadhaar_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.aadhaar_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.aadhaar_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.pan_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.pan_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.pan_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.pan_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.icai_certificate_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.icai_certificate_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.icai_certificate_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.icai_certificate_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.cop_certificate_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.cop_certificate_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.cop_certificate_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.cop_certificate_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.business_reg_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.business_reg_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.business_reg_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.business_reg_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.bank_details_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.bank_details_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.bank_details_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.bank_details_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.office_address_proof_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.office_address_proof_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.office_address_proof_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.office_address_proof_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
     </div>
-    <div class="mb-4">
-      {{ form.area.label(class_="block text-gray-700 font-semibold mb-2") }}
-      {{ form.area(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter area/location") }}
-      {% for error in form.area.errors %}
-        <span class="text-red-500 text-xs">{{ error }}</span>
-      {% endfor %}
+        <div class="mb-5">
+          {{ form.self_declaration_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.self_declaration_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.self_declaration_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.self_declaration_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
     </div>
-    <div class="mb-4">
-      {{ form.contact_number.label(class_="block text-gray-700 font-semibold mb-2") }}
-      {{ form.contact_number(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter contact number") }}
-      {% for error in form.contact_number.errors %}
-        <span class="text-red-500 text-xs">{{ error }}</span>
-      {% endfor %}
     </div>
-    <div class="mb-4">
-      {{ form.gst_number.label(class_="block text-gray-700 font-semibold mb-2") }}
-      {{ form.gst_number(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter GST number (optional)") }}
-      {% for error in form.gst_number.errors %}
-        <span class="text-red-500 text-xs">{{ error }}</span>
-      {% endfor %}
     </div>
-    <div class="mb-4">
-      {{ form.pan_number.label(class_="block text-gray-700 font-semibold mb-2") }}
-      {{ form.pan_number(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter PAN number (optional)") }}
-      {% for error in form.pan_number.errors %}
-        <span class="text-red-500 text-xs">{{ error }}</span>
-      {% endfor %}
-    </div>
-    <div class="mb-4">
-      {{ form.address.label(class_="block text-gray-700 font-semibold mb-2") }}
-      {{ form.address(class_="w-full border border-gray-300 rounded px-3 py-2", placeholder="Enter address (optional)") }}
-      {% for error in form.address.errors %}
-        <span class="text-red-500 text-xs">{{ error }}</span>
-      {% endfor %}
-    </div>
-    <div class="flex gap-4">
-      <button type="submit" class="bg-gradient-to-r from-[#ed6a3e] to-[#ed6a3e] text-white px-6 py-2 rounded-xl shadow hover:bg-opacity-90 transition duration-300">Save</button>
-      <a href="?edit=0" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-xl shadow hover:bg-gray-300 transition duration-300">Cancel</a>
+    <div class="flex gap-4 mt-8 justify-end">
+      <button type="submit" class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-3 rounded-xl shadow-lg hover:from-orange-600 hover:to-orange-700 transition duration-300 ease-in-out transform hover:-translate-y-0.5">Save Changes</button>
+      <a href="?edit=0" class="bg-gray-200 text-gray-700 px-8 py-3 rounded-xl shadow-md hover:bg-gray-300 transition duration-300 ease-in-out">Cancel</a>
     </div>
   </form>
 {% endif %}

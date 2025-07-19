@@ -54,6 +54,18 @@ class CharteredAccountant(db.Model):
     gst_number = db.Column(db.String(20))
     pan_number = db.Column(db.String(20))
     address = db.Column(db.String(255))
+    # New fields for document uploads and GSTIN
+    aadhaar_file = db.Column(db.String(255))
+    pan_file = db.Column(db.String(255))
+    icai_certificate_file = db.Column(db.String(255))
+    cop_certificate_file = db.Column(db.String(255))
+    gstin = db.Column(db.String(30))
+    business_reg_file = db.Column(db.String(255))
+    bank_details_file = db.Column(db.String(255))
+    photo_file = db.Column(db.String(255))
+    signature_file = db.Column(db.String(255))
+    office_address_proof_file = db.Column(db.String(255))
+    self_declaration_file = db.Column(db.String(255))
     # Relationships
     employees = db.relationship('CAEmployee', backref='ca', cascade='all, delete-orphan')
     ca_connections = db.relationship('CAConnection', backref='ca', cascade='all, delete-orphan')
@@ -145,3 +157,14 @@ class ShopConnection(db.Model):
     status = db.Column(db.Enum('pending', 'approved', 'rejected'), nullable=False, default='pending')
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+class GSTFilingStatus(db.Model):
+    __tablename__ = 'gst_filing_status'
+    id = db.Column(db.Integer, primary_key=True)
+    shopkeeper_id = db.Column(db.Integer, db.ForeignKey('shopkeepers.shopkeeper_id', ondelete='CASCADE'), nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('ca_employees.employee_id', ondelete='SET NULL'))
+    month = db.Column(db.String(7), nullable=False)  # Format: YYYY-MM
+    status = db.Column(db.Enum('Filed', 'Not Filed'), default='Not Filed', nullable=False)
+    filed_at = db.Column(db.DateTime)
+    shopkeeper = db.relationship('Shopkeeper', backref='gst_filing_statuses')
+    employee = db.relationship('CAEmployee', backref='gst_filing_statuses')
