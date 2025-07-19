@@ -4,63 +4,75 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Employee Dashboard | MyBillingApp</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-[#fff7f2] min-h-screen">
-  <nav class="bg-gradient-to-r from-[#ed6a3e] to-[#ed6a3e] py-4 px-8 flex items-center justify-between shadow">
+  <nav class="bg-gradient-to-r from-orange-500 to-orange-600 py-4 px-8 flex items-center justify-between shadow">
     <span class="text-xl font-bold text-white">MyBillingApp</span>
     <span class="text-white">Welcome, {{ current_user.username }}</span>
     <a href="/auth/logout" class="text-white hover:underline">Logout</a>
   </nav>
-  <main class="max-w-4xl mx-auto py-10">
-    <h2 class="text-3xl font-bold text-[#ed6a3e] mb-8">Assigned Shop Dashboard</h2>
-    {% if shop %}
-      <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-        <h3 class="text-xl font-semibold text-[#ed6a3e] mb-2">Shop: {{ shop.shop_name }}</h3>
-        <p class="text-gray-600 mb-2">Domain: {{ shop.domain }}</p>
-        <p class="text-gray-600 mb-2">Address: {{ shop.address }}</p>
-        <p class="text-gray-600 mb-2">Contact: {{ shop.contact_number }}</p>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <h4 class="font-semibold text-lg text-[#ed6a3e] mb-4">Products</h4>
-          {% if products %}
-            <ul class="divide-y divide-gray-200">
-              {% for product in products %}
-                <li class="py-2 flex justify-between">
-                  <span>{{ product.product_name }}</span>
-                  <span class="text-gray-500">Stock: {{ product.stock_qty }}</span>
-                </li>
-              {% endfor %}
-            </ul>
+  <main class="max-w-5xl mx-auto py-10">
+    <h2 class="text-3xl font-bold text-orange-600 mb-8">GST Filing Dashboard</h2>
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-10">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Name</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GST Status ({{ current_month }})</th>
+            <th class="px-6 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-100">
+          {% for client in clients %}
+          <tr>
+            <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-800">{{ client.shop_name }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              {% if gst_status_map[client.shopkeeper_id] == 'Filed' %}
+                <span class="inline-block px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold">Filed</span>
+              {% else %}
+                <span class="inline-block px-3 py-1 rounded-full bg-red-100 text-red-700 font-semibold">Not Filed</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <a href="{{ url_for('ca.employee_client_dashboard', shopkeeper_id=client.shopkeeper_id) }}" class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-5 py-2 rounded-lg shadow hover:from-orange-600 hover:to-orange-700 transition">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-8">
+      <h3 class="text-2xl font-bold text-orange-500 mb-6">All Bills of Connected Clients</h3>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Name</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill No.</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-6 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-100">
+          {% for client in clients %}
+            {% for bill in client.bills %}
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-gray-800">{{ client.shop_name }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ bill.bill_number }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">₹{{ bill.total_amount }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ bill.bill_date.strftime('%Y-%m-%d') }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <a href="{{ url_for('shopkeeper.view_bill', bill_id=bill.bill_id) }}" class="bg-blue-500 text-white px-4 py-1 rounded shadow hover:bg-blue-600 transition">View</a>
+              </td>
+            </tr>
+            {% endfor %}
           {% else %}
-            <p class="text-gray-400">No products found.</p>
-          {% endif %}
-        </div>
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <h4 class="font-semibold text-lg text-[#ed6a3e] mb-4">Recent Bills</h4>
-          {% if bills %}
-            <ul class="divide-y divide-gray-200">
-              {% for bill in bills %}
-                <li class="py-2">
-                  <div class="flex justify-between">
-                    <span>Bill #: <span class="font-semibold">{{ bill.bill_number }}</span></span>
-                    <span class="text-gray-500">{{ bill.bill_date }}</span>
-                  </div>
-                  <div class="text-sm text-gray-600">Total: ₹{{ bill.total_amount }} | Status: {{ bill.payment_status }}</div>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-gray-400">No bills found.</p>
-          {% endif %}
-        </div>
-      </div>
-    {% else %}
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <p class="text-gray-500">No shop assigned to you. Please contact your CA.</p>
-      </div>
-    {% endif %}
+            <tr><td colspan="5" class="px-6 py-4 text-center text-gray-400">No bills found for connected clients.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </main>
 </body>
 </html> 

@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Email, Length
+from flask_wtf.file import FileField, FileAllowed
 
 class EmployeeRegistrationForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=100)])
@@ -23,4 +24,16 @@ class CAProfileForm(FlaskForm):
     gst_number = StringField('GST Number', validators=[Length(max=20)])
     pan_number = StringField('PAN Number', validators=[Length(max=20)])
     address = StringField('Address', validators=[Length(max=255)])
+    # New fields for document uploads and GSTIN
+    aadhaar_file = FileField('Aadhaar (PDF/JPG/PNG)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
+    pan_file = FileField('PAN (PDF/JPG/PNG)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
+    icai_certificate_file = FileField('ICAI Membership Certificate', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
+    cop_certificate_file = FileField('Certificate of Practice (COP)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
+    gstin = StringField('GSTIN', validators=[Length(max=30)])
+    business_reg_file = FileField('Business Registration Document', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
+    bank_details_file = FileField('Bank Details (Cheque/Passbook)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
+    photo_file = FileField('Photograph', validators=[FileAllowed(['jpg', 'jpeg', 'png'], 'JPG, PNG only!')])
+    signature_file = FileField('Signature', validators=[FileAllowed(['jpg', 'jpeg', 'png'], 'JPG, PNG only!')])
+    office_address_proof_file = FileField('Office Address Proof', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
+    self_declaration_file = FileField('Self-declaration', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
     submit = SubmitField('Update Profile')
