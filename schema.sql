@@ -17,7 +17,7 @@ CREATE TABLE shopkeepers (
     shopkeeper_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     shop_name VARCHAR(100) NOT NULL,
-    domain VARCHAR(50), -- e.g., grocery, medical, etc.
+    domain VARCHAR(50),
     address VARCHAR(255),
     gst_number VARCHAR(20),
     contact_number VARCHAR(20),
@@ -25,6 +25,12 @@ CREATE TABLE shopkeepers (
     pan_doc_path VARCHAR(255),
     address_proof_path VARCHAR(255),
     logo_path VARCHAR(255),
+    aadhaar_dl_path VARCHAR(255),
+    selfie_path VARCHAR(255),
+    gumasta_path VARCHAR(255),
+    udyam_path VARCHAR(255),
+    bank_statement_path VARCHAR(255),
+    is_verified BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -69,6 +75,7 @@ CREATE TABLE products (
     price DECIMAL(10,2) NOT NULL,
     stock_qty INT DEFAULT 0,
     low_stock_threshold INT DEFAULT 0,
+    gst_rate DECIMAL(5,2) DEFAULT 0,
     FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id) ON DELETE CASCADE
 );
 
@@ -84,6 +91,8 @@ CREATE TABLE bills (
     total_amount DECIMAL(12,2) NOT NULL,
     payment_status ENUM('Paid', 'Unpaid', 'Partial') NOT NULL,
     pdf_file_path VARCHAR(255),
+    amount_paid NUMERIC(12,2) DEFAULT 0 NULL,
+    amount_unpaid NUMERIC(12,2) DEFAULT 0 NULL,
     FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id) ON DELETE CASCADE
 );
 
