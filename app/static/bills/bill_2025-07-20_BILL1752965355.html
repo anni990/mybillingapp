@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bill Receipt - BILL1752965355</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="max-w-4xl mx-auto bg-white p-6 mt-10 rounded shadow-lg">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            
+            <img src="/static/uploads/shopkeeper_1_logo.jpg" alt="Shop Logo" class="h-16 mx-auto mb-2">
+            
+            <h1 class="text-3xl font-bold text-gray-900">Grocery Mart</h1>
+            <p class="text-gray-600">Invoice BILL1752965355</p>
+            <p class="text-gray-600">Date: 2025-07-20</p>
+        </div>
+
+        <!-- From and To section -->
+        <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+            <div class="border p-4 rounded">
+                <h2 class="font-semibold mb-2">From:</h2>
+                <p>Grocery Mart</p>
+                <p>123 Main St</p>
+                <p>GSTIN: GSTIN1234</p>
+            </div>
+            <div class="border p-4 rounded">
+                <h2 class="font-semibold mb-2">To:</h2>
+                <p>Ramesh</p>
+                <p>7894561230</p>
+            </div>
+        </div>
+
+        <!-- GST Summary Table -->
+        <h2 class="text-lg font-semibold mb-2">GST Summary</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full border text-sm text-left">
+                <thead class="bg-orange-100 text-orange-700">
+                    <tr>
+                        <th class="p-2 border">Item</th>
+                        <th class="p-2 border">HSN Code</th>
+                        <th class="p-2 border text-right">Quantity</th>
+                        <th class="p-2 border text-right">Unit Price</th>
+                        <th class="p-2 border text-right">Discount</th>
+                        <th class="p-2 border text-right">Discounted Price</th>
+                        <th class="p-2 border text-right">SGST/UTGST</th>
+                        <th class="p-2 border text-right">CGST</th>
+                        <th class="p-2 border text-right">Sub Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr class="border-t">
+                        <td class="p-2 border">Sugar 1kg</td>
+                        <td class="p-2 border"></td>
+                        <td class="p-2 border text-right">1</td>
+                        <td class="p-2 border text-right">₹45.0</td>
+                        <td class="p-2 border text-right">₹0.0 (0.0%)</td>
+                        <td class="p-2 border text-right">₹45.0</td>
+                        <td class="p-2 border text-right">₹0</td>
+                        <td class="p-2 border text-right">₹0</td>
+                        <td class="p-2 border text-right">₹49.5</td>
+                    </tr>
+                    
+                    <tr class="border-t">
+                        <td class="p-2 border">Pulse 1kg</td>
+                        <td class="p-2 border"></td>
+                        <td class="p-2 border text-right">1</td>
+                        <td class="p-2 border text-right">₹30.0</td>
+                        <td class="p-2 border text-right">₹3.0 (10.0%)</td>
+                        <td class="p-2 border text-right">₹27.0</td>
+                        <td class="p-2 border text-right">₹0</td>
+                        <td class="p-2 border text-right">₹0</td>
+                        <td class="p-2 border text-right">₹29.97</td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary Table (Totals) -->
+        <table class="w-full text-sm mt-4 border">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="p-2 border">Total Taxable Amount</th>
+                    <th class="p-2 border">GST Rate</th>
+                    <th class="p-2 border">CGST</th>
+                    <th class="p-2 border">SGST</th>
+                    <th class="p-2 border">Total GST</th>
+                    <th class="p-2 border">Grand Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="p-2 border">₹79.47</td>
+                    <td class="p-2 border">18%</td>
+                    <td class="p-2 border">₹0</td>
+                    <td class="p-2 border">₹0</td>
+                    <td class="p-2 border">₹0</td>
+                    <td class="p-2 border font-bold text-right">₹79.47</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Bank details -->
+        <div class="mt-6 text-sm">
+            <h2 class="font-semibold mb-2">Bank Details:</h2>
+            <p>Bank Name: SBI</p>
+            <p>Account Number: 14653256921152</p>
+            <p>IFSC Code: 124578</p>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="mt-6 flex justify-center gap-4">
+            <a href="javascript:history.back()" class="bg-blue-500 text-white px-6 py-2 rounded shadow hover:bg-blue-600">Back</a>
+            <button onclick="window.print()" class="bg-green-500 text-white px-6 py-2 rounded shadow hover:bg-green-600">Print</button>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-xs text-gray-400 mt-4">
+            Thank you for shopping with us!
+        </div>
+    </div>
+</body>
+</html>
