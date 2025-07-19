@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const productRows = document.getElementById('product-rows');
     const billTotal = document.getElementById('bill-total');
     const perProductGST = document.getElementById('per_product_gst');
+    const gstSectionContainer = document.getElementById('gst-section-container');
+    const billGstType = document.getElementById('bill_gst_type');
 
     function updateTotal() {
         let total = 0;
@@ -78,6 +80,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     perProductGST.addEventListener('change', toggleGSTFields);
+
+    function updateGSTSectionVisibility() {
+        if (billGstType.value === 'GST') {
+            gstSectionContainer.style.display = '';
+        } else {
+            gstSectionContainer.style.display = 'none';
+        }
+    }
+
+    billGstType.addEventListener('change', updateGSTSectionVisibility);
+    updateGSTSectionVisibility(); // Initial call on page load
 
     function addProductRow() {
         const row = document.createElement('div');

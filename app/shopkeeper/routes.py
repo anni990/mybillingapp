@@ -398,6 +398,16 @@ def generate_bill_pdf():
     bill_date = datetime.date.today()
     total_amount = 0
     bill_number = f"BILL{int(datetime.datetime.now().timestamp())}"
+    # Payment status and amounts
+    payment_status = request.form.get('bill_status', 'Paid').capitalize()
+    try:
+        amount_paid = float(request.form.get('calculated_paid_amount', 0))
+    except Exception:
+        amount_paid = 0
+    try:
+        amount_unpaid = float(request.form.get('calculated_unpaid_amount', 0))
+    except Exception:
+        amount_unpaid = 0
     bill = Bill(
         shopkeeper_id=shopkeeper.shopkeeper_id,
         bill_number=bill_number,
@@ -406,7 +416,9 @@ def generate_bill_pdf():
         bill_date=bill_date,
         gst_type=bill_gst_type,
         total_amount=0,  # will update after calculation
-        payment_status='Paid'
+        payment_status=payment_status,
+        amount_paid=amount_paid,
+        amount_unpaid=amount_unpaid
     )
     db.session.add(bill)
     db.session.flush()  # get bill_id
@@ -476,7 +488,10 @@ def generate_bill_pdf():
         'gst_mode': gst_mode,
         'bill_gst_type': bill_gst_type,
         'bill_gst_rate': bill_gst_rate,
-        'per_product_gst': per_product_gst
+        'per_product_gst': per_product_gst,
+        'amount_paid': amount_paid,
+        'amount_unpaid': amount_unpaid,
+        'payment_status': payment_status
     }
     rendered = render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
     bills_dir = os.path.join('app', 'static', 'bills')

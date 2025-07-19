@@ -114,6 +114,8 @@ class Bill(db.Model):
     gst_type = db.Column(db.Enum('GST', 'Non-GST'), nullable=False)
     total_amount = db.Column(db.Numeric(12,2), nullable=False)
     payment_status = db.Column(db.Enum('Paid', 'Unpaid', 'Partial'), nullable=False)
+    amount_paid = db.Column(db.Numeric(12,2), nullable=True, default=0)
+    amount_unpaid = db.Column(db.Numeric(12,2), nullable=True, default=0)
     pdf_file_path = db.Column(db.String(255))
     # Relationships
     bill_items = db.relationship('BillItem', backref='bill', cascade='all, delete-orphan')
