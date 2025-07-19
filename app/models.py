@@ -42,6 +42,9 @@ class Shopkeeper(db.Model):
     udyam_path = db.Column(db.String(255))
     bank_statement_path = db.Column(db.String(255))
     is_verified = db.Column(db.Boolean, default=False)
+    bank_name = db.Column(db.String(100))
+    account_number = db.Column(db.String(50))
+    ifsc_code = db.Column(db.String(20))
     # Relationships
     products = db.relationship('Product', backref='shopkeeper', cascade='all, delete-orphan')
     bills = db.relationship('Bill', backref='shopkeeper', cascade='all, delete-orphan')
@@ -106,6 +109,7 @@ class Product(db.Model):
     stock_qty = db.Column(db.Integer, default=0)
     low_stock_threshold = db.Column(db.Integer, default=0)
     gst_rate = db.Column(db.Numeric(5,2), default=0)  # New field for GST rate
+    hsn_code = db.Column(db.String(20))  # HSN code for GST
     # Relationships
     bill_items = db.relationship('BillItem', backref='product', cascade='all, delete-orphan')
 
