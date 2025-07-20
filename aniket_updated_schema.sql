@@ -31,7 +31,7 @@
 --     UNIQUE KEY unique_connection (shopkeeper_id, ca_id)
 -- );
 
-ALTER TABLE ca
+ALTER TABLE charterred_accountants
   ADD COLUMN aadhaar_file VARCHAR(255),
   ADD COLUMN pan_file VARCHAR(255),
   ADD COLUMN icai_certificate_file VARCHAR(255),
@@ -43,7 +43,3 @@ ALTER TABLE ca
   ADD COLUMN signature_file VARCHAR(255),
   ADD COLUMN office_address_proof_file VARCHAR(255),
   ADD COLUMN self_declaration_file VARCHAR(255);
-
-  CREATE TABLE gst_filing_status (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    shopkeeper_id INT NOT NULL,
