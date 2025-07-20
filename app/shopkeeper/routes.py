@@ -59,9 +59,11 @@ def dashboard():
 @shopkeeper_required
 def create_bill():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if not shopkeeper.is_verified:
-        flash('Please upload all required documents to use this service.', 'danger')
-        return redirect(url_for('shopkeeper.profile'))
+    # In all relevant routes, comment out the is_verified restriction logic
+    # Example for create_bill:
+    #    if not shopkeeper.is_verified:
+    #        flash('Please upload all required documents to use this service.', 'danger')
+    #        return redirect(url_for('shopkeeper.profile'))
     products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
     products_js = [
         {
@@ -117,9 +119,11 @@ def create_bill():
 @shopkeeper_required
 def manage_bills():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if not shopkeeper.is_verified:
-        flash('Please upload all required documents to use this service.', 'danger')
-        return redirect(url_for('shopkeeper.profile'))
+    # In all relevant routes, comment out the is_verified restriction logic
+    # Example for create_bill:
+    #    if not shopkeeper.is_verified:
+    #        flash('Please upload all required documents to use this service.', 'danger')
+    #        return redirect(url_for('shopkeeper.profile'))
     search = request.args.get('search', '').strip()
     selected_statuses = request.args.getlist('status')
     query = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
@@ -163,9 +167,11 @@ def view_bill(bill_id):
 @shopkeeper_required
 def delete_bill(bill_id):
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if not shopkeeper.is_verified:
-        flash('Please upload all required documents to use this service.', 'danger')
-        return redirect(url_for('shopkeeper.profile'))
+    # In all relevant routes, comment out the is_verified restriction logic
+    # Example for create_bill:
+    #    if not shopkeeper.is_verified:
+    #        flash('Please upload all required documents to use this service.', 'danger')
+    #        return redirect(url_for('shopkeeper.profile'))
     bill = Bill.query.get_or_404(bill_id)
     if bill.shopkeeper.user_id != current_user.user_id:
         flash('Access denied.', 'danger')
@@ -181,9 +187,11 @@ def delete_bill(bill_id):
 @shopkeeper_required
 def sales_reports():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if not shopkeeper.is_verified:
-        flash('Please upload all required documents to use this service.', 'danger')
-        return redirect(url_for('shopkeeper.profile'))
+    # In all relevant routes, comment out the is_verified restriction logic
+    # Example for create_bill:
+    #    if not shopkeeper.is_verified:
+    #        flash('Please upload all required documents to use this service.', 'danger')
+    #        return redirect(url_for('shopkeeper.profile'))
     today = datetime.date.today()
     default_start = today - datetime.timedelta(days=6)
     start = request.args.get('start')
@@ -405,25 +413,19 @@ def delete_product(product_id):
 @shopkeeper_required
 def generate_bill_pdf():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if not shopkeeper.is_verified:
-        flash('Please upload all required documents to use this service.', 'danger')
-        return redirect(url_for('shopkeeper.profile'))
     products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
     customer_name = request.form.get('customer_name')
     customer_contact = request.form.get('customer_contact')
     gst_mode = request.form.get('gst_mode', 'exclusive')
     bill_gst_type = request.form.get('bill_gst_type', 'GST')
     bill_gst_rate = float(request.form.get('bill_gst_rate', 0))
-    # per_product_gst = request.form.get('per_product_gst') == 'on' # No longer needed
     items = request.form.getlist('product_id')
     quantities = request.form.getlist('quantity')
     prices = request.form.getlist('price_per_unit')
     discounts = request.form.getlist('discount')
-    # product_gst_rates = request.form.getlist('product_gst_rate')  # No longer needed
     bill_date = datetime.date.today()
     total_amount = 0
     bill_number = f"BILL{int(datetime.datetime.now().timestamp())}"
-    # Payment status and amounts
     payment_status = request.form.get('bill_status', 'Paid').capitalize()
     try:
         amount_paid = float(request.form.get('calculated_paid_amount', 0))
@@ -433,6 +435,7 @@ def generate_bill_pdf():
         amount_unpaid = float(request.form.get('calculated_unpaid_amount', 0))
     except Exception:
         amount_unpaid = 0
+    
     bill = Bill(
         shopkeeper_id=shopkeeper.shopkeeper_id,
         bill_number=bill_number,
@@ -440,84 +443,134 @@ def generate_bill_pdf():
         customer_contact=customer_contact,
         bill_date=bill_date,
         gst_type=bill_gst_type,
-        total_amount=0,  # will update after calculation
+        total_amount=0,
         payment_status=payment_status,
         amount_paid=amount_paid,
         amount_unpaid=amount_unpaid
     )
     db.session.add(bill)
-    db.session.flush()  # get bill_id
+    db.session.flush()
+    
     bill_items = []
+    bill_items_data = []
+    gst_summary_by_rate = {}
+    overall_grand_total = 0.0
+    
     for idx, (pid, qty, price, discount) in enumerate(zip(items, quantities, prices, discounts)):
         qty = float(qty)
         price = float(price)
         discount = float(discount) if discount else 0
-        # Fetch GST rate from the Product model if GST type is 'GST'
         product = Product.query.get(pid)
-        if bill_gst_type == 'GST' and product:
-            gst_rate = float(product.gst_rate or 0)
-        else:
-            gst_rate = 0
-        gst_type = bill_gst_type  # Always bill-wide
-        # Calculation logic remains the same
-        if gst_type == 'Non-GST' or gst_rate == 0:
-            base_price = price * qty
-            discount_amount = base_price * (discount / 100)
-            discounted_price = base_price - discount_amount
-            gst_amount = 0
-            final_price = discounted_price
-        else:
-            if gst_mode == 'inclusive':
-                actual_price = price * qty
-                base_price = actual_price / (1 + gst_rate / 100)
-                discount_amount = base_price * (discount / 100)
-                discounted_price = base_price - discount_amount
-                gst_amount = discounted_price * (gst_rate / 100)
-                final_price = discounted_price + gst_amount
-            else:  # exclusive
-                base_price = price * qty
-                discount_amount = base_price * (discount / 100)
-                discounted_price = base_price - discount_amount
-                gst_amount = discounted_price * (gst_rate / 100)
-                final_price = discounted_price + gst_amount
+        
+        if not product:
+            continue
+            
+        # Get GST rate from product
+        gst_rate = float(product.gst_rate or 0)
+        hsn_code = product.hsn_code or ''
+        
+        # Calculate base price
+        total_base_price = price * qty
+        
+        # Calculate discount
+        discount_amount = total_base_price * (discount / 100.0)
+        
+        # Calculate discounted price (taxable value)
+        discounted_price = total_base_price - discount_amount
+        
+        # Calculate CGST and SGST (50/50 split)
+        cgst_rate_percentage = gst_rate / 2.0
+        sgst_rate_percentage = gst_rate / 2.0
+        
+        cgst_amount = discounted_price * (cgst_rate_percentage / 100.0)
+        sgst_amount = discounted_price * (sgst_rate_percentage / 100.0)
+        total_gst_item_amount = cgst_amount + sgst_amount
+        
+        # Final price for item
+        final_price_item = discounted_price + total_gst_item_amount
+        
+        # Create bill item
         bill_item = BillItem(
             bill_id=bill.bill_id,
             product_id=pid,
             quantity=qty,
             price_per_unit=price,
-            total_price=final_price
+            total_price=final_price_item
         )
-        # Attach all calculation details for template rendering
-        bill_item.discount = discount
-        bill_item.base_price = base_price
-        bill_item.discount_amount = discount_amount
-        bill_item.discounted_price = discounted_price
-        bill_item.gst_type = gst_type
-        bill_item.gst_rate = gst_rate
-        bill_item.gst_amount = gst_amount
-        bill_item.final_price = final_price
         db.session.add(bill_item)
         bill_items.append(bill_item)
+        
+        # Store calculated data for template
+        item_data = {
+            'product': product,
+            'quantity': qty,
+            'base_price': price,
+            'total_base_price': total_base_price,
+            'discount': discount,
+            'discount_amount': discount_amount,
+            'discounted_price': discounted_price,
+            'gst_rate': gst_rate,
+            'cgst_rate': cgst_rate_percentage,
+            'sgst_rate': sgst_rate_percentage,
+            'cgst_amount': cgst_amount,
+            'sgst_amount': sgst_amount,
+            'total_gst_amount': total_gst_item_amount,
+            'final_price': final_price_item,
+            'hsn_code': hsn_code
+        }
+        bill_items_data.append(item_data)
+        
+        # Aggregate by GST rate
+        gst_rate_key = str(int(gst_rate)) if gst_rate > 0 else '0'
+        if gst_rate_key not in gst_summary_by_rate:
+            gst_summary_by_rate[gst_rate_key] = {
+                'taxable_amount': 0.0,
+                'cgst_amount': 0.0,
+                'sgst_amount': 0.0,
+                'total_gst_amount': 0.0
+            }
+        
+        gst_summary_by_rate[gst_rate_key]['taxable_amount'] += discounted_price
+        gst_summary_by_rate[gst_rate_key]['cgst_amount'] += cgst_amount
+        gst_summary_by_rate[gst_rate_key]['sgst_amount'] += sgst_amount
+        gst_summary_by_rate[gst_rate_key]['total_gst_amount'] += total_gst_item_amount
+        
+        overall_grand_total += final_price_item
+        
         # Update product stock
         if product:
             product.stock_qty = product.stock_qty - int(qty)
-        total_amount += final_price
-    bill.total_amount = total_amount
+    
+    bill.total_amount = overall_grand_total
     db.session.commit()
+    
+    # Calculate grand total summary
+    total_taxable_amount = sum(summary['taxable_amount'] for summary in gst_summary_by_rate.values())
+    total_cgst_amount = sum(summary['cgst_amount'] for summary in gst_summary_by_rate.values())
+    total_sgst_amount = sum(summary['sgst_amount'] for summary in gst_summary_by_rate.values())
+    total_gst_amount = sum(summary['total_gst_amount'] for summary in gst_summary_by_rate.values())
+    
     # Prepare data for receipt
     bill_data = {
         'bill': bill,
         'bill_items': bill_items,
+        'bill_items_data': bill_items_data,
         'shopkeeper': shopkeeper,
         'products': {str(p.product_id): p for p in products},
+        'gst_summary_by_rate': gst_summary_by_rate,
+        'overall_grand_total': overall_grand_total,
+        'total_taxable_amount': total_taxable_amount,
+        'total_cgst_amount': total_cgst_amount,
+        'total_sgst_amount': total_sgst_amount,
+        'total_gst_amount': total_gst_amount,
         'gst_mode': gst_mode,
         'bill_gst_type': bill_gst_type,
         'bill_gst_rate': bill_gst_rate,
-        # 'per_product_gst': per_product_gst, # No longer needed
         'amount_paid': amount_paid,
         'amount_unpaid': amount_unpaid,
         'payment_status': payment_status
     }
+    
     rendered = render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
     bills_dir = os.path.join('app', 'static', 'bills')
     os.makedirs(bills_dir, exist_ok=True)
@@ -551,6 +604,9 @@ def profile_edit():
         shopkeeper.address = request.form.get('address')
         shopkeeper.gst_number = request.form.get('gst_number')
         shopkeeper.contact_number = request.form.get('contact_number')
+        shopkeeper.bank_name = request.form.get('bank_name')
+        shopkeeper.account_number = request.form.get('account_number')
+        shopkeeper.ifsc_code = request.form.get('ifsc_code')
         db.session.commit()
         flash('Profile updated successfully.', 'success')
         return redirect(url_for('shopkeeper.profile'))

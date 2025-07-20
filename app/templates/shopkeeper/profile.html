@@ -39,37 +39,63 @@
 </aside>
 <main class="flex-1 ml-64 p-8 bg-gray-50 min-h-screen">
     <div class="max-w-5xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10">
+        {#
         {% if not shopkeeper.is_verified %}
         <div class="mb-6 p-4 bg-red-100 border border-red-300 text-red-700 rounded text-center text-base font-semibold">
             Please upload all required documents to start using the services.
         </div>
         {% endif %}
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-bold text-[#ed6a3e]">Profile</h2>
+        #}
+        <div class="flex flex-col items-center text-center mb-8">
+            <div class="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-[#ed6a3e] p-1">
+                {% if shopkeeper.logo_path %}
+                <img src="{{ url_for('static', filename=shopkeeper.logo_path) }}" alt="Shop Logo" class="w-full h-full object-cover rounded-full">
+                {% else %}
+                <span class="text-gray-500 text-sm">No Photo</span>
+                {% endif %}
+            </div>
+            <h2 class="text-4xl font-bold text-[#ed6a3e] mt-4">{{ shopkeeper.shop_name }}</h2>
+            <p class="text-xl text-gray-600 mt-1">{{ shopkeeper.domain }}</p>
             <a href="{{ url_for('shopkeeper.profile_edit') }}"
-                class="bg-[#ed6a3e] text-white px-4 py-2 rounded shadow hover:bg-orange-700 transition duration-300"><i
-                    data-feather="edit-2" class="inline mr-2"></i>Edit</a>
+                class="mt-6 bg-[#ed6a3e] text-white px-5 py-2 rounded-lg shadow hover:bg-orange-700 transition duration-300 flex items-center">
+                <i data-feather="edit-2" class="inline mr-2 h-5 w-5"></i>Edit Profile
+            </a>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div>
-                <label class="block text-gray-700 font-semibold mb-1">Shop Name</label>
-                <div class="bg-gray-100 rounded px-3 py-2">{{ shopkeeper.shop_name }}</div>
+        <div class="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+            <h3 class="text-xl font-bold text-[#ed6a3e] mb-5">Contact & Identity</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <p class="text-gray-700 font-medium mb-1">Contact Number:</p>
+                    <p class="text-gray-900">{{ shopkeeper.contact_number or 'N/A' }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-700 font-medium mb-1">GST Number:</p>
+                    <p class="text-gray-900">{{ shopkeeper.gst_number or 'N/A' }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-700 font-medium mb-1">PAN Number:</p>
+                    <p class="text-gray-900">{{ shopkeeper.pan_number or 'N/A' }}</p>
+                </div>
+                <div class="md:col-span-2 lg:col-span-3"> <p class="text-gray-700 font-medium mb-1">Address:</p>
+                    <p class="text-gray-900">{{ shopkeeper.address or 'N/A' }}</p>
+                </div>
             </div>
-            <div>
-                <label class="block text-gray-700 font-semibold mb-1">Domain</label>
-                <div class="bg-gray-100 rounded px-3 py-2">{{ shopkeeper.domain }}</div>
-            </div>
-            <div>
-                <label class="block text-gray-700 font-semibold mb-1">Address</label>
-                <div class="bg-gray-100 rounded px-3 py-2">{{ shopkeeper.address }}</div>
-            </div>
-            <div>
-                <label class="block text-gray-700 font-semibold mb-1">GST Number</label>
-                <div class="bg-gray-100 rounded px-3 py-2">{{ shopkeeper.gst_number }}</div>
-            </div>
-            <div>
-                <label class="block text-gray-700 font-semibold mb-1">Contact Number</label>
-                <div class="bg-gray-100 rounded px-3 py-2">{{ shopkeeper.contact_number }}</div>
+        </div>
+        <div class="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+            <h3 class="text-xl font-bold text-[#ed6a3e] mb-5">Bank Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <p class="text-gray-700 font-medium mb-1">Bank Name:</p>
+                    <p class="text-gray-900">{{ shopkeeper.bank_name or 'N/A' }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-700 font-medium mb-1">Account Number:</p>
+                    <p class="text-gray-900">{{ shopkeeper.account_number or 'N/A' }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-700 font-medium mb-1">IFSC Code:</p>
+                    <p class="text-gray-900">{{ shopkeeper.ifsc_code or 'N/A' }}</p>
+                </div>
             </div>
         </div>
         <h3 class="text-lg font-semibold mb-6 text-gray-900">Required Documents</h3>

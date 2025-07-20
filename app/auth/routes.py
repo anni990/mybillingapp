@@ -50,6 +50,19 @@ def register():
             role=form.role.data
         )
         db.session.add(user)
+        db.session.flush()  # Get user_id before commit
+        # If registering as shopkeeper, create Shopkeeper profile
+        if form.role.data == 'shopkeeper':
+            from app.models import Shopkeeper
+            shopkeeper = Shopkeeper(
+                user_id=user.user_id,
+                shop_name=form.username.data + "'s Shop",  # Placeholder, can be edited later
+                domain='',
+                address='',
+                gst_number='',
+                contact_number=''
+            )
+            db.session.add(shopkeeper)
         db.session.commit()
         flash('Registration successful. Please log in.', 'success')
         return redirect(url_for('auth.login'))

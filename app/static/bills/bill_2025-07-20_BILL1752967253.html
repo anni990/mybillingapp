@@ -2,33 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bill Receipt - {{ bill.bill_number }}</title>
+    <title>Bill Receipt - BILL1752967253</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
     <div class="max-w-4xl mx-auto bg-white p-6 mt-10 rounded shadow-lg">
         <!-- Header -->
         <div class="text-center mb-6">
-            {% if shopkeeper.logo_path %}
-            <img src="{{ url_for('static', filename=shopkeeper.logo_path) }}" alt="Shop Logo" class="h-16 mx-auto mb-2">
-            {% endif %}
-            <h1 class="text-3xl font-bold text-gray-900">{{ shopkeeper.shop_name }}</h1>
-            <p class="text-gray-600">Invoice {{ bill.bill_number }}</p>
-            <p class="text-gray-600">Date: {{ bill.bill_date }}</p>
+            
+            <img src="/static/uploads/shopkeeper_1_logo.jpg" alt="Shop Logo" class="h-16 mx-auto mb-2">
+            
+            <h1 class="text-3xl font-bold text-gray-900">Grocery Mart</h1>
+            <p class="text-gray-600">Invoice BILL1752967253</p>
+            <p class="text-gray-600">Date: 2025-07-20</p>
         </div>
 
         <!-- From and To section -->
         <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
             <div class="border p-4 rounded">
                 <h2 class="font-semibold mb-2">From:</h2>
-                <p>{{ shopkeeper.shop_name }}</p>
-                <p>{{ shopkeeper.address }}</p>
-                <p>GSTIN: {{ shopkeeper.gst_number }}</p>
+                <p>Grocery Mart</p>
+                <p>123 Main St</p>
+                <p>GSTIN: GSTIN1234</p>
             </div>
             <div class="border p-4 rounded">
                 <h2 class="font-semibold mb-2">To:</h2>
-                <p>{{ bill.customer_name }}</p>
-                <p>{{ bill.customer_contact }}</p>
+                <p>Ramesh</p>
+                <p>7894561230</p>
             </div>
         </div>
 
@@ -63,21 +63,35 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item_data in bill_items_data %}
+                    
                     <tr class="border-t">
-                        <td class="p-2 border">{{ item_data.product.product_name }}</td>
-                        <td class="p-2 border">{{ item_data.hsn_code }}</td>
-                        <td class="p-2 border text-right">{{ item_data.quantity }}</td>
-                        <td class="p-2 border text-right">₹{{ item_data.base_price|round(2) }}</td>
-                        <td class="p-2 border text-right">₹{{ item_data.discount_amount|round(2) }} ({{ item_data.discount }}%)</td>
-                        <td class="p-2 border text-right">₹{{ item_data.discounted_price|round(2) }}</td>
-                        <td class="p-2 border text-right">{{ item_data.sgst_rate|round(2) }}</td>
-                        <td class="p-2 border text-right">₹{{ item_data.sgst_amount|round(2) }}</td>
-                        <td class="p-2 border text-right">{{ item_data.cgst_rate|round(2) }}</td>
-                        <td class="p-2 border text-right">₹{{ item_data.cgst_amount|round(2) }}</td>
-                        <td class="p-2 border text-right">₹{{ item_data.final_price|round(2) }}</td>
+                        <td class="p-2 border">Badam</td>
+                        <td class="p-2 border"></td>
+                        <td class="p-2 border text-right">1.0</td>
+                        <td class="p-2 border text-right">₹105.0</td>
+                        <td class="p-2 border text-right">₹0.0 (0.0%)</td>
+                        <td class="p-2 border text-right">₹105.0</td>
+                        <td class="p-2 border text-right">6.0</td>
+                        <td class="p-2 border text-right">₹6.3</td>
+                        <td class="p-2 border text-right">6.0</td>
+                        <td class="p-2 border text-right">₹6.3</td>
+                        <td class="p-2 border text-right">₹117.6</td>
                     </tr>
-                    {% endfor %}
+                    
+                    <tr class="border-t">
+                        <td class="p-2 border">Sugar 1kg</td>
+                        <td class="p-2 border"></td>
+                        <td class="p-2 border text-right">1.0</td>
+                        <td class="p-2 border text-right">₹45.0</td>
+                        <td class="p-2 border text-right">₹0.0 (0.0%)</td>
+                        <td class="p-2 border text-right">₹45.0</td>
+                        <td class="p-2 border text-right">5.0</td>
+                        <td class="p-2 border text-right">₹2.25</td>
+                        <td class="p-2 border text-right">5.0</td>
+                        <td class="p-2 border text-right">₹2.25</td>
+                        <td class="p-2 border text-right">₹49.5</td>
+                    </tr>
+                    
                 </tbody>
             </table>
         </div>
@@ -95,24 +109,33 @@
                 </tr>
             </thead>
             <tbody>
-                {% for gst_rate, summary in gst_summary_by_rate.items() %}
+                
                 <tr>
-                    <td class="p-2 border">₹{{ summary.taxable_amount|round(2) }}</td>
-                    <td class="p-2 border">{{ gst_rate }}%</td>
-                    <td class="p-2 border">₹{{ summary.cgst_amount|round(2) }}</td>
-                    <td class="p-2 border">₹{{ summary.sgst_amount|round(2) }}</td>
-                    <td class="p-2 border">₹{{ summary.total_gst_amount|round(2) }}</td>
+                    <td class="p-2 border">₹105.0</td>
+                    <td class="p-2 border">12%</td>
+                    <td class="p-2 border">₹6.3</td>
+                    <td class="p-2 border">₹6.3</td>
+                    <td class="p-2 border">₹12.6</td>
                     <td class="p-2 border"></td>
                 </tr>
-                {% endfor %}
+                
+                <tr>
+                    <td class="p-2 border">₹45.0</td>
+                    <td class="p-2 border">10%</td>
+                    <td class="p-2 border">₹2.25</td>
+                    <td class="p-2 border">₹2.25</td>
+                    <td class="p-2 border">₹4.5</td>
+                    <td class="p-2 border"></td>
+                </tr>
+                
                 <!-- Grand Total Row -->
                 <tr class="bg-gray-50 font-bold">
-                    <td class="p-2 border">₹{{ total_taxable_amount|round(2) }}</td>
+                    <td class="p-2 border">₹150.0</td>
                     <td class="p-2 border"></td>
-                    <td class="p-2 border">₹{{ total_cgst_amount|round(2) }}</td>
-                    <td class="p-2 border">₹{{ total_sgst_amount|round(2) }}</td>
-                    <td class="p-2 border">₹{{ total_gst_amount|round(2) }}</td>
-                    <td class="p-2 border font-bold text-right">₹{{ overall_grand_total|round(2) }}</td>
+                    <td class="p-2 border">₹8.55</td>
+                    <td class="p-2 border">₹8.55</td>
+                    <td class="p-2 border">₹17.1</td>
+                    <td class="p-2 border font-bold text-right">₹167.1</td>
                 </tr>
             </tbody>
         </table>
@@ -120,9 +143,9 @@
         <!-- Bank details -->
         <div class="mt-6 text-sm">
             <h2 class="font-semibold mb-2">Bank Details:</h2>
-            <p>Bank Name: {{ shopkeeper.bank_name or '' }}</p>
-            <p>Account Number: {{ shopkeeper.account_number or '' }}</p>
-            <p>IFSC Code: {{ shopkeeper.ifsc_code or '' }}</p>
+            <p>Bank Name: SBI</p>
+            <p>Account Number: 14653256921152</p>
+            <p>IFSC Code: 124578</p>
         </div>
 
         <!-- Action buttons -->
