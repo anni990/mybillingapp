@@ -256,11 +256,15 @@ def client_profile(shopkeeper_id):
     if current_user.role != 'CA':
         return redirect(url_for('ca.dashboard'))
     shop = Shopkeeper.query.get(shopkeeper_id)
+    ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
+    firm_name = ca.firm_name
     if not shop:
         flash('Client not found', 'danger')
         return redirect(url_for('ca.clients'))
+    user = User.query.get(shop.user_id)  # Fetch the related user
     documents = shop.documents  # List of Document objects
-    return render_template('ca/client_profile.html', client=shop, documents=documents)
+    
+    return render_template('ca/client_profile.html', client=shop, user=user, documents=documents, firm_name=firm_name)
 
 @ca_bp.route('/export/all')
 @login_required
@@ -369,12 +373,14 @@ def ca_profile():
         ca.pan_number = form.pan_number.data
         ca.address = form.address.data
         ca.gstin = form.gstin.data
+        ca.about_me = form.about_me.data  # Save About Me
         # Handle file uploads
         upload_folder = os.path.join('app', 'static', 'ca_upload')
         os.makedirs(upload_folder, exist_ok=True)
         def save_file(field, old_path=None):
             file = getattr(form, field).data
-            if file:
+            # Only save if file is a FileStorage object (has filename attribute)
+            if hasattr(file, 'filename') and file.filename:
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)
@@ -512,6 +518,7 @@ def shopkeeper_marketplace():
     if current_user.role != 'CA':
         return redirect(url_for('ca.dashboard'))
     ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
+    firm_name = ca.firm_name
     shopkeepers = []
     if request.method == 'POST':
         area = request.form.get('area')
@@ -526,7 +533,7 @@ def shopkeeper_marketplace():
         shopkeepers = Shopkeeper.query.all()
     # Get connection status for each shopkeeper
     connections = {c.shopkeeper_id: c for c in CAConnection.query.filter_by(ca_id=ca.ca_id).all()}
-    return render_template('ca/shopkeeper_marketplace.html', shopkeepers=shopkeepers, connections=connections)
+    return render_template('ca/shopkeeper_marketplace.html', shopkeepers=shopkeepers, connections=connections, firm_name=firm_name)
 
 @ca_bp.route('/connect_shopkeeper/<int:shopkeeper_id>', methods=['POST'])
 @login_required

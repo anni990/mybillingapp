@@ -15,6 +15,12 @@
     </div>
     <h1 class="text-4xl font-extrabold text-orange-600 mt-5 tracking-tight">{{ ca.firm_name }}</h1>
     <p class="text-xl text-gray-700 mt-2 font-medium">{{ ca.area }}</p>
+    {% if ca.about_me %}
+      <div class="mt-6 max-w-2xl text-center">
+        <h2 class="text-xl font-bold text-orange-500 mb-2">About Me</h2>
+        <p class="text-gray-700 whitespace-pre-line">{{ ca.about_me }}</p>
+      </div>
+    {% endif %}
   </div>
 
   <div class="space-y-8">
@@ -60,6 +66,12 @@
           {{ form.firm_name.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
           {{ form.firm_name(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter firm name") }}
           {% for error in form.firm_name.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <!-- About Me field -->
+        <div class="mb-5">
+          {{ form.about_me.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.about_me(class_="w-full border border-gray-300 rounded-lg px-4 py-2 min-h-[100px] focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Write something about yourself, your firm, or your expertise...") }}
+          {% for error in form.about_me.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
         </div>
         <div class="mb-5">
           {{ form.area.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}

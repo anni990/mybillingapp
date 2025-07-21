@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SelectField, SubmitField
+from wtforms import StringField, PasswordField, SelectField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length
 from flask_wtf.file import FileField, FileAllowed
 
@@ -24,6 +24,7 @@ class CAProfileForm(FlaskForm):
     gst_number = StringField('GST Number', validators=[Length(max=20)])
     pan_number = StringField('PAN Number', validators=[Length(max=20)])
     address = StringField('Address', validators=[Length(max=255)])
+    about_me = TextAreaField('About Me', validators=[Length(max=2000)])
     # New fields for document uploads and GSTIN
     aadhaar_file = FileField('Aadhaar (PDF/JPG/PNG)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
     pan_file = FileField('PAN (PDF/JPG/PNG)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
