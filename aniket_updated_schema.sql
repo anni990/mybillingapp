@@ -54,5 +54,4 @@
 --     FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id),
 --     FOREIGN KEY (employee_id) REFERENCES ca_employees(employee_id)
 --   );
-
-  ALTER TABLE chartered_accountants ADD COLUMN about_me TEXT;
+ALTER TABLE employee_clients ADD CONSTRAINT unique_employee_client UNIQUE (employee_id, shopkeeper_id);

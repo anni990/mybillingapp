@@ -48,8 +48,8 @@
               bill.payment_status }}</span>
           </td>
           <td class="py-2 px-3 space-x-2">
-            <a href="/bills/view/{{ bill.bill_id }}" class="text-blue-500 hover:underline">View</a>
-            <a href="/bills/download/{{ bill.bill_id }}" class="text-[#ed6a3e] hover:underline">Download</a>
+            <a href="{{ url_for('ca.view_bill', bill_id=bill.bill_id) }}" class="text-blue-500 hover:underline">View</a>
+            <a href="{{ url_for('ca.download_bill', bill_id=bill.bill_id) }}" class="text-[#ed6a3e] hover:underline">Download</a>
           </td>
         </tr>
         {% else %}

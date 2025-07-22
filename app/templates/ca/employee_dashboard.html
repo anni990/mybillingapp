@@ -14,6 +14,16 @@
   </nav>
   <main class="max-w-5xl mx-auto py-10">
     <h2 class="text-3xl font-bold text-orange-600 mb-8">GST Filing Dashboard</h2>
+    <form method="get" class="mb-6 flex items-center gap-4">
+      <label for="shop_filter" class="font-semibold text-gray-700">Filter by Client:</label>
+      <select name="shop_filter" id="shop_filter" class="border border-gray-300 rounded px-3 py-2">
+        <option value="">All</option>
+        {% for client in clients %}
+          <option value="{{ client.shopkeeper_id }}" {% if shop_filter|default('') == client.shopkeeper_id|string %}selected{% endif %}>{{ client.shop_name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="bg-orange-500 text-white px-4 py-2 rounded-lg shadow hover:bg-orange-600 transition">Go</button>
+    </form>
     <div class="bg-white rounded-2xl shadow-lg p-8 mb-10">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
@@ -25,6 +35,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-100">
           {% for client in clients %}
+            {% if not shop_filter or shop_filter|int == client.shopkeeper_id %}
           <tr>
             <td class="px-6 py-4 whitespace-nowrap text-lg text-gray-800">{{ client.shop_name }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
@@ -38,6 +49,7 @@
               <a href="{{ url_for('ca.employee_client_dashboard', shopkeeper_id=client.shopkeeper_id) }}" class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-5 py-2 rounded-lg shadow hover:from-orange-600 hover:to-orange-700 transition">View</a>
             </td>
           </tr>
+            {% endif %}
           {% endfor %}
         </tbody>
       </table>
@@ -56,7 +68,8 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-100">
           {% for client in clients %}
-            {% for bill in client.bills %}
+            {% if not shop_filter or shop_filter|int == client.shopkeeper_id %}
+              {% for bill in client.bills %}
             <tr>
               <td class="px-6 py-4 whitespace-nowrap text-gray-800">{{ client.shop_name }}</td>
               <td class="px-6 py-4 whitespace-nowrap">{{ bill.bill_number }}</td>
@@ -66,7 +79,8 @@
                 <a href="{{ url_for('shopkeeper.view_bill', bill_id=bill.bill_id) }}" class="bg-blue-500 text-white px-4 py-1 rounded shadow hover:bg-blue-600 transition">View</a>
               </td>
             </tr>
-            {% endfor %}
+              {% endfor %}
+            {% endif %}
           {% else %}
             <tr><td colspan="5" class="px-6 py-4 text-center text-gray-400">No bills found for connected clients.</td></tr>
           {% endfor %}
