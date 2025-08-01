@@ -45,6 +45,7 @@ class Shopkeeper(db.Model):
     bank_name = db.Column(db.String(100))
     account_number = db.Column(db.String(50))
     ifsc_code = db.Column(db.String(20))
+    template_choice = db.Column(db.String(20), default='template2')
     # Relationships
     products = db.relationship('Product', backref='shopkeeper', cascade='all, delete-orphan')
     bills = db.relationship('Bill', backref='shopkeeper', cascade='all, delete-orphan')
@@ -127,7 +128,6 @@ class Bill(db.Model):
     payment_status = db.Column(db.Enum('Paid', 'Unpaid', 'Partial'), nullable=False)
     amount_paid = db.Column(db.Numeric(12,2), nullable=True, default=0)
     amount_unpaid = db.Column(db.Numeric(12,2), nullable=True, default=0)
-    pdf_file_path = db.Column(db.String(255))
     # Relationships
     bill_items = db.relationship('BillItem', backref='bill', cascade='all, delete-orphan')
 

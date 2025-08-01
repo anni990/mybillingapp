@@ -20,3 +20,6 @@ ALTER TABLE shopkeepers ADD COLUMN is_verified BOOLEAN DEFAULT FALSE;
 ALTER TABLE shopkeepers ADD COLUMN bank_name VARCHAR(100);
 ALTER TABLE shopkeepers ADD COLUMN account_number VARCHAR(50);
 ALTER TABLE shopkeepers ADD COLUMN ifsc_code VARCHAR(20);
+
+-- Add template_choice column for shopkeepers with default template2
+ALTER TABLE shopkeepers ADD COLUMN template_choice VARCHAR(20) DEFAULT 'template2';

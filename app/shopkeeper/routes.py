@@ -145,33 +145,318 @@ def view_bill(bill_id):
     if bill.shopkeeper.user_id != current_user.user_id:
         flash('Access denied.', 'danger')
         return redirect(url_for('shopkeeper.manage_bills'))
-    items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
+    
+    bill_items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
     shopkeeper = bill.shopkeeper
     products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
     products_dict = {str(p.product_id): p for p in products}
-    if bill.pdf_file_path:
-        # Try to read the HTML file and render it
-        try:
-            with open(os.path.join('app', bill.pdf_file_path), 'r', encoding='utf-8') as f:
-                bill_html = f.read()
-            # Render as safe HTML
-            from flask import Markup
-            return bill_html
-        except Exception:
-            pass
-    # Fallback: render the template
-    return render_template('shopkeeper/bill_receipt.html', bill=bill, bill_items=items, shopkeeper=shopkeeper, products=products_dict, back_url=url_for('shopkeeper.manage_bills'))
+    
+    # Check if user can edit (you can customize this based on roles)
+    is_editable = False
+    if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id == current_user.user_id:
+        is_editable = True
+    elif current_user.role == 'CA':
+        ca_conn = CAConnection.query.filter_by(shopkeeper_id=bill.shopkeeper_id, ca_id=current_user.ca.ca_id, status='approved').first()
+        is_editable = bool(ca_conn)
+    elif current_user.role == 'employee':
+        emp_client = EmployeeClient.query.filter_by(shopkeeper_id=bill.shopkeeper_id, employee_id=current_user.ca_employee.employee_id).first()
+        is_editable = bool(emp_client)
+    
+    # Calculate GST summary for each item
+    bill_items_data = []
+    gst_summary_by_rate = {}
+    total_taxable_amount = 0
+    total_cgst_amount = 0
+    total_sgst_amount = 0
+    total_gst_amount = 0
+    overall_grand_total = 0
+
+    for item in bill_items:
+        product = products_dict[str(item.product_id)]
+        base_price = float(item.price_per_unit)
+        quantity = int(item.quantity)
+        total_price = base_price * quantity
+        
+        # Assuming discount percentage is stored or calculated
+        discount = 0  # You can modify this based on your discount logic
+        discount_amount = (discount / 100) * total_price
+        discounted_price = total_price - discount_amount
+        
+        # GST calculations
+        gst_rate = float(product.gst_rate or 0)
+        sgst_rate = cgst_rate = gst_rate / 2
+        sgst_amount = (sgst_rate / 100) * discounted_price
+        cgst_amount = (cgst_rate / 100) * discounted_price
+        final_price = discounted_price + sgst_amount + cgst_amount
+
+        item_data = {
+            'product': product,
+            'hsn_code': product.hsn_code if hasattr(product, 'hsn_code') else '',
+            'quantity': quantity,
+            'base_price': base_price,
+            'discount': discount,
+            'discount_amount': discount_amount,
+            'discounted_price': discounted_price,
+            'sgst_rate': sgst_rate,
+            'sgst_amount': sgst_amount,
+            'cgst_rate': cgst_rate,
+            'cgst_amount': cgst_amount,
+            'final_price': final_price
+        }
+        bill_items_data.append(item_data)
+
+        # Update GST summary
+        if gst_rate not in gst_summary_by_rate:
+            gst_summary_by_rate[gst_rate] = {
+                'taxable_amount': 0,
+                'cgst_amount': 0,
+                'sgst_amount': 0,
+                'total_gst_amount': 0
+            }
+        
+        gst_summary_by_rate[gst_rate]['taxable_amount'] += discounted_price
+        gst_summary_by_rate[gst_rate]['cgst_amount'] += cgst_amount
+        gst_summary_by_rate[gst_rate]['sgst_amount'] += sgst_amount
+        gst_summary_by_rate[gst_rate]['total_gst_amount'] += (cgst_amount + sgst_amount)
+        
+        total_taxable_amount += discounted_price
+        total_cgst_amount += cgst_amount
+        total_sgst_amount += sgst_amount
+        total_gst_amount += (cgst_amount + sgst_amount)
+        overall_grand_total += final_price
+
+    is_editable = True  # You can set conditions for editability here
+
+    return render_template('shopkeeper/bill_receipt.html',
+        bill=bill,
+        bill_items_data=bill_items_data,
+        shopkeeper=shopkeeper,
+        products=products_dict,
+        gst_summary_by_rate=gst_summary_by_rate,
+        total_taxable_amount=total_taxable_amount,
+        total_cgst_amount=total_cgst_amount,
+        total_sgst_amount=total_sgst_amount,
+        total_gst_amount=total_gst_amount,
+        overall_grand_total=overall_grand_total,
+        is_editable=is_editable,
+        back_url=url_for('shopkeeper.manage_bills'))
+
+@shopkeeper_bp.route('/bill/download/<int:bill_id>')
+@login_required
+def download_bill_pdf(bill_id):
+    bill = Bill.query.get_or_404(bill_id)
+    
+    # Check permissions
+    if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id != current_user.user_id:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('shopkeeper.manage_bills'))
+    
+    # Get bill data
+    bill_items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
+    shopkeeper = bill.shopkeeper
+    products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
+    products_dict = {str(p.product_id): p for p in products}
+    
+    # Calculate GST summary
+    bill_items_data = []
+    gst_summary_by_rate = {}
+    total_taxable_amount = 0
+    total_cgst_amount = 0
+    total_sgst_amount = 0
+    total_gst_amount = 0
+    overall_grand_total = 0
+
+    for item in bill_items:
+        product = products_dict[str(item.product_id)]
+        base_price = float(item.price_per_unit)
+        quantity = int(item.quantity)
+        total_price = base_price * quantity
+        
+        discount = 0
+        discount_amount = (discount / 100) * total_price
+        discounted_price = total_price - discount_amount
+        
+        gst_rate = float(product.gst_rate or 0)
+        sgst_rate = cgst_rate = gst_rate / 2
+        sgst_amount = (sgst_rate / 100) * discounted_price
+        cgst_amount = (cgst_rate / 100) * discounted_price
+        final_price = discounted_price + sgst_amount + cgst_amount
+
+        item_data = {
+            'product': product,
+            'hsn_code': product.hsn_code if hasattr(product, 'hsn_code') else '',
+            'quantity': quantity,
+            'base_price': base_price,
+            'discount': discount,
+            'discount_amount': discount_amount,
+            'discounted_price': discounted_price,
+            'sgst_rate': sgst_rate,
+            'sgst_amount': sgst_amount,
+            'cgst_rate': cgst_rate,
+            'cgst_amount': cgst_amount,
+            'final_price': final_price
+        }
+        bill_items_data.append(item_data)
+
+        if gst_rate not in gst_summary_by_rate:
+            gst_summary_by_rate[gst_rate] = {
+                'taxable_amount': 0,
+                'cgst_amount': 0,
+                'sgst_amount': 0,
+                'total_gst_amount': 0
+            }
+        
+        gst_summary_by_rate[gst_rate]['taxable_amount'] += discounted_price
+        gst_summary_by_rate[gst_rate]['cgst_amount'] += cgst_amount
+        gst_summary_by_rate[gst_rate]['sgst_amount'] += sgst_amount
+        gst_summary_by_rate[gst_rate]['total_gst_amount'] += (cgst_amount + sgst_amount)
+        
+        total_taxable_amount += discounted_price
+        total_cgst_amount += cgst_amount
+        total_sgst_amount += sgst_amount
+        total_gst_amount += (cgst_amount + sgst_amount)
+        overall_grand_total += final_price
+
+    # Render template to HTML
+    html = render_template('shopkeeper/bill_receipt.html',
+        bill=bill,
+        bill_items_data=bill_items_data,
+        shopkeeper=shopkeeper,
+        products=products_dict,
+        gst_summary_by_rate=gst_summary_by_rate,
+        total_taxable_amount=total_taxable_amount,
+        total_cgst_amount=total_cgst_amount,
+        total_sgst_amount=total_sgst_amount,
+        total_gst_amount=total_gst_amount,
+        overall_grand_total=overall_grand_total,
+        is_editable=False # No edit button in PDF
+    )
+
+    # Generate PDF using WeasyPrint
+    from weasyprint import HTML
+    pdf = HTML(string=html).write_pdf()
+
+    return send_file(
+        io.BytesIO(pdf),
+        download_name=f'bill_{bill.bill_number}.pdf',
+        mimetype='application/pdf'
+    )
+
+@shopkeeper_bp.route('/bill/<int:bill_id>/edit', methods=['POST'])
+@login_required
+def update_bill(bill_id):
+    print("Update bill route called")
+    print("Form data:", request.form)
+    
+    try:
+        bill = Bill.query.get_or_404(bill_id)
+        
+        # Check permissions
+        if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id != current_user.user_id:
+            flash('Access denied.', 'danger')
+            return redirect(url_for('shopkeeper.manage_bills'))
+
+        # Get form data
+        customer_name = request.form.get('customer_name')
+        customer_contact = request.form.get('customer_contact')
+        payment_status = request.form.get('payment_status', bill.payment_status)
+        
+        print(f"Customer details - Name: {customer_name}, Contact: {customer_contact}")
+
+        # Update basic bill information
+        if customer_name:
+            bill.customer_name = customer_name
+        if customer_contact:
+            bill.customer_contact = customer_contact
+        bill.payment_status = payment_status
+
+        # Get bill items data from form
+        item_ids = request.form.getlist('item_id[]')
+        quantities = request.form.getlist('quantity[]')
+        prices = request.form.getlist('price[]')
+        
+        print(f"Bill items - IDs: {item_ids}, Quantities: {quantities}, Prices: {prices}")
+
+        # Update bill items
+        total_bill_amount = 0
+        
+        for index, (item_id, qty, price) in enumerate(zip(item_ids, quantities, prices)):
+            try:
+                # Convert form data to appropriate types
+                item_id = str(item_id)  # Convert to string to match product_id
+                qty = int(qty)
+                price = float(price)
+                
+                # Get the bill item
+                bill_item = BillItem.query.filter_by(
+                    bill_id=bill.bill_id,
+                    product_id=item_id
+                ).first()
+                
+                if bill_item:
+                    print(f"Processing item {item_id} - Old qty: {bill_item.quantity}, New qty: {qty}")
+                    print(f"Old price: {bill_item.price_per_unit}, New price: {price}")
+                    
+                    # Update product stock
+                    product = Product.query.get(item_id)
+                    if product:
+                        # Adjust stock
+                        old_qty = bill_item.quantity
+                        stock_adjustment = old_qty - qty
+                        product.stock_qty += stock_adjustment
+                        print(f"Stock adjustment for product {product.product_name}: {stock_adjustment}")
+                        
+                        # Calculate item total with GST
+                        gst_rate = float(product.gst_rate or 0)
+                        base_amount = qty * price
+                        gst_amount = (gst_rate / 100) * base_amount
+                        item_total = base_amount + gst_amount
+                        
+                        # Update bill item
+                        bill_item.quantity = qty
+                        bill_item.price_per_unit = price
+                        bill_item.total_price = item_total
+                        
+                        print(f"Updated totals - Base: {base_amount}, GST: {gst_amount}, Total: {item_total}")
+                        
+                        total_bill_amount += item_total
+                    else:
+                        print(f"Product not found for ID: {item_id}")
+                else:
+                    print(f"Bill item not found for ID: {item_id}")
+            
+            except ValueError as ve:
+                print(f"Value error processing item {item_id}: {str(ve)}")
+                flash(f"Invalid value for item {index + 1}", 'error')
+                continue
+            except Exception as e:
+                print(f"Error processing item {item_id}: {str(e)}")
+                continue
+
+        # Update bill total
+        bill.total_amount = total_bill_amount
+        print(f"Final bill amount: {total_bill_amount}")
+        
+        # Commit all changes
+        db.session.commit()
+        flash('Bill updated successfully!', 'success')
+        return redirect(url_for('shopkeeper.view_bill', bill_id=bill_id))
+        
+    except Exception as e:
+        print(f"Error updating bill: {str(e)}")
+        db.session.rollback()
+        flash('Error updating bill. Please try again.', 'danger')
+        return redirect(url_for('shopkeeper.view_bill', bill_id=bill_id))
+    
+    db.session.commit()
+    flash('Bill updated successfully.', 'success')
+    return redirect(url_for('shopkeeper.view_bill', bill_id=bill_id))
 
 @shopkeeper_bp.route('/bill/delete/<int:bill_id>', methods=['POST'])
 @login_required
 @shopkeeper_required
 def delete_bill(bill_id):
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    # In all relevant routes, comment out the is_verified restriction logic
-    # Example for create_bill:
-    #    if not shopkeeper.is_verified:
-    #        flash('Please upload all required documents to use this service.', 'danger')
-    #        return redirect(url_for('shopkeeper.profile'))
     bill = Bill.query.get_or_404(bill_id)
     if bill.shopkeeper.user_id != current_user.user_id:
         flash('Access denied.', 'danger')
@@ -180,6 +465,8 @@ def delete_bill(bill_id):
     db.session.commit()
     flash('Bill deleted.', 'success')
     return redirect(url_for('shopkeeper.manage_bills'))
+
+
 
 # Sales Reports
 @shopkeeper_bp.route('/sales_reports')
@@ -311,34 +598,31 @@ def connect_ca(ca_id):
 @shopkeeper_required
 def settings():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    user = User.query.get(current_user.user_id)
     if request.method == 'POST':
         shop_name = request.form.get('shop_name')
         domain = request.form.get('domain')
         address = request.form.get('address')
         gst_number = request.form.get('gst_number')
         contact_number = request.form.get('contact_number')
+        bank_name = request.form.get('bank_name')
+        account_number = request.form.get('account_number')
+        ifsc_code = request.form.get('ifsc_code')
+        template_choice = request.form.get('template_choice')
+        
         if shopkeeper:
             shopkeeper.shop_name = shop_name
             shopkeeper.domain = domain
             shopkeeper.address = address
             shopkeeper.gst_number = gst_number
             shopkeeper.contact_number = contact_number
+            shopkeeper.bank_name = bank_name
+            shopkeeper.account_number = account_number
+            shopkeeper.ifsc_code = ifsc_code
+            shopkeeper.template_choice = template_choice
             db.session.commit()
-            flash('Profile updated.', 'success')
-        # Password change
-        current_pw = request.form.get('current_password')
-        new_pw = request.form.get('new_password')
-        confirm_pw = request.form.get('confirm_new_password')
-        if current_pw and new_pw and new_pw == confirm_pw:
-            from werkzeug.security import check_password_hash, generate_password_hash
-            if check_password_hash(user.password_hash, current_pw):
-                user.password_hash = generate_password_hash(new_pw)
-                db.session.commit()
-                flash('Password changed.', 'success')
-            else:
-                flash('Current password incorrect.', 'danger')
-    return render_template('shopkeeper/settings.html', shopkeeper=shopkeeper)
+            flash('Profile updated successfully.', 'success')
+        return redirect(url_for('shopkeeper.settings'))
+    return render_template('shopkeeper/profile_edit.html', shopkeeper=shopkeeper)
 
 # Products & Stock (already implemented above)
 @shopkeeper_bp.route('/products', methods=['GET'])
@@ -607,6 +891,7 @@ def profile_edit():
         shopkeeper.bank_name = request.form.get('bank_name')
         shopkeeper.account_number = request.form.get('account_number')
         shopkeeper.ifsc_code = request.form.get('ifsc_code')
+        shopkeeper.template_choice = request.form.get('template_choice')
         db.session.commit()
         flash('Profile updated successfully.', 'success')
         return redirect(url_for('shopkeeper.profile'))
