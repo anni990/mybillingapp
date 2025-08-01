@@ -488,6 +488,9 @@ def ca_profile():
         ca.address = form.address.data
         ca.gstin = form.gstin.data
         ca.about_me = form.about_me.data  # Save About Me
+        ca.city = form.city.data
+        ca.state = form.state.data
+        ca.pincode = form.pincode.data
         # Handle file uploads
         upload_folder = os.path.join('app', 'static', 'ca_upload')
         os.makedirs(upload_folder, exist_ok=True)

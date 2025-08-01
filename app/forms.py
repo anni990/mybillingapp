@@ -25,6 +25,9 @@ class CAProfileForm(FlaskForm):
     pan_number = StringField('PAN Number', validators=[Length(max=20)])
     address = StringField('Address', validators=[Length(max=255)])
     about_me = TextAreaField('About Me', validators=[Length(max=2000)])
+    city = StringField('City', validators=[Length(max=100)])
+    state = StringField('State', validators=[Length(max=100)])
+    pincode = StringField('Pincode', validators=[Length(max=20)])
     # New fields for document uploads and GSTIN
     aadhaar_file = FileField('Aadhaar (PDF/JPG/PNG)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
     pan_file = FileField('PAN (PDF/JPG/PNG)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])

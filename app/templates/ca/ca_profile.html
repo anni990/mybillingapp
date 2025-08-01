@@ -31,6 +31,9 @@
         <div><span class="font-semibold text-gray-800">GST Number:</span> {{ ca.gst_number or 'N/A' }}</div>
         <div><span class="font-semibold text-gray-800">PAN Number:</span> {{ ca.pan_number or 'N/A' }}</div>
         <div><span class="font-semibold text-gray-800">GSTIN:</span> {{ ca.gstin or 'N/A' }}</div>
+        <div><span class="font-semibold text-gray-800">City:</span> {{ ca.city or 'N/A' }}</div>
+        <div><span class="font-semibold text-gray-800">State:</span> {{ ca.state or 'N/A' }}</div>
+        <div><span class="font-semibold text-gray-800">Pincode:</span> {{ ca.pincode or 'N/A' }}</div>
         <div class="md:col-span-2 lg:col-span-3"><span class="font-semibold text-gray-800">Address:</span> {{ ca.address or 'N/A' }}</div>
       </div>
     </div>
@@ -102,6 +105,21 @@
           {{ form.address.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
           {{ form.address(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter address (optional)") }}
           {% for error in form.address.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.city.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.city(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter city") }}
+          {% for error in form.city.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.state.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.state(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter state") }}
+          {% for error in form.state.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.pincode.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.pincode(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter pincode") }}
+          {% for error in form.pincode.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
         </div>
       </div>
       <div>

@@ -45,6 +45,9 @@ class Shopkeeper(db.Model):
     bank_name = db.Column(db.String(100))
     account_number = db.Column(db.String(50))
     ifsc_code = db.Column(db.String(20))
+    city = db.Column(db.String(100))
+    state = db.Column(db.String(100))
+    pincode = db.Column(db.String(20))
     # Relationships
     products = db.relationship('Product', backref='shopkeeper', cascade='all, delete-orphan')
     bills = db.relationship('Bill', backref='shopkeeper', cascade='all, delete-orphan')
@@ -63,6 +66,9 @@ class CharteredAccountant(db.Model):
     gst_number = db.Column(db.String(20))
     pan_number = db.Column(db.String(20))
     address = db.Column(db.String(255))
+    city = db.Column(db.String(100))
+    state = db.Column(db.String(100))
+    pincode = db.Column(db.String(20))
     # New fields for document uploads and GSTIN
     aadhaar_file = db.Column(db.String(255))
     pan_file = db.Column(db.String(255))
