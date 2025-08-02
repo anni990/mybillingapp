@@ -1,9 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, g, send_file
 from flask_login import login_required, current_user
-from app.models import (db, User, Shopkeeper, CharteredAccountant, CAEmployee, EmployeeClient, 
-                       Bill, BillItem, Product, CAConnection, ShopConnection, GSTFilingStatus)
-import io
-from sqlalchemy import func, and_, or_
+from app.models import (db, User, Shopkeeper, CharteredAccountant, CAEmployee, EmployeeClient, Bill, BillItem, Product, CAConnection, ShopConnection, GSTFilingStatus)
+from sqlalchemy import func, and_, or_, func, extract
 from app.forms import EmployeeRegistrationForm, EmployeeEditForm, CAProfileForm
 from werkzeug.security import generate_password_hash
 import io
@@ -57,16 +55,48 @@ def dashboard():
     # Only CA can access
     if current_user.role != 'CA':
         return redirect(url_for('ca.employee_dashboard'))
+    
     ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
+    if not ca:
+        return redirect(url_for('auth.login'))
+    
     firm_name = ca.firm_name
-    # Summary cards
+    current_month = datetime.now().strftime('%Y-%m')
+    current_year = datetime.now().year
+    current_month_num = datetime.now().month
+    
+    # Basic metrics
     total_clients = CAConnection.query.filter_by(ca_id=ca.ca_id, status='approved').count()
-    new_connections = CAConnection.query.filter_by(ca_id=ca.ca_id, status='approved').filter(CAConnection.id > 0).count() # Placeholder logic
+    total_employees = CAEmployee.query.filter_by(ca_id=ca.ca_id).count()
     pending_approvals = CAConnection.query.filter_by(ca_id=ca.ca_id, status='pending').count()
+    
+    # Monthly revenue calculation (sum of all bills for connected clients this month)
+    monthly_revenue_query = db.session.query(func.sum(Bill.total_amount)).join(
+        Shopkeeper, Bill.shopkeeper_id == Shopkeeper.shopkeeper_id
+    ).join(
+        CAConnection, and_(
+            CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id,
+            CAConnection.ca_id == ca.ca_id,
+            CAConnection.status == 'approved'
+        )
+    ).filter(
+        extract('year', Bill.bill_date) == current_year,
+        extract('month', Bill.bill_date) == current_month_num
+    ).scalar()
+    
+    monthly_revenue = monthly_revenue_query or 0
+    
     # Recent bills (last 5)
-    recent_bills = db.session.query(Bill, Shopkeeper.shop_name).join(Shopkeeper, Bill.shopkeeper_id == Shopkeeper.shopkeeper_id)
-    recent_bills = recent_bills.join(CAConnection, and_(CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id, CAConnection.ca_id == ca.ca_id, CAConnection.status == 'approved'))
-    recent_bills = recent_bills.order_by(Bill.bill_date.desc()).limit(5).all()
+    recent_bills = db.session.query(Bill, Shopkeeper.shop_name).join(
+        Shopkeeper, Bill.shopkeeper_id == Shopkeeper.shopkeeper_id
+    ).join(
+        CAConnection, and_(
+            CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id,
+            CAConnection.ca_id == ca.ca_id,
+            CAConnection.status == 'approved'
+        )
+    ).order_by(Bill.bill_date.desc()).limit(5).all()
+    
     bills_data = []
     for bill, shopkeeper_name in recent_bills:
         bills_data.append({
@@ -77,12 +107,88 @@ def dashboard():
             'total_amount': bill.total_amount,
             'payment_status': bill.payment_status
         })
+    
+    # GST Filing Status for current month
+    connected_shopkeepers = db.session.query(Shopkeeper).join(
+        CAConnection, and_(
+            CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id,
+            CAConnection.ca_id == ca.ca_id,
+            CAConnection.status == 'approved'
+        )
+    ).all()
+    
+    gst_filed_count = 0
+    gst_pending_count = 0
+    gst_pending_clients = []
+    
+    for shopkeeper in connected_shopkeepers:
+        gst_status = GSTFilingStatus.query.filter_by(
+            shopkeeper_id=shopkeeper.shopkeeper_id,
+            month=current_month
+        ).first()
+        
+        if gst_status and gst_status.status == 'Filed':
+            gst_filed_count += 1
+        else:
+            gst_pending_count += 1
+            gst_pending_clients.append(shopkeeper)
+    
+    # Employee performance
+    employee_performance = []
+    employees = CAEmployee.query.filter_by(ca_id=ca.ca_id).all()
+    
+    for employee in employees:
+        # Count assigned clients
+        client_count = EmployeeClient.query.filter_by(employee_id=employee.employee_id).count()
+        
+        # Count GST filings done by this employee this month
+        gst_filed = GSTFilingStatus.query.filter_by(
+            employee_id=employee.employee_id,
+            month=current_month,
+            status='Filed'
+        ).count()
+        
+        employee_performance.append({
+            'name': employee.name,
+            'client_count': client_count,
+            'gst_filed': gst_filed
+        })
+    
+    # Pending connection requests with shopkeeper details
+    pending_connections_query = db.session.query(
+        CAConnection, Shopkeeper
+    ).join(
+        Shopkeeper, CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id
+    ).filter(
+        CAConnection.ca_id == ca.ca_id,
+        CAConnection.status == 'pending'
+    ).order_by(CAConnection.created_at.desc()).all()
+    
+    pending_connections = []
+    for connection, shopkeeper in pending_connections_query:
+        pending_connections.append({
+            'connection_id': connection.id,
+            'shop_name': shopkeeper.shop_name,
+            'domain': shopkeeper.domain,
+            'contact_number': shopkeeper.contact_number,
+            'gst_number': shopkeeper.gst_number,
+            'created_at': connection.created_at
+        })
+    
     return render_template('ca/dashboard.html',
+        firm_name=firm_name,
         total_clients=total_clients,
-        new_connections=new_connections,
+        total_employees=total_employees,
         pending_approvals=pending_approvals,
+        monthly_revenue=f"{monthly_revenue:,.2f}",
         recent_bills=bills_data,
-        firm_name=firm_name)
+        current_month=datetime.now().strftime('%B %Y'),
+        gst_filed_count=gst_filed_count,
+        gst_pending_count=gst_pending_count,
+        gst_pending_clients=gst_pending_clients[:5],  # Show only first 5
+        employee_performance=employee_performance,
+        pending_connections=pending_connections
+    )
 
 @ca_bp.route('/clients')
 @login_required
@@ -233,9 +339,10 @@ def add_employee():
         ca_employee = CAEmployee(ca_id=ca.ca_id, user_id=user.user_id, name=form.name.data, email=form.email.data)
         db.session.add(ca_employee)
         db.session.flush()  # Get employee_id
-        # Assign to shop
-        emp_client = EmployeeClient(employee_id=ca_employee.employee_id, shopkeeper_id=form.shop_id.data)
-        db.session.add(emp_client)
+        # Assign to selected shops (multi)
+        for shopkeeper_id in form.shop_id.data:
+            emp_client = EmployeeClient(employee_id=ca_employee.employee_id, shopkeeper_id=shopkeeper_id)
+            db.session.add(emp_client)
         db.session.commit()
         flash('Employee added successfully!', 'success')
         return redirect(url_for('ca.employees'))
@@ -252,12 +359,13 @@ def edit_employee(employee_id):
     # Get all shopkeepers for this CA
     shopkeepers = Shopkeeper.query.join(CAConnection, (CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id) & (CAConnection.ca_id == ca.ca_id) & (CAConnection.status == 'approved')).all()
     shop_choices = [(shop.shopkeeper_id, shop.shop_name) for shop in shopkeepers]
-    # Get current shop assignment
-    current_client = EmployeeClient.query.filter_by(employee_id=employee.employee_id).first()
+    # Get current shop assignments (multi)
+    current_clients = EmployeeClient.query.filter_by(employee_id=employee.employee_id).all()
+    current_shop_ids = [ec.shopkeeper_id for ec in current_clients]
     form = EmployeeEditForm(obj=employee)
     form.shop_id.choices = shop_choices
-    if request.method == 'GET' and current_client:
-        form.shop_id.data = current_client.shopkeeper_id
+    if request.method == 'GET':
+        form.shop_id.data = current_shop_ids
         form.name.data = employee.name
         form.email.data = employee.email
     if form.validate_on_submit():
@@ -271,12 +379,16 @@ def edit_employee(employee_id):
         # Update CAEmployee
         employee.name = form.name.data
         employee.email = form.email.data
-        # Update shop assignment
-        if current_client and current_client.shopkeeper_id != form.shop_id.data:
-            current_client.shopkeeper_id = form.shop_id.data
-        elif not current_client:
-            new_client = EmployeeClient(employee_id=employee.employee_id, shopkeeper_id=form.shop_id.data)
-            db.session.add(new_client)
+        # Update shop assignments (multi)
+        new_shop_ids = set(form.shop_id.data)
+        old_shop_ids = set(current_shop_ids)
+        # Remove unselected
+        for ec in current_clients:
+            if ec.shopkeeper_id not in new_shop_ids:
+                db.session.delete(ec)
+        # Add new assignments
+        for shopkeeper_id in new_shop_ids - old_shop_ids:
+            db.session.add(EmployeeClient(employee_id=employee.employee_id, shopkeeper_id=shopkeeper_id))
         db.session.commit()
         flash('Employee updated successfully!', 'success')
         return redirect(url_for('ca.employees'))
@@ -308,11 +420,15 @@ def client_profile(shopkeeper_id):
     if current_user.role != 'CA':
         return redirect(url_for('ca.dashboard'))
     shop = Shopkeeper.query.get(shopkeeper_id)
+    ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
+    firm_name = ca.firm_name
     if not shop:
         flash('Client not found', 'danger')
         return redirect(url_for('ca.clients'))
+    user = User.query.get(shop.user_id)  # Fetch the related user
     documents = shop.documents  # List of Document objects
-    return render_template('ca/client_profile.html', client=shop, documents=documents)
+    
+    return render_template('ca/client_profile.html', client=shop, user=user, documents=documents, firm_name=firm_name)
 
 @ca_bp.route('/export/all')
 @login_required
@@ -421,12 +537,17 @@ def ca_profile():
         ca.pan_number = form.pan_number.data
         ca.address = form.address.data
         ca.gstin = form.gstin.data
+        ca.about_me = form.about_me.data  # Save About Me
+        ca.city = form.city.data
+        ca.state = form.state.data
+        ca.pincode = form.pincode.data
         # Handle file uploads
         upload_folder = os.path.join('app', 'static', 'ca_upload')
         os.makedirs(upload_folder, exist_ok=True)
         def save_file(field, old_path=None):
             file = getattr(form, field).data
-            if file:
+            # Only save if file is a FileStorage object (has filename attribute)
+            if hasattr(file, 'filename') and file.filename:
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)
@@ -459,13 +580,17 @@ def employee_dashboard():
     emp_clients = EmployeeClient.query.filter_by(employee_id=ca_employee.employee_id).all()
     client_ids = [ec.shopkeeper_id for ec in emp_clients]
     clients = Shopkeeper.query.filter(Shopkeeper.shopkeeper_id.in_(client_ids)).all() if client_ids else []
+    # Filter by shop name if requested
+    shop_filter = request.args.get('shop_filter', type=int)
+    if shop_filter:
+        clients = [c for c in clients if c.shopkeeper_id == shop_filter]
     # For each client, get GST status for current month
     current_month = datetime.now().strftime('%Y-%m')
     gst_status_map = {}
     for client in clients:
         status_obj = GSTFilingStatus.query.filter_by(shopkeeper_id=client.shopkeeper_id, month=current_month).first()
         gst_status_map[client.shopkeeper_id] = status_obj.status if status_obj else 'Not Filed'
-    return render_template('ca/employee_dashboard.html', clients=clients, gst_status_map=gst_status_map, current_month=current_month)
+    return render_template('ca/employee_dashboard.html', clients=clients, gst_status_map=gst_status_map, current_month=current_month, shop_filter=shop_filter)
 
 @ca_bp.route('/employee_client_dashboard/<int:shopkeeper_id>', methods=['GET', 'POST'])
 @login_required
@@ -564,6 +689,7 @@ def shopkeeper_marketplace():
     if current_user.role != 'CA':
         return redirect(url_for('ca.dashboard'))
     ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
+    firm_name = ca.firm_name
     shopkeepers = []
     if request.method == 'POST':
         area = request.form.get('area')
@@ -578,7 +704,7 @@ def shopkeeper_marketplace():
         shopkeepers = Shopkeeper.query.all()
     # Get connection status for each shopkeeper
     connections = {c.shopkeeper_id: c for c in CAConnection.query.filter_by(ca_id=ca.ca_id).all()}
-    return render_template('ca/shopkeeper_marketplace.html', shopkeepers=shopkeepers, connections=connections)
+    return render_template('ca/shopkeeper_marketplace.html', shopkeepers=shopkeepers, connections=connections, firm_name=firm_name)
 
 @ca_bp.route('/connect_shopkeeper/<int:shopkeeper_id>', methods=['POST'])
 @login_required
@@ -607,7 +733,29 @@ def connect_shopkeeper(shopkeeper_id):
 @ca_bp.route('/handle_shop_connection_request', methods=['POST'])
 @login_required
 def handle_shop_connection_request():
-    pass
+    if current_user.role != 'CA':
+        return redirect(url_for('ca.dashboard'))
+    ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
+    conn_id = request.form.get('conn_id')
+    action = request.form.get('action')
+    conn = ShopConnection.query.get(conn_id)
+    if conn and conn.ca_id == ca.ca_id and conn.status == 'pending':
+        # Find or create the corresponding CAConnection
+        ca_conn = CAConnection.query.filter_by(shopkeeper_id=conn.shopkeeper_id, ca_id=ca.ca_id).first()
+        if not ca_conn:
+            ca_conn = CAConnection(shopkeeper_id=conn.shopkeeper_id, ca_id=ca.ca_id, status='pending')
+            db.session.add(ca_conn)
+        if action == 'accept':
+            conn.status = 'approved'
+            ca_conn.status = 'approved'
+            db.session.commit()
+            flash('Connection approved.', 'success')
+        elif action == 'reject':
+            conn.status = 'rejected'
+            ca_conn.status = 'rejected'
+            db.session.commit()
+            flash('Connection rejected.', 'info')
+    return redirect(request.referrer or url_for('ca.dashboard'))
 
 @ca_bp.route('/bill/<int:bill_id>')
 @login_required
@@ -747,7 +895,8 @@ def view_bill(bill_id):
 
     if is_download:
         from weasyprint import HTML
-        html = render_template('shopkeeper/bill_receipt.html', **template_data, is_editable=False)
+        template_data['is_editable'] = False
+        html = render_template('shopkeeper/bill_receipt.html', **template_data)
         pdf = HTML(string=html).write_pdf()
         return send_file(
             io.BytesIO(pdf),
@@ -828,7 +977,7 @@ def update_bill_ca(bill_id):
 
     # Redirect dynamically based on role
     if current_user.role == 'employee':
-        return redirect(url_for('ca.employee_dashboard'))
+        return redirect(url_for('ca.view_bill', bill_id=bill_id))
     elif current_user.role == 'CA':
         return redirect(url_for('ca.view_bill', bill_id=bill_id))
     else:  # shopkeeper

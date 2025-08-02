@@ -149,3 +149,14 @@ CREATE TABLE shop_connections (
     FOREIGN KEY (ca_id) REFERENCES chartered_accountants(ca_id) ON DELETE CASCADE,
     UNIQUE KEY unique_connection (shopkeeper_id, ca_id)
 ); 
+
+CREATE TABLE gst_filing_status (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shopkeeper_id INT NOT NULL,
+    employee_id INT,
+    month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
+    status ENUM('Filed', 'Not Filed') DEFAULT 'Not Filed',
+    filed_at DATETIME,
+    FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id),
+    FOREIGN KEY (employee_id) REFERENCES ca_employees(employee_id)
+);

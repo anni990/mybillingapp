@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SelectField, SubmitField
+from wtforms import StringField, PasswordField, SelectField, SubmitField, TextAreaField, SelectMultipleField
 from wtforms.validators import DataRequired, Email, Length
 from flask_wtf.file import FileField, FileAllowed
 
@@ -7,14 +7,14 @@ class EmployeeRegistrationForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=100)])
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=100)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6, max=100)])
-    shop_id = SelectField('Shop Name', coerce=int, validators=[DataRequired()])
+    shop_id = SelectMultipleField('Shop Name(s)', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Add Employee')
 
 class EmployeeEditForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=100)])
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=100)])
     password = PasswordField('Password', validators=[Length(min=0, max=100)])  # Optional
-    shop_id = SelectField('Shop Name', coerce=int, validators=[DataRequired()])
+    shop_id = SelectMultipleField('Shop Name(s)', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Update Employee')
 
 class CAProfileForm(FlaskForm):
@@ -24,6 +24,10 @@ class CAProfileForm(FlaskForm):
     gst_number = StringField('GST Number', validators=[Length(max=20)])
     pan_number = StringField('PAN Number', validators=[Length(max=20)])
     address = StringField('Address', validators=[Length(max=255)])
+    about_me = TextAreaField('About Me', validators=[Length(max=2000)])
+    city = StringField('City', validators=[Length(max=100)])
+    state = StringField('State', validators=[Length(max=100)])
+    pincode = StringField('Pincode', validators=[Length(max=20)])
     # New fields for document uploads and GSTIN
     aadhaar_file = FileField('Aadhaar (PDF/JPG/PNG)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
     pan_file = FileField('PAN (PDF/JPG/PNG)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])

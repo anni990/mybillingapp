@@ -31,19 +31,28 @@
 --     UNIQUE KEY unique_connection (shopkeeper_id, ca_id)
 -- );
 
-ALTER TABLE ca
-  ADD COLUMN aadhaar_file VARCHAR(255),
-  ADD COLUMN pan_file VARCHAR(255),
-  ADD COLUMN icai_certificate_file VARCHAR(255),
-  ADD COLUMN cop_certificate_file VARCHAR(255),
-  ADD COLUMN gstin VARCHAR(30),
-  ADD COLUMN business_reg_file VARCHAR(255),
-  ADD COLUMN bank_details_file VARCHAR(255),
-  ADD COLUMN photo_file VARCHAR(255),
-  ADD COLUMN signature_file VARCHAR(255),
-  ADD COLUMN office_address_proof_file VARCHAR(255),
-  ADD COLUMN self_declaration_file VARCHAR(255);
+-- ALTER TABLE chartered_accountants
+--   ADD COLUMN aadhaar_file VARCHAR(255),
+--   ADD COLUMN pan_file VARCHAR(255),
+--   ADD COLUMN icai_certificate_file VARCHAR(255),
+--   ADD COLUMN cop_certificate_file VARCHAR(255),
+--   ADD COLUMN gstin VARCHAR(30),
+--   ADD COLUMN business_reg_file VARCHAR(255),
+--   ADD COLUMN bank_details_file VARCHAR(255),
+--   ADD COLUMN photo_file VARCHAR(255),
+--   ADD COLUMN signature_file VARCHAR(255),
+--   ADD COLUMN office_address_proof_file VARCHAR(255),
+--   ADD COLUMN self_declaration_file VARCHAR(255);
 
-  CREATE TABLE gst_filing_status (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    shopkeeper_id INT NOT NULL,
+--   CREATE TABLE gst_filing_status (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     shopkeeper_id INT NOT NULL,
+--     employee_id INT,
+--     month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
+--     status ENUM('Filed', 'Not Filed') DEFAULT 'Not Filed',
+--     filed_at DATETIME,
+--     FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id),
+--     FOREIGN KEY (employee_id) REFERENCES ca_employees(employee_id)
+--   );
+-- ALTER TABLE employee_clients ADD CONSTRAINT unique_employee_client UNIQUE (employee_id, shopkeeper_id);
+
