@@ -2,18 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bill Receipt - BILL1753194001</title>
+    <title>Bill Receipt - BILL1753774922</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
     <div class="max-w-4xl mx-auto bg-white p-6 mt-10 rounded shadow-lg">
-        <!-- Header -->
+        <!-- Header Templates -->
+        
+        <!-- Template 2: Modern Centered (Default) -->
         <div class="text-center mb-6">
             
+            <img src="/static/uploads/shopkeeper_1_logo.jpg" alt="Shop Logo" class="h-16 mx-auto mb-2">
+            
             <h1 class="text-3xl font-bold text-gray-900">Grocery Mart</h1>
-            <p class="text-gray-600">Invoice BILL1753194001</p>
-            <p class="text-gray-600">Date: 2025-07-22</p>
+            <p class="text-gray-600">Invoice BILL1753774922</p>
+            <p class="text-gray-600">Date: 2025-07-29</p>
         </div>
+        
 
         <!-- From and To section -->
         <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
@@ -25,8 +37,8 @@
             </div>
             <div class="border p-4 rounded">
                 <h2 class="font-semibold mb-2">To:</h2>
-                <p>Customer Name</p>
-                <p>8596565221</p>
+                <p>Ramesh</p>
+                <p>7894561230</p>
             </div>
         </div>
 
@@ -65,29 +77,29 @@
                     <tr class="border-t">
                         <td class="p-2 border">Sugar 1kg</td>
                         <td class="p-2 border"></td>
-                        <td class="p-2 border text-right">1.0</td>
+                        <td class="p-2 border text-right">2.0</td>
                         <td class="p-2 border text-right">₹45.0</td>
                         <td class="p-2 border text-right">₹0.0 (0.0%)</td>
-                        <td class="p-2 border text-right">₹45.0</td>
-                        <td class="p-2 border text-right">3.75</td>
-                        <td class="p-2 border text-right">₹1.69</td>
-                        <td class="p-2 border text-right">3.75</td>
-                        <td class="p-2 border text-right">₹1.69</td>
-                        <td class="p-2 border text-right">₹48.38</td>
+                        <td class="p-2 border text-right">₹90.0</td>
+                        <td class="p-2 border text-right">5.0</td>
+                        <td class="p-2 border text-right">₹4.5</td>
+                        <td class="p-2 border text-right">5.0</td>
+                        <td class="p-2 border text-right">₹4.5</td>
+                        <td class="p-2 border text-right">₹99.0</td>
                     </tr>
                     
                     <tr class="border-t">
                         <td class="p-2 border">Pulse 1kg</td>
                         <td class="p-2 border"></td>
-                        <td class="p-2 border text-right">8.0</td>
+                        <td class="p-2 border text-right">2.0</td>
                         <td class="p-2 border text-right">₹30.0</td>
                         <td class="p-2 border text-right">₹0.0 (0.0%)</td>
-                        <td class="p-2 border text-right">₹240.0</td>
-                        <td class="p-2 border text-right">1.6</td>
-                        <td class="p-2 border text-right">₹3.84</td>
-                        <td class="p-2 border text-right">1.6</td>
-                        <td class="p-2 border text-right">₹3.84</td>
-                        <td class="p-2 border text-right">₹247.68</td>
+                        <td class="p-2 border text-right">₹60.0</td>
+                        <td class="p-2 border text-right">5.5</td>
+                        <td class="p-2 border text-right">₹3.3</td>
+                        <td class="p-2 border text-right">5.5</td>
+                        <td class="p-2 border text-right">₹3.3</td>
+                        <td class="p-2 border text-right">₹66.6</td>
                     </tr>
                     
                 </tbody>
@@ -109,31 +121,31 @@
             <tbody>
                 
                 <tr>
-                    <td class="p-2 border">₹45.0</td>
-                    <td class="p-2 border">7%</td>
-                    <td class="p-2 border">₹1.69</td>
-                    <td class="p-2 border">₹1.69</td>
-                    <td class="p-2 border">₹3.38</td>
+                    <td class="p-2 border">₹90.0</td>
+                    <td class="p-2 border">10%</td>
+                    <td class="p-2 border">₹4.5</td>
+                    <td class="p-2 border">₹4.5</td>
+                    <td class="p-2 border">₹9.0</td>
                     <td class="p-2 border"></td>
                 </tr>
                 
                 <tr>
-                    <td class="p-2 border">₹240.0</td>
-                    <td class="p-2 border">3%</td>
-                    <td class="p-2 border">₹3.84</td>
-                    <td class="p-2 border">₹3.84</td>
-                    <td class="p-2 border">₹7.68</td>
+                    <td class="p-2 border">₹60.0</td>
+                    <td class="p-2 border">11%</td>
+                    <td class="p-2 border">₹3.3</td>
+                    <td class="p-2 border">₹3.3</td>
+                    <td class="p-2 border">₹6.6</td>
                     <td class="p-2 border"></td>
                 </tr>
                 
                 <!-- Grand Total Row -->
                 <tr class="bg-gray-50 font-bold">
-                    <td class="p-2 border">₹285.0</td>
+                    <td class="p-2 border">₹150.0</td>
                     <td class="p-2 border"></td>
-                    <td class="p-2 border">₹5.53</td>
-                    <td class="p-2 border">₹5.53</td>
-                    <td class="p-2 border">₹11.05</td>
-                    <td class="p-2 border font-bold text-right">₹296.06</td>
+                    <td class="p-2 border">₹7.8</td>
+                    <td class="p-2 border">₹7.8</td>
+                    <td class="p-2 border">₹15.6</td>
+                    <td class="p-2 border font-bold text-right">₹165.6</td>
                 </tr>
             </tbody>
         </table>
@@ -141,13 +153,13 @@
         <!-- Bank details -->
         <div class="mt-6 text-sm">
             <h2 class="font-semibold mb-2">Bank Details:</h2>
-            <p>Bank Name: </p>
-            <p>Account Number: </p>
-            <p>IFSC Code: </p>
+            <p>Bank Name: SBI</p>
+            <p>Account Number: 14653256921152</p>
+            <p>IFSC Code: 124578</p>
         </div>
 
-        <!-- Action buttons -->
-        <div class="mt-6 flex justify-center gap-4">
+        <!-- Action buttons with no-print class -->
+        <div class="mt-6 flex justify-center gap-4 no-print">
             <a href="javascript:history.back()" class="bg-blue-500 text-white px-6 py-2 rounded shadow hover:bg-blue-600">Back</a>
             <button onclick="window.print()" class="bg-green-500 text-white px-6 py-2 rounded shadow hover:bg-green-600">Print</button>
         </div>

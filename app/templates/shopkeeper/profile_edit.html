@@ -57,6 +57,14 @@
                     <label class="block text-gray-700 font-semibold mb-1">IFSC Code</label>
                     <input type="text" name="ifsc_code" value="{{ shopkeeper.ifsc_code }}" class="w-full border rounded px-3 py-2">
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <label class="block text-gray-700 font-semibold mb-1">Bill Template</label>
+                    <select name="template_choice" class="w-full border rounded px-3 py-2">
+                        <option value="template1" {% if shopkeeper.template_choice == 'template1' %}selected{% endif %}>Classic Left-Aligned</option>
+                        <option value="template2" {% if shopkeeper.template_choice == 'template2' %}selected{% endif %}>Modern Centered (Default)</option>
+                        <option value="template3" {% if shopkeeper.template_choice == 'template3' %}selected{% endif %}>Compact & Minimalist</option>
+                    </select>
+                </div>
                 <div class="mb-4">
                     <label for="city" class="block text-gray-700 font-medium mb-2">City</label>
                     <input type="text" id="city" name="city" value="{{ shopkeeper.city or '' }}" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200" placeholder="Enter city">
@@ -77,4 +85,4 @@
     </div>
 </main>
 <script>feather.replace()</script>
-{% endblock %} 
+{% endblock %}
