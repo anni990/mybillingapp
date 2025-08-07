@@ -12,4 +12,5 @@ python-dotenv==1.0.1
 flask_bcrypt==1.0.1
 xlsxwriter
 pyodbc==4.0.39
+pandas
 # For frontend (Tailwind CSS is managed via CDN or npm, not pip)
