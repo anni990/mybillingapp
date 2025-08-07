@@ -12,6 +12,8 @@ def create_app():
     bcrypt.init_app(app)
     session.init_app(app)
 
+    login_manager.login_view = 'auth.login'
+    
     # Import and register blueprints
     from .auth.routes import auth_bp
     from .shopkeeper.routes import shopkeeper_bp

@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: mybillingapp
+    env: docker
+    region: singapore  # Choose your preferred region
+    healthCheckPath: /
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_APP
+        value: run.py
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false  # This should be set manually in Render dashboard
+      - key: AZURE_SQL_SERVER
+        sync: false
+      - key: AZURE_SQL_DATABASE
+        sync: false
+      - key: AZURE_SQL_USERNAME
+        sync: false
+      - key: AZURE_SQL_PASSWORD
+        sync: false
+    buildCommand: docker build -t mybillingapp .
+    startCommand: docker run -p $PORT:5000 mybillingapp

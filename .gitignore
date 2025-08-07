@@ -1,4 +1,57 @@
-app/config.py
-app/config.py
 copy_utils.py
 all_code_snippets.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+.env
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Application specific
+instance/
+.webassets-cache
+uploads/
+static/uploads/
+static/storage/
+*.db
+*.sqlite
+
+# Audio files
+*.wav
+*.mp3
+*.ogg
+
+# Logs
+logs/
+*.log
+
+# OS specific
+.DS_Store
+Thumbs.db 

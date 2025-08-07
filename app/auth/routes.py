@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db, bcrypt, login_manager
-from app.models import User
+from app.models import User,Shopkeeper,CharteredAccountant 
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask import session
 
@@ -53,7 +53,7 @@ def register():
         db.session.flush()  # Get user_id before commit
         # If registering as shopkeeper, create Shopkeeper profile
         if form.role.data == 'shopkeeper':
-            from app.models import Shopkeeper
+            # from app.models import Shopkeeper
             shopkeeper = Shopkeeper(
                 user_id=user.user_id,
                 shop_name=form.username.data + "'s Shop",  # Placeholder, can be edited later
@@ -63,6 +63,15 @@ def register():
                 contact_number=''
             )
             db.session.add(shopkeeper)
+        elif form.role.data == 'CA':
+            # Add logic for creating a CharteredAccountant profile
+            ca = CharteredAccountant(
+                user_id=user.user_id,
+                firm_name=form.username.data + "'s Firm", # Placeholder
+                area="Not specified", # Placeholder
+                contact_number="Not specified" # Placeholder
+            )
+            db.session.add(ca)
         db.session.commit()
         flash('Registration successful. Please log in.', 'success')
         return redirect(url_for('auth.login'))
