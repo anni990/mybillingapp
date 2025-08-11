@@ -830,6 +830,25 @@ def generate_bill_pdf():
             product.stock_qty = product.stock_qty - int(qty)
     
     bill.total_amount = overall_grand_total
+    try:
+    # Update amount_paid and amount_unpaid based on final total if needed
+        if payment_status == 'Paid':
+            amount_paid = overall_grand_total
+            amount_unpaid = 0
+        elif payment_status == 'Unpaid':
+            amount_paid = 0
+            amount_unpaid = overall_grand_total
+        else:
+                # For partial payments, use the calculated amounts
+                amount_paid = float(request.form.get('calculated_paid_amount', 0))
+                amount_unpaid = float(request.form.get('calculated_unpaid_amount', 0))
+    except Exception:
+        # Fallback values
+        amount_paid = 0
+        amount_unpaid = 0
+    
+    bill.amount_paid = amount_paid
+    bill.amount_unpaid = amount_unpaid
     db.session.commit()
     
     # Calculate grand total summary

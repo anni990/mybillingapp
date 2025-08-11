@@ -325,7 +325,9 @@ def bills_panel():
                 'bill_number': bill.bill_number,
                 'bill_date': bill.bill_date,
                 'total_amount': bill.total_amount,
-                'payment_status': bill.payment_status
+                'payment_status': bill.payment_status,
+                'amount_paid':bill.amount_paid,
+                'amount_unpaid':bill.amount_unpaid
             })
             print(f"Added bill {bill.bill_id} to bills_data")
         except Exception as e:
