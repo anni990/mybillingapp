@@ -15,68 +15,66 @@
     </a>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-    {% for emp in employees %}
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 ease-in-out flex flex-col">
-        <div class="p-6 flex-grow">
-            <div class="flex items-center space-x-4 mb-6">
-                <div class="flex-shrink-0">
-                    <span class="inline-flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-br from-[#f08a6b] to-[#ed6a3e] text-white text-2xl font-bold">
-                        {{ emp.name[0] }}
-                    </span>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-xl font-bold text-gray-900 truncate">{{ emp.name }}</p>
-                    <p class="text-sm text-gray-500 truncate">{{ emp.email }}</p>
-                </div>
-            </div>
-
-            <div class="space-y-5">
-                <div>
-                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password</h4>
-                    {% if emp.plain_password %}
-                        <div class="flex items-center justify-between bg-gray-50 rounded-lg p-2 pl-3">
-                            <p id="password-{{ emp.employee_id }}" class="text-gray-700 font-mono text-sm tracking-wider" style="user-select: none;">••••••••</p>
+<div class="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+                <tr>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Shops</th>
+                    <th class="px-6 py-3 bg-gray-50 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for emp in employees %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-[#f08a6b] to-[#ed6a3e] text-white text-lg font-bold">
+                                    {{ emp.name[0] }}
+                                </span>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">{{ emp.name }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">{{ emp.email }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if emp.plain_password %}
+                        <div class="flex items-center space-x-2">
+                            <span id="password-{{ emp.employee_id }}" class="text-sm text-gray-500">••••••••</span>
                             <button 
-                                class="toggle-password-btn text-xs font-semibold text-blue-600 hover:text-blue-800 px-2 py-1 rounded"
+                                class="toggle-password-btn text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded"
                                 data-target="#password-{{ emp.employee_id }}"
                                 data-password="{{ emp.plain_password }}">
                                 Show
                             </button>
                         </div>
-                    {% else %}
-                        <div class="bg-gray-50 rounded-lg p-2 pl-3">
-                            <p class="text-gray-400 italic text-sm">Not Set</p>
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div>
-                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Assigned Clients</h4>
-                    <div class="flex flex-wrap gap-2">
-                        {% for client in emp.clients %}
-                            <span class="inline-block bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-xs font-semibold">{{ client.shop_name }}</span>
                         {% else %}
-                            <span class="text-gray-400 text-sm italic">No clients assigned</span>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="bg-gray-50/70 px-6 py-3 flex justify-end space-x-3 border-t border-gray-100">
-            <a href="/ca/employees/{{ emp.employee_id }}/edit" class="text-sm font-medium text-green-600 hover:text-green-800 transition-colors duration-200">Edit</a>
-            <span class="text-gray-300">|</span>
-            <a href="/ca/employees/{{ emp.employee_id }}/remove" class="text-sm font-medium text-red-600 hover:text-red-800 transition-colors duration-200">Remove</a>
-        </div>
+                        <span class="text-sm text-gray-400 italic">Not Set</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">{{ emp.assigned_shops_count }} shops</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <a href="{{ url_for('ca.employee_profile', employee_id=emp.employee_id) }}" 
+                           class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            View Profile
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    {% else %}
-    <div class="col-span-full bg-white rounded-2xl shadow-md p-12 text-center">
-        <h3 class="text-xl text-gray-600">No Employees Found</h3>
-        <p class="text-gray-400 mt-2">Click 'Add Employee' to get started.</p>
-    </div>
-    {% endfor %}
 </div>
-
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const toggleButtons = document.querySelectorAll('.toggle-password-btn');
@@ -102,5 +100,4 @@
         });
     });
 </script>
-
 {% endblock %}
