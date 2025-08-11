@@ -31,6 +31,13 @@ CREATE TABLE shopkeepers (
     udyam_path VARCHAR(255),
     bank_statement_path VARCHAR(255),
     is_verified BOOLEAN DEFAULT FALSE,
+    bank_name VARCHAR(100),
+    account_number VARCHAR(50),
+    ifsc_code VARCHAR(20),
+    template_choice VARCHAR(20) DEFAULT 'template2',
+    city VARCHAR(100),
+    state VARCHAR(100),
+    pincode VARCHAR(20),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -44,6 +51,20 @@ CREATE TABLE chartered_accountants (
     gst_number VARCHAR(20),
     pan_number VARCHAR(20),
     address VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    pincode VARCHAR(20),
+    aadhaar_file VARCHAR(255),
+    pan_file VARCHAR(255),
+    icai_certificate_file VARCHAR(255),
+    cop_certificate_file VARCHAR(255),
+    gstin VARCHAR(30),
+    business_reg_file VARCHAR(255),
+    bank_details_file VARCHAR(255),
+    photo_file VARCHAR(255),
+    signature_file VARCHAR(255),
+    office_address_proof_file VARCHAR(255),
+    self_declaration_file VARCHAR(255),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -76,6 +97,7 @@ CREATE TABLE products (
     stock_qty INT DEFAULT 0,
     low_stock_threshold INT DEFAULT 0,
     gst_rate DECIMAL(5,2) DEFAULT 0,
+    hsn_code VARCHAR(20),
     FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id) ON DELETE CASCADE
 );
 

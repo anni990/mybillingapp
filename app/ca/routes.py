@@ -50,7 +50,7 @@ def ca_employee_root():
     return redirect(url_for('ca.employee_dashboard'))
 
 @ca_bp.route('/dashboard')
-@login_required
+# @login_required
 def dashboard():
     # Only CA can access
     if current_user.role != 'CA':

@@ -644,6 +644,8 @@ def add_product():
     name = request.form.get('product_name')
     barcode = request.form.get('barcode')
     price = request.form.get('price')
+    gst_rate = request.form.get('gst_rate')
+    hsn_code = request.form.get('hsn_code')
     stock_qty = request.form.get('stock_qty')
     low_stock_threshold = request.form.get('low_stock_threshold')
     if not name or not price:
@@ -654,6 +656,8 @@ def add_product():
         product_name=name,
         barcode=barcode,
         price=price,
+        gst_rate=gst_rate,
+        hsn_code=hsn_code,
         stock_qty=stock_qty or 0,
         low_stock_threshold=low_stock_threshold or 0
     )
