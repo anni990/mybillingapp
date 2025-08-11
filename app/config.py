@@ -1,8 +1,10 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class Config:
     # Secret key for session management
-    SECRET_KEY = os.environ.get('SECRET_KEY')
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'this-is-a-very-secret-key'
     
     # Build the SQL Server connection string from environment variables
     SQLALCHEMY_DATABASE_URI = (

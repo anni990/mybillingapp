@@ -3,6 +3,10 @@ all_code_snippets.txt
 
 # Python
 __pycache__/
+app\api\__pycache__
+app\auth\__pycache__
+app\ca\__pycache__
+app\shopkeeper\__pycache__
 *.py[cod]
 *$py.class
 *.so

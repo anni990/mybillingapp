@@ -50,6 +50,8 @@
             <input name="product_name" placeholder="Name" class="border rounded px-3 py-2 w-32 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]" required>
             <input name="barcode" placeholder="Barcode" class="border rounded px-3 py-2 w-32 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
             <input name="price" type="number" step="0.01" placeholder="Price" class="border rounded px-3 py-2 w-24 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]" required>
+            <input name="gst_rate" type="number" step="0.01" placeholder="GST RATE" class="border rounded px-3 py-2 w-24 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]" required>
+            <input name="hsn_code" type="number" step="000" placeholder="HSN Code" class="border rounded px-3 py-2 w-24 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]" required>
             <input name="stock_qty" type="number" min="0" placeholder="Stock" class="border rounded px-3 py-2 w-20 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
             <button class="bg-[#ed6a3e] text-white px-6 py-2 rounded shadow hover:bg-orange-700 transition duration-300">Add</button>
         </form>
@@ -63,6 +65,8 @@
                     <th class="py-4 px-4 text-left font-semibold">Barcode</th>
                     <th class="py-4 px-4 text-left font-semibold">Price</th>
                     <th class="py-4 px-4 text-left font-semibold">Stock</th>
+                    <th class="py-4 px-4 text-left font-semibold">GST RATE</th>
+                    <th class="py-4 px-4 text-left font-semibold">HSN CODE</th>
                     <th class="py-4 px-4 text-left font-semibold">Status</th>
                     <th class="py-4 px-4 text-left font-semibold">Actions</th>
                 </tr>
@@ -73,6 +77,8 @@
                     <td class="py-4 px-4">{{ product.product_name }}</td>
                     <td class="py-4 px-4">{{ product.barcode }}</td>
                     <td class="py-4 px-4 font-bold">₹{{ product.price }}</td>
+                    <td class="py-4 px-4 font-bold">{{ product.gst_rate }}</td>
+                    <td class="py-4 px-4 font-bold">{{ product.hsn_code }}</td>
                     <td class="py-4 px-4">{{ product.stock_qty }}</td>
                     <td class="py-4 px-4">
                         {% if product.stock_qty <= product.low_stock_threshold %}
@@ -86,6 +92,8 @@
                             <input type="hidden" name="product_name" value="{{ product.product_name }}">
                             <input type="hidden" name="barcode" value="{{ product.barcode }}">
                             <input type="hidden" name="price" value="{{ product.price }}">
+                            <input type="hidden" name="gst_rate" value="{{ product.gst_rate }}">
+                            <input type="hidden" name="hsn_code" value="{{ product.hsn_code }}">
                             <input type="hidden" name="stock_qty" value="{{ product.stock_qty }}">
                             <input type="hidden" name="low_stock_threshold" value="{{ product.low_stock_threshold }}">
                             <button class="bg-[#ed6a3e] text-white px-4 py-2 rounded shadow hover:bg-orange-700 transition duration-300">Edit</button>
