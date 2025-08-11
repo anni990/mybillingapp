@@ -43,7 +43,7 @@
     </div>
     <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
 </aside>
-<div class="max-w-6xl mx-auto bg-white p-10 rounded-2xl shadow-lg mt-12 ml-80">
+<div class="max-w-6xl mx-auto bg-white p-10 rounded-2xl shadow-lg mt-12 ml-60">
     <h2 class="text-3xl font-bold text-[#ed6a3e] mb-8">Manage Bills</h2>
     <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
         <form method="get" class="flex flex-col md:flex-row gap-4 w-full">
@@ -71,6 +71,8 @@
                     <th class="py-4 px-4 text-left font-semibold">Date</th>
                     <th class="py-4 px-4 text-left font-semibold">Amount</th>
                     <th class="py-4 px-4 text-left font-semibold">Status</th>
+                    <th class="py-4 px-4 text-left font-semibold">Paid Amount</th>
+                    <th class="py-4 px-4 text-left font-semibold">Unpaid amount</th>
                     <th class="py-4 px-4 text-left font-semibold">Actions</th>
                 </tr>
             </thead>
@@ -86,6 +88,8 @@
                             {{ bill.payment_status }}
                         </span>
                     </td>
+                    <td class="py-4 px-4 font-bold">₹{{ bill.amount_paid }}</td>
+                    <td class="py-4 px-4 font-bold">₹{{ bill.amount_unpaid }}</td>
                     <td class="py-4 px-4 flex gap-2">
                         <a href="{{ url_for('shopkeeper.view_bill', bill_id=bill.bill_id) }}" class="bg-[#ed6a3e] text-white px-4 py-2 rounded shadow hover:bg-orange-700 transition duration-300">View</a>
                         <form action="{{ url_for('shopkeeper.delete_bill', bill_id=bill.bill_id) }}" method="post" style="display:inline;">
