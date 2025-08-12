@@ -86,4 +86,123 @@ document.addEventListener('DOMContentLoaded', function () {
     addBtn.addEventListener('click', addProductRow);
     // Initial row
     addProductRow();
-}); 
+});
+
+// Function to calculate total with GST
+function calculateTotalWithGST() {
+    const rows = document.querySelectorAll('.product-row');
+    const gstMode = document.getElementById('gst_mode').value;
+    const billGstType = document.getElementById('bill_gst_type').value;
+    let grandTotal = 0;
+    
+    rows.forEach(row => {
+        const productSelect = row.querySelector('[name="product_id"]');
+        if (!productSelect || !productSelect.value) return;
+        
+        const productId = productSelect.value;
+        const product = PRODUCTS.find(p => p.id == productId);
+        if (!product) return;
+        
+        const qty = parseFloat(row.querySelector('[name="quantity"]').value) || 0;
+        const price = parseFloat(row.querySelector('[name="price_per_unit"]').value) || 0;
+        const discount = parseFloat(row.querySelector('[name="discount"]').value) || 0;
+        
+        // Get GST rate - for Non-GST bills, treat as if GST is 0%
+        let gstRate = billGstType === 'GST' ? (parseFloat(product.gst_rate) || 0) : 0;
+        
+        // Set GST rate display
+        const gstRateElem = row.querySelector('.gst-rate');
+        if (gstRateElem) {
+            gstRateElem.textContent = gstRate + '%';
+        }
+        
+        let basePrice = price * qty;
+        let discountAmount = basePrice * (discount / 100);
+        let discountedPrice = basePrice - discountAmount;
+        let gstAmount = 0;
+        let finalPrice = 0;
+        
+        if (billGstType === 'GST') {
+            if (gstMode === 'inclusive' && gstRate > 0) {
+                // CASE 1: GST-Inclusive Billing
+                // Base price without GST
+                const divisor = 1 + (gstRate / 100);
+                const actualBasePrice = basePrice / divisor;
+                
+                // Apply discount to base price
+                discountAmount = actualBasePrice * (discount / 100);
+                discountedPrice = actualBasePrice - discountAmount;
+                
+                // Calculate GST on discounted price
+                gstAmount = discountedPrice * (gstRate / 100);
+                
+                // Final price
+                finalPrice = discountedPrice + gstAmount;
+            } else {
+                // CASE 2: GST-Exclusive Billing
+                // Calculate discount on base price
+                discountAmount = basePrice * (discount / 100);
+                discountedPrice = basePrice - discountAmount;
+                
+                // Calculate GST on discounted price
+                gstAmount = discountedPrice * (gstRate / 100);
+                
+                // Final price
+                finalPrice = discountedPrice + gstAmount;
+            }
+        } else {
+            // Non-GST billing - just use the discounted price
+            finalPrice = discountedPrice;
+        }
+        
+        // Add to grand total
+        grandTotal += finalPrice;
+    });
+    
+    // Round to 2 decimal places and update display
+    grandTotal = Math.round(grandTotal * 100) / 100;
+    document.getElementById('bill-total').textContent = grandTotal.toFixed(2);
+    
+    // Update payment fields
+    if (typeof updatePaymentFields === 'function') {
+        updatePaymentFields();
+    }
+}
+
+// Add event listeners to all product-related inputs
+function setupGSTCalculationListeners() {
+    const productContainer = document.getElementById('product-rows');
+    
+    // Use event delegation for all product inputs
+    productContainer.addEventListener('input', function(e) {
+        if (e.target.matches('[name="quantity"], [name="price_per_unit"], [name="discount"]')) {
+            calculateTotalWithGST();
+        }
+    });
+    
+    // Listen for product selection changes
+    productContainer.addEventListener('change', function(e) {
+        if (e.target.matches('[name="product_id"]')) {
+            calculateTotalWithGST();
+        }
+    });
+    
+    // Recalculate when GST mode changes
+    document.getElementById('gst_mode')?.addEventListener('change', calculateTotalWithGST);
+    document.getElementById('bill_gst_type')?.addEventListener('change', calculateTotalWithGST);
+    
+    // Call initially
+    calculateTotalWithGST();
+}
+
+// Call this after adding the first product row
+document.addEventListener('DOMContentLoaded', function() {
+    // Setup after a short delay to ensure product rows are created
+    setTimeout(setupGSTCalculationListeners, 500);
+    
+    // Add listener to "Add Product" button
+    document.getElementById('add-product-btn').addEventListener('click', function() {
+        // Wait for row to be added
+        setTimeout(calculateTotalWithGST, 100);
+    });
+});
