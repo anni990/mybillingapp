@@ -57,8 +57,15 @@
             </div>
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Customer Contact</label>
-                <input type="text" name="customer_contact"
-                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
+                <input type="tel" 
+                       name="customer_contact" 
+                       pattern="^[6-9]\d{9}$"
+                       maxlength="10"
+                       placeholder="Enter 10 digit mobile number"
+                       title="Please enter a valid 10 digit mobile number"
+                       class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);">
+                <small class="text-gray-500">Enter 10 digit mobile number starting with 6-9</small>
             </div>
         </div>
         <div id="gst-type-row" class="mb-8">
@@ -160,27 +167,22 @@
         billGstType.addEventListener('change', updateGSTSectionVisibility);
         updateGSTSectionVisibility(); // Initial call on page load
 
-        function updatePaymentFields() {
-            const total = parseFloat(billTotal.textContent) || 0;
-            let paid = 0, unpaid = 0;
-            if (billStatus.value === 'paid') {
-                paid = total;
-                unpaid = 0;
-                amountPaidSection.style.display = 'none';
-            } else if (billStatus.value === 'unpaid') {
-                paid = 0;
-                unpaid = total;
-                amountPaidSection.style.display = 'none';
-            } else if (billStatus.value === 'partial') {
-                amountPaidSection.style.display = '';
-                paid = parseFloat(amountPaidInput.value) || 0;
-                unpaid = total - paid;
-                if (unpaid < 0) unpaid = 0;
-            }
-            paidAmountDisplay.textContent = paid.toFixed(2);
-            unpaidAmountDisplay.textContent = unpaid.toFixed(2);
-            calculatedPaidAmount.value = paid;
-            calculatedUnpaidAmount.value = unpaid;
+    function updatePaymentFields() {
+        const total = parseFloat(billTotal.textContent) || 0;
+        let paid = 0, unpaid = 0;
+        if (billStatus.value === 'paid') {
+            paid = total;
+            unpaid = 0;
+            amountPaidSection.style.display = 'none';
+        } else if (billStatus.value === 'unpaid') {
+            paid = 0;
+            unpaid = total;
+            amountPaidSection.style.display = 'none';
+        } else if (billStatus.value === 'partial') {
+            amountPaidSection.style.display = '';
+            paid = parseFloat(amountPaidInput.value);
+            unpaid = total - paid;
+            if (unpaid < 0) unpaid = 0;
         }
         billStatus.addEventListener('change', updatePaymentFields);
         amountPaidInput.addEventListener('input', updatePaymentFields);
