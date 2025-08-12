@@ -855,29 +855,67 @@ def generate_bill_pdf():
         if not product:
             continue
             
-        # Get GST rate from product
-        gst_rate = float(product.gst_rate or 0)
+        # Get GST rate from product - for Non-GST, treat as 0%
+        gst_rate = float(product.gst_rate or 0) if bill_gst_type == 'GST' else 0
         hsn_code = product.hsn_code or ''
         
         # Calculate base price
         total_base_price = price * qty
         
-        # Calculate discount
-        discount_amount = total_base_price * (discount / 100.0)
+        # Variables for calculations
+        discounted_price = 0
+        cgst_amount = 0
+        sgst_amount = 0
+        total_gst_item_amount = 0
+        final_price_item = 0
         
-        # Calculate discounted price (taxable value)
-        discounted_price = total_base_price - discount_amount
-        
-        # Calculate CGST and SGST (50/50 split)
-        cgst_rate_percentage = gst_rate / 2.0
-        sgst_rate_percentage = gst_rate / 2.0
-        
-        cgst_amount = discounted_price * (cgst_rate_percentage / 100.0)
-        sgst_amount = discounted_price * (sgst_rate_percentage / 100.0)
-        total_gst_item_amount = cgst_amount + sgst_amount
-        
-        # Final price for item
-        final_price_item = discounted_price + total_gst_item_amount
+        if bill_gst_type == 'GST':
+            if gst_mode == 'inclusive' and gst_rate > 0:
+                # CASE 1: GST-Inclusive Billing
+                
+                # Step 1: Extract the base price without GST
+                divisor = 1 + (gst_rate / 100)
+                actual_base_price = total_base_price / divisor
+                
+                # Step 2: Apply discount to base price
+                discount_amount = actual_base_price * (discount / 100)
+                discounted_price = actual_base_price - discount_amount
+                
+                # Step 3: Calculate GST components
+                cgst_rate_percentage = gst_rate / 2.0
+                sgst_rate_percentage = gst_rate / 2.0
+                
+                cgst_amount = discounted_price * (cgst_rate_percentage / 100)
+                sgst_amount = discounted_price * (sgst_rate_percentage / 100)
+                total_gst_item_amount = cgst_amount + sgst_amount
+                
+                # Step 4: Calculate final price
+                final_price_item = discounted_price + total_gst_item_amount
+            else:
+                # CASE 2: GST-Exclusive Billing
+                
+                # Step 1: Calculate discount on base price
+                discount_amount = total_base_price * (discount / 100)
+                discounted_price = total_base_price - discount_amount
+                
+                # Step 2: Calculate GST components
+                cgst_rate_percentage = gst_rate / 2.0
+                sgst_rate_percentage = gst_rate / 2.0
+                
+                cgst_amount = discounted_price * (cgst_rate_percentage / 100)
+                sgst_amount = discounted_price * (sgst_rate_percentage / 100)
+                total_gst_item_amount = cgst_amount + sgst_amount
+                
+                # Step 3: Calculate final price
+                final_price_item = discounted_price + total_gst_item_amount
+        else:
+            # Non-GST billing
+            discount_amount = total_base_price * (discount / 100)
+            discounted_price = total_base_price - discount_amount
+            cgst_amount = 0
+            sgst_amount = 0
+            total_gst_item_amount = 0
+            final_price_item = discounted_price
         
         # Create bill item
         bill_item = BillItem(

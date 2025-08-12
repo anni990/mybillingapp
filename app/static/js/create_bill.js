@@ -82,11 +82,6 @@ document.addEventListener('DOMContentLoaded', function () {
         row.querySelector('.remove-product').addEventListener('click', removeRow);
         productRows.appendChild(row);
         updateTotal();
-
-        // Dispatch an event to recalculate totals
-        setTimeout(function() {
-            document.dispatchEvent(new Event('product-row-updated'));
-        }, 50);
     }
     addBtn.addEventListener('click', addProductRow);
     // Initial row
@@ -101,34 +96,71 @@ function calculateTotalWithGST() {
     let grandTotal = 0;
     
     rows.forEach(row => {
+        const productSelect = row.querySelector('[name="product_id"]');
+        if (!productSelect || !productSelect.value) return;
+        
+        const productId = productSelect.value;
+        const product = PRODUCTS.find(p => p.id == productId);
+        if (!product) return;
+        
         const qty = parseFloat(row.querySelector('[name="quantity"]').value) || 0;
         const price = parseFloat(row.querySelector('[name="price_per_unit"]').value) || 0;
         const discount = parseFloat(row.querySelector('[name="discount"]').value) || 0;
-        let gstRate = 0;
         
-        // Get GST rate from either hidden input or displayed text
-        const gstRateElem = row.querySelector('.gst-rate-display');
+        // Get GST rate - for Non-GST bills, treat as if GST is 0%
+        let gstRate = billGstType === 'GST' ? (parseFloat(product.gst_rate) || 0) : 0;
+        
+        // Set GST rate display
+        const gstRateElem = row.querySelector('.gst-rate');
         if (gstRateElem) {
-            gstRate = parseFloat(gstRateElem.textContent) || 0;
+            gstRateElem.textContent = gstRate + '%';
         }
         
-        // Base calculations
-        const baseTotal = qty * price;
-        const discountAmount = baseTotal * (discount / 100);
-        const discountedPrice = baseTotal - discountAmount;
+        let basePrice = price * qty;
+        let discountAmount = basePrice * (discount / 100);
+        let discountedPrice = basePrice - discountAmount;
+        let gstAmount = 0;
+        let finalPrice = 0;
         
-        // Calculate with GST
-        let itemTotal = discountedPrice;
-        if (billGstType === 'GST' && gstRate > 0) {
-            // Always include GST in grand total
-            const gstAmount = discountedPrice * (gstRate / 100);
-            itemTotal = discountedPrice + gstAmount;
+        if (billGstType === 'GST') {
+            if (gstMode === 'inclusive' && gstRate > 0) {
+                // CASE 1: GST-Inclusive Billing
+                // Base price without GST
+                const divisor = 1 + (gstRate / 100);
+                const actualBasePrice = basePrice / divisor;
+                
+                // Apply discount to base price
+                discountAmount = actualBasePrice * (discount / 100);
+                discountedPrice = actualBasePrice - discountAmount;
+                
+                // Calculate GST on discounted price
+                gstAmount = discountedPrice * (gstRate / 100);
+                
+                // Final price
+                finalPrice = discountedPrice + gstAmount;
+            } else {
+                // CASE 2: GST-Exclusive Billing
+                // Calculate discount on base price
+                discountAmount = basePrice * (discount / 100);
+                discountedPrice = basePrice - discountAmount;
+                
+                // Calculate GST on discounted price
+                gstAmount = discountedPrice * (gstRate / 100);
+                
+                // Final price
+                finalPrice = discountedPrice + gstAmount;
+            }
+        } else {
+            // Non-GST billing - just use the discounted price
+            finalPrice = discountedPrice;
         }
         
-        grandTotal += itemTotal;
+        // Add to grand total
+        grandTotal += finalPrice;
     });
     
-    // Update the bill total with 2 decimal places
+    // Round to 2 decimal places and update display
+    grandTotal = Math.round(grandTotal * 100) / 100;
     document.getElementById('bill-total').textContent = grandTotal.toFixed(2);
     
     // Update payment fields
@@ -174,21 +206,3 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(calculateTotalWithGST, 100);
     });
 });
-
-// When updating product details or prices
-function updateProductDetails(productSelect, row) {
-    const productId = productSelect.value;
-    const product = PRODUCTS.find(p => p.id == productId);
-    if (product) {
-        row.querySelector('.price').value = product.price;
-        row.querySelector('.stock').textContent = `Stock: ${product.stock}`;
-        row.querySelector('.gst-rate').textContent = `${product.gst_rate}%`;
-    } else {
-        row.querySelector('.price').value = '';
-        row.querySelector('.stock').textContent = '';
-        row.querySelector('.gst-rate').textContent = '';
-    }
-
-    // Trigger total recalculation
-    document.dispatchEvent(new Event('product-row-updated'));
-}

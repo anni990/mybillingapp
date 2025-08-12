@@ -156,67 +156,13 @@
         const unpaidAmountDisplay = document.getElementById('unpaid-amount-display');
         const calculatedPaidAmount = document.getElementById('calculated_paid_amount');
         const calculatedUnpaidAmount = document.getElementById('calculated_unpaid_amount');
-        const gstColumns = document.querySelectorAll('.gst-col');
 
-        // Function to calculate total with proper GST handling
-        function calculateTotal() {
-            const rows = document.querySelectorAll('.product-row');
-            let grandTotal = 0;
-            
-            rows.forEach(row => {
-                const productId = row.querySelector('[name="product_id"]')?.value;
-                const qty = parseFloat(row.querySelector('[name="quantity"]')?.value) || 0;
-                const price = parseFloat(row.querySelector('[name="price_per_unit"]')?.value) || 0;
-                const discount = parseFloat(row.querySelector('[name="discount"]')?.value) || 0;
-                
-                if (!productId || !qty || !price) return;
-                
-                // Find product in the PRODUCTS array
-                const product = PRODUCTS.find(p => p.product_id == productId);
-                if (!product) return;
-                
-                // Calculate base price with discount
-                const baseTotal = qty * price;
-                const discountAmount = baseTotal * (discount / 100);
-                const discountedPrice = baseTotal - discountAmount;
-                
-                // Add GST only if GST type is selected
-                let finalPrice = discountedPrice;
-                if (billGstType.value === 'GST' && product.gst_rate) {
-                    const gstRate = parseFloat(product.gst_rate);
-                    const gstAmount = discountedPrice * (gstRate / 100);
-                    finalPrice = discountedPrice + gstAmount;
-                }
-                
-                grandTotal += finalPrice;
-            });
-            
-            // Round to 2 decimal places
-            grandTotal = Math.round(grandTotal * 100) / 100;
-            
-            // Update the display
-            billTotal.textContent = grandTotal.toFixed(2);
-            
-            // Also update payment calculations
-            updatePaymentFields();
-            
-            return grandTotal;
-        }
-
-        // Function to update GST column visibility
         function updateGSTSectionVisibility() {
             if (billGstType.value === 'GST') {
                 gstSectionContainer.style.display = '';
-                // Show GST columns
-                gstColumns.forEach(col => col.style.display = '');
             } else {
                 gstSectionContainer.style.display = 'none';
-                // Hide GST columns
-                gstColumns.forEach(col => col.style.display = 'none');
             }
-            
-            // Recalculate totals when GST type changes
-            calculateTotal();
         }
 
         function updatePaymentFields() {
@@ -255,50 +201,36 @@
             calculatedUnpaidAmount.value = unpaid.toFixed(2);
         }
 
-        // Add event listeners for GST changes
+        // Add event listeners
         billGstType.addEventListener('change', updateGSTSectionVisibility);
-        gstMode.addEventListener('change', calculateTotal);
-        
-        // Add event listeners for payment changes
         billStatus.addEventListener('change', updatePaymentFields);
         amountPaidInput.addEventListener('input', updatePaymentFields);
         
-        // Set up monitoring for product changes
-        const productRows = document.getElementById('product-rows');
-        if (productRows) {
-            // Monitor DOM changes in product rows
-            const observer = new MutationObserver(function() {
-                setTimeout(calculateTotal, 50);
-            });
-            observer.observe(productRows, { childList: true, subtree: true });
-            
-            // Listen for input events in product rows
-            productRows.addEventListener('input', function(e) {
-                if (e.target.matches('input[name="quantity"], input[name="price_per_unit"], input[name="discount"]')) {
-                    calculateTotal();
-                }
-            });
-            
-            // Listen for product selection changes
-            productRows.addEventListener('change', function(e) {
-                if (e.target.matches('select[name="product_id"]')) {
-                    calculateTotal();
-                }
-            });
-        }
-        
-        // Add listener to "Add Product" button
-        const addProductBtn = document.getElementById('add-product-btn');
-        if (addProductBtn) {
-            addProductBtn.addEventListener('click', function() {
-                // Wait for row to be added
-                setTimeout(calculateTotal, 100);
-            });
-        }
-        
         // Initial calls
         updateGSTSectionVisibility();
-        setTimeout(calculateTotal, 100); // Calculate after products load
+        updatePaymentFields();
+    });
+
+    document.getElementById('create-bill-form').addEventListener('submit', function(e) {
+        const billTotal = parseFloat(document.getElementById('bill-total').textContent);
+        const paidAmount = parseFloat(document.getElementById('calculated_paid_amount').value);
+        const unpaidAmount = parseFloat(document.getElementById('calculated_unpaid_amount').value);
+        
+        // Verify payment amounts match total
+        if (Math.abs((paidAmount + unpaidAmount) - billTotal) > 0.01) {
+            alert('Error: Paid + Unpaid amounts do not match the total bill amount.');
+            e.preventDefault();
+            return false;
+        }
+        
+        // Verify at least one product was added
+        if (document.querySelectorAll('.product-row').length === 0) {
+            alert('Please add at least one product to the bill.');
+            e.preventDefault();
+            return false;
+        }
+        
+        return true;
     });
 </script>
 <script>feather.replace()</script>
