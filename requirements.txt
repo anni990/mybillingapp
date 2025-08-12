@@ -14,4 +14,5 @@ xlsxwriter
 pyodbc==4.0.39
 pandas
 gunicorn
+python-dateutil
 # For frontend (Tailwind CSS is managed via CDN or npm, not pip)
