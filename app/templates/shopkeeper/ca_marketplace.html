@@ -3,7 +3,8 @@
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
-<aside class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
+<aside
+    class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
     <div>
         <!-- <div class="flex items-center justify-center h-20 border-b border-orange-200">
             <div class="bg-white rounded-full w-12 h-12 flex items-center justify-center text-[#ed6a3e] font-bold text-2xl shadow">{{ current_user.username[0]|upper }}</div>
@@ -11,14 +12,28 @@
         </div> -->
         <nav class="mt-5 flex-1">
             <ul class="space-y-2">
-                <li><a href="{{ url_for('shopkeeper.dashboard') }}" class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/30 transition duration-300"><i data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
-                <li><a href="{{ url_for('shopkeeper.create_bill') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
-                <li><a href="{{ url_for('shopkeeper.manage_bills') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
-                <li><a href="{{ url_for('shopkeeper.products_stock') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="box" class="mr-3"></i>Products & Stock</a></li>
-                <li><a href="{{ url_for('shopkeeper.sales_reports') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
-                <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}" class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
+                <li><a href="{{ url_for('shopkeeper.dashboard') }}"
+                        class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/30 transition duration-300"><i
+                            data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
+                <li><a href="{{ url_for('shopkeeper.create_bill') }}"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
+                <li><a href="{{ url_for('shopkeeper.manage_bills') }}"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
+                <li><a href="{{ url_for('shopkeeper.products_stock') }}"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="box" class="mr-3"></i>Products & Stock</a></li>
+                <li><a href="{{ url_for('shopkeeper.sales_reports') }}"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
+                <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
+                        class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i
+                            data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
                 <!-- <li><a href="#" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file" class="mr-3"></i>Documents</a></li> -->
-                <li><a href="{{ url_for('shopkeeper.settings') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="settings" class="mr-3"></i>Settings</a></li>
+                <li><a href="{{ url_for('shopkeeper.settings') }}"
+                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                            data-feather="settings" class="mr-3"></i>Settings</a></li>
                 <!-- <li><a href="/auth/logout" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="log-out" class="mr-3"></i>Logout</a></li> -->
             </ul>
         </nav>
@@ -47,33 +62,44 @@
                     <td class="py-3 px-4 align-middle">
                         {% set conn = connections.get(ca.ca_id) %}
                         {% if not conn %}
-                            <span class="inline-block px-3 py-1 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold">Not Connected</span>
+                        <span
+                            class="inline-block px-3 py-1 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold">Not
+                            Connected</span>
                         {% elif conn.status == 'pending' %}
-                            <span class="inline-block px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-semibold">Pending</span>
+                        <span
+                            class="inline-block px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-semibold">Pending</span>
                         {% elif conn.status == 'approved' %}
-                            <span class="inline-block px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Connected</span>
+                        <span
+                            class="inline-block px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Connected</span>
                         {% elif conn.status == 'rejected' %}
-                            <span class="inline-block px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Rejected</span>
+                        <span
+                            class="inline-block px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Rejected</span>
                         {% endif %}
                     </td>
                     <td class="py-3 px-4 align-middle">
                         {% if not conn or conn.status == 'rejected' %}
-                            <form method="POST" action="{{ url_for('shopkeeper.connect_ca', ca_id=ca.ca_id) }}" style="display:inline;">
-                                <button type="submit" class="bg-[#ed6a3e] text-white px-3 py-1 rounded shadow hover:bg-orange-700 transition duration-200 text-xs">Connect</button>
-                            </form>
+                        <form method="POST" action="{{ url_for('shopkeeper.connect_ca', ca_id=ca.ca_id) }}"
+                            style="display:inline;">
+                            <button type="submit"
+                                class="bg-[#ed6a3e] text-white px-3 py-1 rounded shadow hover:bg-orange-700 transition duration-200 text-xs">Connect</button>
+                        </form>
                         {% elif conn.status == 'pending' %}
-                            <button class="bg-yellow-400 text-white px-3 py-1 rounded shadow text-xs" disabled>Pending</button>
+                        <button class="bg-yellow-400 text-white px-3 py-1 rounded shadow text-xs"
+                            disabled>Pending</button>
                         {% elif conn.status == 'approved' %}
-                            <button class="bg-green-500 text-white px-3 py-1 rounded shadow text-xs" disabled>Connected</button>
+                        <button class="bg-green-500 text-white px-3 py-1 rounded shadow text-xs"
+                            disabled>Connected</button>
                         {% endif %}
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" class="text-center text-gray-400 py-6">No CAs found.</td></tr>
+                <tr>
+                    <td colspan="5" class="text-center text-gray-400 py-6">No CAs found.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 <script>feather.replace()</script>
-{% endblock %} 
+{% endblock %}

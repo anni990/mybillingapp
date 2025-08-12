@@ -1,0 +1,115 @@
+{% extends 'shopkeeper/s_base.html' %}
+{% block title %}Connected CA Profile | MyBillingApp{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 ml-64 p-8">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-8">
+        <div class="flex items-center space-x-4">
+            <a href="{{ url_for('shopkeeper.dashboard') }}" class="text-gray-600 hover:text-gray-800">
+                <i data-feather="arrow-left" class="w-6 h-6"></i>
+            </a>
+            <h1 class="text-3xl font-bold text-[#ed6a3e]">Connected CA Profile</h1>
+        </div>
+    </div>
+
+    <!-- Profile Card -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+        <!-- CA Header Info -->
+        <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-white">
+            <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-20 h-20 rounded-full bg-[#ed6a3e] flex items-center justify-center text-white text-3xl font-bold">
+                        {{ ca.firm_name[0]|upper }}
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">{{ ca.firm_name }}</h2>
+                        <p class="text-gray-600">{{ ca.user.email }}</p>
+                    </div>
+                </div>
+                <div class="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                    Connected
+                </div>
+            </div>
+        </div>
+
+        <!-- CA Details -->
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Contact Information -->
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i data-feather="info" class="w-5 h-5 mr-2 text-[#ed6a3e]"></i>
+                    Contact Information
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-2">
+                        <i data-feather="phone" class="w-4 h-4 text-gray-500"></i>
+                        <span class="text-gray-600">{{ ca.contact_number }}</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <i data-feather="map-pin" class="w-4 h-4 text-gray-500 mt-1"></i>
+                        <div class="text-gray-600">
+                            <p>{{ ca.address }}</p>
+                            <p>{{ ca.area }}, {{ ca.city }}</p>
+                            <p>{{ ca.state }} - {{ ca.pincode }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professional Details -->
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i data-feather="briefcase" class="w-5 h-5 mr-2 text-[#ed6a3e]"></i>
+                    Professional Information
+                </h3>
+                <div class="space-y-3">
+                    {% if ca.gst_number %}
+                    <div class="flex items-center space-x-2">
+                        <i data-feather="hash" class="w-4 h-4 text-gray-500"></i>
+                        <span class="text-gray-600">GST Number: {{ ca.gst_number }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex items-center space-x-2">
+                        <i data-feather="credit-card" class="w-4 h-4 text-gray-500"></i>
+                        <span class="text-gray-600">PAN: {{ ca.pan_number }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connected Employees Section -->
+            <div class="col-span-full">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <i data-feather="users" class="w-5 h-5 mr-2 text-[#ed6a3e]"></i>
+                    Assigned Employees
+                </h3>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    {% if assigned_employees %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for employee in assigned_employees %}
+                        <div class="bg-white p-4 rounded-lg shadow-sm flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-[#ed6a3e] bg-opacity-20 flex items-center justify-center text-[#ed6a3e]">
+                                <i data-feather="user" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-800">{{ employee.name }}</p>
+                                <p class="text-sm text-gray-500">{{ employee.email }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500 text-center py-4">No employees assigned yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        feather.replace();
+    });
+</script>
+{% endblock %}

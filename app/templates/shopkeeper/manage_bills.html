@@ -3,116 +3,210 @@
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
-<!-- Sidebar -->
-<aside
-    class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
-    <div>
-        <!-- <div class="flex items-center justify-center h-20 border-b border-orange-200">
-                <div class="bg-white rounded-full w-12 h-12 flex items-center justify-center text-[#ed6a3e] font-bold text-2xl shadow">{{ current_user.username[0]|upper }}</div>
-                <span class="ml-3 text-white text-xl font-bold text-">MyBillingApp</span>
-            </div> -->
-        <nav class="mt-5 flex-1">
-            <ul class="space-y-2">
-                <li><a href="{{ url_for('shopkeeper.dashboard') }}"
-                        class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/20 transition duration-300"><i
-                            data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
-                <li><a href="{{ url_for('shopkeeper.create_bill') }}"
-                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                            data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
-                <li><a href="{{ url_for('shopkeeper.manage_bills') }}"
-                        class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i
-                            data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
-                <li><a href="{{ url_for('shopkeeper.products_stock') }}"
-                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                            data-feather="box" class="mr-3"></i>Products & Stock</a></li>
-                <li><a href="{{ url_for('shopkeeper.sales_reports') }}"
-                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                            data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
-                <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
-                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                            data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
-                <!-- <li><a href="#"
-                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                            data-feather="file" class="mr-3"></i>Documents</a></li> -->
-                <li><a href="{{ url_for('shopkeeper.settings') }}"
-                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                            data-feather="settings" class="mr-3"></i>Settings</a></li>
-                <!-- <li><a href="/auth/logout" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="log-out" class="mr-3"></i>Logout</a></li> -->
-            </ul>
-        </nav>
-    </div>
-    <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
-</aside>
-<div class="max-w-6xl mx-auto bg-white p-10 rounded-2xl shadow-lg mt-12 ml-60">
-    <h2 class="text-3xl font-bold text-[#ed6a3e] mb-8">Manage Bills</h2>
-    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-        <form method="get" class="flex flex-col md:flex-row gap-4 w-full">
-            <input type="text" name="search" value="{{ request.args.get('search', '') }}" placeholder="Search by customer or bill #" class="border rounded px-4 py-2 w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-            <div class="relative">
-                <button type="button" onclick="document.getElementById('status-dropdown').classList.toggle('hidden')" class="border rounded px-4 py-2 w-full md:w-48 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] flex items-center justify-between">
-                    Filter Status
-                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
-                <div id="status-dropdown" class="absolute left-0 mt-2 w-48 bg-white border rounded shadow-lg z-10 hidden">
-                    <label class="block px-4 py-2"><input type="checkbox" name="status" value="Paid" {% if 'Paid' in selected_statuses %}checked{% endif %}> Paid</label>
-                    <label class="block px-4 py-2"><input type="checkbox" name="status" value="Unpaid" {% if 'Unpaid' in selected_statuses %}checked{% endif %}> Unpaid</label>
-                    <label class="block px-4 py-2"><input type="checkbox" name="status" value="Partial" {% if 'Partial' in selected_statuses %}checked{% endif %}> Partial</label>
-                    <div class="px-4 py-2"><button type="submit" class="bg-[#ed6a3e] text-white px-4 py-1 rounded">Apply</button></div>
+<div class="flex min-h-screen bg-gray-100">
+    <aside
+        class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
+        <div>
+            <nav class="mt-5 flex-1">
+                <ul class="space-y-2">
+                    <li><a href="{{ url_for('shopkeeper.dashboard') }}"
+                            class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/20 transition duration-300"><i
+                                data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
+                    <li><a href="{{ url_for('shopkeeper.create_bill') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
+                    <li><a href="{{ url_for('shopkeeper.manage_bills') }}"
+                            class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i
+                                data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
+                    <li><a href="{{ url_for('shopkeeper.products_stock') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="box" class="mr-3"></i>Products & Stock</a></li>
+                    <li><a href="{{ url_for('shopkeeper.sales_reports') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
+                    <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
+                    <li><a href="{{ url_for('shopkeeper.settings') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
+                                data-feather="settings" class="mr-3"></i>Settings</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
+    </aside>
+    <main class="flex-1 ml-64 p-8 bg-gray-100 min-h-screen">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-3xl font-bold text-[#ed6a3e] mt-6 mb-6">Manage Bills</h2>
+            <div class="bg-white p-6 rounded-xl shadow-lg mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                    <div class="relative col-span-1 md:col-span-2 lg:col-span-1">
+                        <label for="bill-search" class="block text-sm font-medium text-gray-700 sr-only">Search</label>
+                        <i data-feather="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="bill-search" placeholder="Search bills..." class="pl-10 pr-4 py-2 border rounded-full w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row col-span-1 lg:col-span-2 gap-4">
+                        <div>
+                            <label for="start-date" class="block text-sm font-medium text-gray-700">From:</label>
+                            <input type="date" id="start-date" class="mt-1 block w-full border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+                        </div>
+                        <div>
+                            <label for="end-date" class="block text-sm font-medium text-gray-700">To:</label>
+                            <input type="date" id="end-date" class="mt-1 block w-full border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+                        </div>
+                    </div>
+                    
+                    <div class="relative">
+                        <button type="button" id="status-filter-btn" class="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent flex items-center justify-between bg-white">
+                            Filter Status <i data-feather="chevron-down" class="ml-2 w-4 h-4"></i>
+                        </button>
+                        <div id="status-dropdown" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10 hidden">
+                            <label class="block px-4 py-2 hover:bg-gray-50 cursor-pointer"><input type="checkbox" name="status" value="Paid" class="mr-2"> Paid</label>
+                            <label class="block px-4 py-2 hover:bg-gray-50 cursor-pointer"><input type="checkbox" name="status" value="Unpaid" class="mr-2"> Unpaid</label>
+                            <label class="block px-4 py-2 hover:bg-gray-50 cursor-pointer"><input type="checkbox" name="status" value="Partial" class="mr-2"> Partial</label>
+                        </div>
+                    </div>
+
+                    <div class="col-span-full mt-4 flex justify-end">
+                        <button id="clear-filters" class="flex items-center text-gray-500 hover:text-red-500 transition duration-300">
+                            <i data-feather="x-circle" class="mr-2 w-5 h-5"></i>
+                            Clear Filters
+                        </button>
+                    </div>
                 </div>
             </div>
-        </form>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full text-base rounded-xl overflow-hidden shadow-md">
-            <thead>
-                <tr class="bg-[#f8bfa0] text-[#ed6a3e]">
-                    <th class="py-4 px-4 text-left font-semibold">Bill #</th>
-                    <th class="py-4 px-4 text-left font-semibold">Customer</th>
-                    <th class="py-4 px-4 text-left font-semibold">Date</th>
-                    <th class="py-4 px-4 text-left font-semibold">Amount</th>
-                    <th class="py-4 px-4 text-left font-semibold">Status</th>
-                    <th class="py-4 px-4 text-left font-semibold">Paid Amount</th>
-                    <th class="py-4 px-4 text-left font-semibold">Unpaid amount</th>
-                    <th class="py-4 px-4 text-left font-semibold">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for bill in bills %}
-                <tr class="border-b hover:bg-orange-50 transition duration-200">
-                    <td class="py-4 px-4">{{ bill.bill_number }}</td>
-                    <td class="py-4 px-4">{{ bill.customer_name }}</td>
-                    <td class="py-4 px-4">{{ bill.bill_date }}</td>
-                    <td class="py-4 px-4 font-bold">₹{{ bill.total_amount }}</td>
-                    <td class="py-4 px-4">
-                        <span class="px-3 py-1 rounded-full text-sm font-semibold {% if bill.payment_status == 'Paid' %}bg-green-100 text-green-700{% elif bill.payment_status == 'Unpaid' %}bg-yellow-100 text-yellow-700{% else %}bg-orange-100 text-orange-700{% endif %}">
-                            {{ bill.payment_status }}
-                        </span>
-                    </td>
-                    <td class="py-4 px-4 font-bold">₹{{ bill.amount_paid }}</td>
-                    <td class="py-4 px-4 font-bold">₹{{ bill.amount_unpaid }}</td>
-                    <td class="py-4 px-4 flex gap-2">
-                        <a href="{{ url_for('shopkeeper.view_bill', bill_id=bill.bill_id) }}" class="bg-[#ed6a3e] text-white px-4 py-2 rounded shadow hover:bg-orange-700 transition duration-300">View</a>
-                        <form action="{{ url_for('shopkeeper.delete_bill', bill_id=bill.bill_id) }}" method="post" style="display:inline;">
-                            <button type="submit" class="bg-red-100 text-red-600 px-4 py-2 rounded shadow hover:bg-red-200 transition duration-300">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" class="text-gray-400 py-8 text-center text-lg">No bills found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+
+            <div class="overflow-x-auto bg-white rounded-xl shadow-lg">
+                <table class="min-w-full divide-y divide-gray-200" id="bills-table">
+                    <thead class="bg-[#f8bfa0]">
+                        <tr>
+                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Bill #</th>
+                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Customer</th>
+                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Date</th>
+                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Amount</th>
+                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Status</th>
+                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Paid Amount</th>
+                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Unpaid Amount</th>
+                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for bill in bills %}
+                        <tr class="bill-row hover:bg-orange-50 transition duration-200">
+                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-900">{{ bill.bill_number }}</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-500">{{ bill.customer_name }}</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-500 bill-date" data-date="{{ bill.bill_date.isoformat() }}">{{ bill.bill_date.strftime('%Y-%m-%d') }}</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-base font-bold text-gray-900">₹{{ bill.total_amount }}</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-base">
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold bill-status
+                                    {% if bill.payment_status == 'Paid' %}bg-green-100 text-green-700
+                                    {% elif bill.payment_status == 'Unpaid' %}bg-red-100 text-red-700
+                                    {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                                    {{ bill.payment_status }}
+                                </span>
+                            </td>
+                            <td class="py-4 px-6 whitespace-nowrap text-base font-bold text-gray-900">₹{{ bill.amount_paid }}</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-base font-bold text-gray-900">₹{{ bill.amount_unpaid }}</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-right text-base font-medium flex gap-2 justify-end items-center">
+                                <a href="{{ url_for('shopkeeper.view_bill', bill_id=bill.bill_id) }}" class="text-[#ed6a3e] hover:text-orange-700" title="View Bill">
+                                    <i data-feather="eye" class="w-5 h-5"></i>
+                                </a>
+                                <form action="{{ url_for('shopkeeper.delete_bill', bill_id=bill.bill_id) }}" method="post" class="inline">
+                                    <button type="submit" class="text-red-500 hover:text-red-700" title="Delete Bill" onclick="return confirm('Are you sure you want to delete this bill?');">
+                                        <i data-feather="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-gray-400 py-8 text-center text-lg">No bills found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
 </div>
 <script>
-document.addEventListener('click', function(event) {
-    var dropdown = document.getElementById('status-dropdown');
-    if (dropdown && !dropdown.contains(event.target) && !event.target.closest('button')) {
-        dropdown.classList.add('hidden');
-    }
-});
+    feather.replace();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('bill-search');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const statusCheckboxes = document.querySelectorAll('#status-dropdown input[type="checkbox"]');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        const table = document.getElementById('bills-table');
+        const rows = table.querySelectorAll('tbody tr.bill-row');
+        const statusFilterBtn = document.getElementById('status-filter-btn');
+        const statusDropdown = document.getElementById('status-dropdown');
+
+        // Toggle status dropdown
+        statusFilterBtn.addEventListener('click', () => {
+            statusDropdown.classList.toggle('hidden');
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!statusFilterBtn.contains(event.target) && !statusDropdown.contains(event.target)) {
+                statusDropdown.classList.add('hidden');
+            }
+        });
+
+        const filterBills = () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            const selectedStatuses = Array.from(statusCheckboxes)
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.value);
+
+            rows.forEach(row => {
+                const customerName = row.cells[1].textContent.toLowerCase();
+                const billNumber = row.cells[0].textContent.toLowerCase();
+                const billDate = row.querySelector('.bill-date').getAttribute('data-date');
+                const billStatus = row.querySelector('.bill-status').textContent.trim();
+                
+                const matchesSearch = searchTerm === '' || customerName.includes(searchTerm) || billNumber.includes(searchTerm);
+                
+                let matchesDate = true;
+                if (startDate) {
+                    matchesDate = matchesDate && billDate >= startDate;
+                }
+                if (endDate) {
+                    matchesDate = matchesDate && billDate <= endDate;
+                }
+                
+                const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(billStatus);
+
+                if (matchesSearch && matchesDate && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        };
+
+        // Event listeners for filtering
+        searchInput.addEventListener('keyup', filterBills);
+        startDateInput.addEventListener('change', filterBills);
+        endDateInput.addEventListener('change', filterBills);
+        statusCheckboxes.forEach(checkbox => checkbox.addEventListener('change', filterBills));
+
+        // Clear filters button
+        clearFiltersBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            startDateInput.value = '';
+            endDateInput.value = '';
+            statusCheckboxes.forEach(checkbox => checkbox.checked = false);
+            filterBills();
+        });
+
+        // Initial filter on page load
+        filterBills();
+    });
 </script>
-<script>feather.replace()</script>
 {% endblock %}
