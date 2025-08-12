@@ -147,6 +147,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const gstSectionContainer = document.getElementById('gst-section-container');
         const billGstType = document.getElementById('bill_gst_type');
+        const gstMode = document.getElementById('gst_mode');
         const billStatus = document.getElementById('bill_status');
         const amountPaidSection = document.getElementById('amount-paid-section');
         const amountPaidInput = document.getElementById('amount_paid');
@@ -155,39 +156,149 @@
         const unpaidAmountDisplay = document.getElementById('unpaid-amount-display');
         const calculatedPaidAmount = document.getElementById('calculated_paid_amount');
         const calculatedUnpaidAmount = document.getElementById('calculated_unpaid_amount');
+        const gstColumns = document.querySelectorAll('.gst-col');
 
+        // Function to calculate total with proper GST handling
+        function calculateTotal() {
+            const rows = document.querySelectorAll('.product-row');
+            let grandTotal = 0;
+            
+            rows.forEach(row => {
+                const productId = row.querySelector('[name="product_id"]')?.value;
+                const qty = parseFloat(row.querySelector('[name="quantity"]')?.value) || 0;
+                const price = parseFloat(row.querySelector('[name="price_per_unit"]')?.value) || 0;
+                const discount = parseFloat(row.querySelector('[name="discount"]')?.value) || 0;
+                
+                if (!productId || !qty || !price) return;
+                
+                // Find product in the PRODUCTS array
+                const product = PRODUCTS.find(p => p.product_id == productId);
+                if (!product) return;
+                
+                // Calculate base price with discount
+                const baseTotal = qty * price;
+                const discountAmount = baseTotal * (discount / 100);
+                const discountedPrice = baseTotal - discountAmount;
+                
+                // Add GST only if GST type is selected
+                let finalPrice = discountedPrice;
+                if (billGstType.value === 'GST' && product.gst_rate) {
+                    const gstRate = parseFloat(product.gst_rate);
+                    const gstAmount = discountedPrice * (gstRate / 100);
+                    finalPrice = discountedPrice + gstAmount;
+                }
+                
+                grandTotal += finalPrice;
+            });
+            
+            // Round to 2 decimal places
+            grandTotal = Math.round(grandTotal * 100) / 100;
+            
+            // Update the display
+            billTotal.textContent = grandTotal.toFixed(2);
+            
+            // Also update payment calculations
+            updatePaymentFields();
+            
+            return grandTotal;
+        }
+
+        // Function to update GST column visibility
         function updateGSTSectionVisibility() {
             if (billGstType.value === 'GST') {
                 gstSectionContainer.style.display = '';
+                // Show GST columns
+                gstColumns.forEach(col => col.style.display = '');
             } else {
                 gstSectionContainer.style.display = 'none';
+                // Hide GST columns
+                gstColumns.forEach(col => col.style.display = 'none');
             }
+            
+            // Recalculate totals when GST type changes
+            calculateTotal();
         }
 
+        function updatePaymentFields() {
+            // Always use parseFloat and round to 2 decimal places
+            const total = Math.round((parseFloat(billTotal.textContent) || 0) * 100) / 100;
+            let paid = 0, unpaid = 0;
+            
+            if (billStatus.value === 'paid') {
+                paid = total;
+                unpaid = 0;
+                amountPaidSection.style.display = 'none';
+            } else if (billStatus.value === 'unpaid') {
+                paid = 0;
+                unpaid = total;
+                amountPaidSection.style.display = 'none';
+            } else if (billStatus.value === 'partial') {
+                amountPaidSection.style.display = '';
+                paid = Math.round((parseFloat(amountPaidInput.value) || 0) * 100) / 100;
+                unpaid = Math.round((total - paid) * 100) / 100;
+                
+                // Ensure unpaid doesn't go negative
+                if (unpaid < 0) unpaid = 0;
+                
+                // If paid is more than total, cap it
+                if (paid > total) {
+                    paid = total;
+                    unpaid = 0;
+                    amountPaidInput.value = total.toFixed(2);
+                }
+            }
+            
+            // Update display with 2 decimal places
+            paidAmountDisplay.textContent = paid.toFixed(2);
+            unpaidAmountDisplay.textContent = unpaid.toFixed(2);
+            calculatedPaidAmount.value = paid.toFixed(2);
+            calculatedUnpaidAmount.value = unpaid.toFixed(2);
+        }
+
+        // Add event listeners for GST changes
         billGstType.addEventListener('change', updateGSTSectionVisibility);
-        updateGSTSectionVisibility(); // Initial call on page load
-
-    function updatePaymentFields() {
-        const total = parseFloat(billTotal.textContent) || 0;
-        let paid = 0, unpaid = 0;
-        if (billStatus.value === 'paid') {
-            paid = total;
-            unpaid = 0;
-            amountPaidSection.style.display = 'none';
-        } else if (billStatus.value === 'unpaid') {
-            paid = 0;
-            unpaid = total;
-            amountPaidSection.style.display = 'none';
-        } else if (billStatus.value === 'partial') {
-            amountPaidSection.style.display = '';
-            paid = parseFloat(amountPaidInput.value);
-            unpaid = total - paid;
-            if (unpaid < 0) unpaid = 0;
-        }
+        gstMode.addEventListener('change', calculateTotal);
+        
+        // Add event listeners for payment changes
         billStatus.addEventListener('change', updatePaymentFields);
         amountPaidInput.addEventListener('input', updatePaymentFields);
-        // Call on page load
-        updatePaymentFields();
+        
+        // Set up monitoring for product changes
+        const productRows = document.getElementById('product-rows');
+        if (productRows) {
+            // Monitor DOM changes in product rows
+            const observer = new MutationObserver(function() {
+                setTimeout(calculateTotal, 50);
+            });
+            observer.observe(productRows, { childList: true, subtree: true });
+            
+            // Listen for input events in product rows
+            productRows.addEventListener('input', function(e) {
+                if (e.target.matches('input[name="quantity"], input[name="price_per_unit"], input[name="discount"]')) {
+                    calculateTotal();
+                }
+            });
+            
+            // Listen for product selection changes
+            productRows.addEventListener('change', function(e) {
+                if (e.target.matches('select[name="product_id"]')) {
+                    calculateTotal();
+                }
+            });
+        }
+        
+        // Add listener to "Add Product" button
+        const addProductBtn = document.getElementById('add-product-btn');
+        if (addProductBtn) {
+            addProductBtn.addEventListener('click', function() {
+                // Wait for row to be added
+                setTimeout(calculateTotal, 100);
+            });
+        }
+        
+        // Initial calls
+        updateGSTSectionVisibility();
+        setTimeout(calculateTotal, 100); // Calculate after products load
     });
 </script>
 <script>feather.replace()</script>

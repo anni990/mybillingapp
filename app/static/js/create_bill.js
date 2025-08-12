@@ -82,8 +82,113 @@ document.addEventListener('DOMContentLoaded', function () {
         row.querySelector('.remove-product').addEventListener('click', removeRow);
         productRows.appendChild(row);
         updateTotal();
+
+        // Dispatch an event to recalculate totals
+        setTimeout(function() {
+            document.dispatchEvent(new Event('product-row-updated'));
+        }, 50);
     }
     addBtn.addEventListener('click', addProductRow);
     // Initial row
     addProductRow();
-}); 
+});
+
+// Function to calculate total with GST
+function calculateTotalWithGST() {
+    const rows = document.querySelectorAll('.product-row');
+    const gstMode = document.getElementById('gst_mode').value;
+    const billGstType = document.getElementById('bill_gst_type').value;
+    let grandTotal = 0;
+    
+    rows.forEach(row => {
+        const qty = parseFloat(row.querySelector('[name="quantity"]').value) || 0;
+        const price = parseFloat(row.querySelector('[name="price_per_unit"]').value) || 0;
+        const discount = parseFloat(row.querySelector('[name="discount"]').value) || 0;
+        let gstRate = 0;
+        
+        // Get GST rate from either hidden input or displayed text
+        const gstRateElem = row.querySelector('.gst-rate-display');
+        if (gstRateElem) {
+            gstRate = parseFloat(gstRateElem.textContent) || 0;
+        }
+        
+        // Base calculations
+        const baseTotal = qty * price;
+        const discountAmount = baseTotal * (discount / 100);
+        const discountedPrice = baseTotal - discountAmount;
+        
+        // Calculate with GST
+        let itemTotal = discountedPrice;
+        if (billGstType === 'GST' && gstRate > 0) {
+            // Always include GST in grand total
+            const gstAmount = discountedPrice * (gstRate / 100);
+            itemTotal = discountedPrice + gstAmount;
+        }
+        
+        grandTotal += itemTotal;
+    });
+    
+    // Update the bill total with 2 decimal places
+    document.getElementById('bill-total').textContent = grandTotal.toFixed(2);
+    
+    // Update payment fields
+    if (typeof updatePaymentFields === 'function') {
+        updatePaymentFields();
+    }
+}
+
+// Add event listeners to all product-related inputs
+function setupGSTCalculationListeners() {
+    const productContainer = document.getElementById('product-rows');
+    
+    // Use event delegation for all product inputs
+    productContainer.addEventListener('input', function(e) {
+        if (e.target.matches('[name="quantity"], [name="price_per_unit"], [name="discount"]')) {
+            calculateTotalWithGST();
+        }
+    });
+    
+    // Listen for product selection changes
+    productContainer.addEventListener('change', function(e) {
+        if (e.target.matches('[name="product_id"]')) {
+            calculateTotalWithGST();
+        }
+    });
+    
+    // Recalculate when GST mode changes
+    document.getElementById('gst_mode')?.addEventListener('change', calculateTotalWithGST);
+    document.getElementById('bill_gst_type')?.addEventListener('change', calculateTotalWithGST);
+    
+    // Call initially
+    calculateTotalWithGST();
+}
+
+// Call this after adding the first product row
+document.addEventListener('DOMContentLoaded', function() {
+    // Setup after a short delay to ensure product rows are created
+    setTimeout(setupGSTCalculationListeners, 500);
+    
+    // Add listener to "Add Product" button
+    document.getElementById('add-product-btn').addEventListener('click', function() {
+        // Wait for row to be added
+        setTimeout(calculateTotalWithGST, 100);
+    });
+});
+
+// When updating product details or prices
+function updateProductDetails(productSelect, row) {
+    const productId = productSelect.value;
+    const product = PRODUCTS.find(p => p.id == productId);
+    if (product) {
+        row.querySelector('.price').value = product.price;
+        row.querySelector('.stock').textContent = `Stock: ${product.stock}`;
+        row.querySelector('.gst-rate').textContent = `${product.gst_rate}%`;
+    } else {
+        row.querySelector('.price').value = '';
+        row.querySelector('.stock').textContent = '';
+        row.querySelector('.gst-rate').textContent = '';
+    }
+
+    // Trigger total recalculation
+    document.dispatchEvent(new Event('product-row-updated'));
+}
