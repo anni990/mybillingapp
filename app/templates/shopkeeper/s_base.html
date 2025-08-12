@@ -6,10 +6,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MyBillingApp{% endblock %}</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ed6a3e;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #d45f34;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+    </style>
+    <script src="https://unpkg.com/feather-icons"></script>
 </head>
 
 <body class="bg-gray-50 min-h-screen">
-    <nav class="bg-[#ed6a3e] text-white px-6 py-4 flex justify-between items-center fixed top-0 left-0 w-full z-10">
+    <nav class="bg-[#ed6a3e] text-white px-6 py-4 flex justify-between items-center fixed top-0 left-0 w-full z-30">
         <a href="/" class="font-bold text-xl">MyBillingApp</a>
         <div class="flex items-center space-x-6">
             {% if current_user.is_authenticated %}
@@ -23,36 +58,61 @@
                             stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                     {% if shopkeeper_pending_requests|length > 0 %}
-                    <span class="absolute top-0 right-0 inline-block w-2 h-2 bg-red-500 rounded-full"></span>
+                    <span class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                        {{ shopkeeper_pending_requests|length }}
+                    </span>
                     {% endif %}
                 </button>
-                <div class="hidden group-hover:block absolute right-0 mt-2 w-80 bg-white rounded shadow-lg z-50 border border-gray-200"
-                    id="notificationDropdown">
-                    <div class="p-4 border-b font-semibold text-[#ed6a3e]">Pending Connection Requests</div>
-                    <div class="max-h-80 overflow-y-auto">
+                <div class="hidden group-hover:block absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200 animate-fade-in"
+                     id="notificationDropdown">
+                    <div class="p-4 border-b font-bold text-gray-700 flex items-center justify-between">
+                        <span class="flex items-center">
+                            <i data-feather="bell" class="w-5 h-5 mr-2 text-[#ed6a3e]"></i>
+                            Pending Connection Requests
+                        </span>
+                        <span class="text-xs text-gray-400">({{ shopkeeper_pending_requests|length }})</span>
+                    </div>
+                    <div class="max-h-80 overflow-y-auto custom-scrollbar">
                         {% if shopkeeper_pending_requests %}
                         {% for req in shopkeeper_pending_requests %}
-                        <div class="flex items-center justify-between px-4 py-2 hover:bg-orange-50">
-                            <div>
-                                <div class="font-bold">{{ req.ca_firm_name }}</div>
-                                <div class="text-xs text-gray-500">{{ req.ca_area }} | {{ req.ca_contact_number }}</div>
+                        <div class="flex flex-col border-b px-4 py-3 hover:bg-gray-50 transition duration-150 last:border-b-0">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="font-bold text-sm text-gray-800">{{ req.ca_firm_name }}</div>
+                                <form method="POST" action="{{ url_for('shopkeeper.handle_connection_request') }}" class="flex space-x-2">
+                                    <input type="hidden" name="conn_id" value="{{ req.conn_id }}">
+                                    <button type="submit" name="action" value="accept"
+                                        class="text-green-600 hover:text-white hover:bg-green-600 p-1 rounded-full transition duration-150 group"
+                                        title="Accept">
+                                        <i data-feather="check" class="w-4 h-4"></i>
+                                    </button>
+                                    <button type="submit" name="action" value="reject"
+                                        class="text-red-600 hover:text-white hover:bg-red-600 p-1 rounded-full transition duration-150 group"
+                                        title="Reject">
+                                        <i data-feather="x" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
                             </div>
-                            <form method="POST" action="{{ url_for('shopkeeper.handle_connection_request') }}"
-                                class="flex space-x-1">
-                                <input type="hidden" name="conn_id" value="{{ req.conn_id }}">
-                                <button name="action" value="accept"
-                                    class="bg-green-500 text-white px-2 py-1 rounded text-xs">Accept</button>
-                                <button name="action" value="reject"
-                                    class="bg-red-500 text-white px-2 py-1 rounded text-xs">Reject</button>
-                            </form>
+                            <div class="text-xs text-gray-500 space-y-1">
+                                <div class="flex items-center">
+                                    <i data-feather="map-pin" class="w-3 h-3 mr-1 text-gray-400"></i>
+                                    <span>{{ req.ca_area }}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i data-feather="phone" class="w-3 h-3 mr-1 text-gray-400"></i>
+                                    <span>{{ req.ca_contact_number }}</span>
+                                </div>
+                            </div>
                         </div>
                         {% endfor %}
                         {% else %}
-                        <div class="px-4 py-4 text-gray-400 text-center">No pending requests.</div>
+                        <div class="flex flex-col items-center justify-center p-6 text-gray-400">
+                            <i data-feather="inbox" class="w-8 h-8 mb-2"></i>
+                            <p class="text-sm">No pending requests.</p>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
-            </div>
+                </div>
             {% endif %}
             {% if current_user.role == 'CA' %}
             <a href="/ca/dashboard" class="mx-2 hover:underline">CA Dashboard</a>
@@ -66,14 +126,14 @@
             {% endif %}
         </div>
     </nav>
-    <main class="container mx-auto py-8">
+    <main class="container mx-auto py-8 pt-20">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="max-w-2xl mx-auto mt-10">
             {% for category, message in messages %}
             <div
                 class="mb-2 px-4 py-3 rounded shadow text-sm
-                            {% if category == 'success' %}bg-green-100 text-green-800 border border-green-300{% elif category == 'danger' %}bg-red-100 text-red-800 border border-red-300{% else %}bg-gray-100 text-gray-800 border border-gray-300{% endif %}">
+                                {% if category == 'success' %}bg-green-100 text-green-800 border border-green-300{% elif category == 'danger' %}bg-red-100 text-red-800 border border-red-300{% else %}bg-gray-100 text-gray-800 border border-gray-300{% endif %}">
                 {{ message }}
             </div>
             {% endfor %}
@@ -83,10 +143,12 @@
         {% block content %}{% endblock %}
     </main>
     <script>
-        // Notification dropdown toggle logic
+        feather.replace();
         const notifBtn = document.getElementById('notificationDropdownBtn');
         const notifDropdown = document.getElementById('notificationDropdown');
+
         if (notifBtn && notifDropdown) {
+            // Using click instead of hover for better mobile support and accessibility
             notifBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 notifDropdown.classList.toggle('hidden');

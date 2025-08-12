@@ -4,83 +4,93 @@
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/feather-icons"></script>
-<!-- Sidebar (reuse your sidebar code here if needed) -->
-<aside class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
-    <div>
-        <nav class="mt-5 flex-1">
-            <ul class="space-y-2">
-                <li><a href="{{ url_for('shopkeeper.dashboard') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
-                <li><a href="{{ url_for('shopkeeper.create_bill') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
-                <li><a href="{{ url_for('shopkeeper.manage_bills') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
-                <li><a href="{{ url_for('shopkeeper.products_stock') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="box" class="mr-3"></i>Products & Stock</a></li>
-                <li><a href="{{ url_for('shopkeeper.sales_reports') }}" class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
-                <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
-                <!-- <li><a href="#" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file" class="mr-3"></i>Documents</a></li> -->
-                <li><a href="{{ url_for('shopkeeper.settings') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="settings" class="mr-3"></i>Settings</a></li>
-            </ul>
-        </nav>
-    </div>
-    <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
-</aside>
-<div class="max-w-6xl mx-auto bg-white p-10 rounded-2xl shadow-lg mt-12 ml-80">
-    <h2 class="text-3xl font-bold text-[#ed6a3e] mb-8">Sales Reports</h2>
-    <form class="flex flex-col md:flex-row md:items-center gap-4 mb-8" method="get">
-        <div class="flex items-center gap-2">
-            <label class="font-semibold text-gray-700">From</label>
-            <input type="date" name="start" value="{{ start }}" max="{{ end }}" class="border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
+<div class="flex min-h-screen bg-gray-100">
+    <aside class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
+        <div>
+            <nav class="mt-5 flex-1">
+                <ul class="space-y-2">
+                    <li><a href="{{ url_for('shopkeeper.dashboard') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
+                    <li><a href="{{ url_for('shopkeeper.create_bill') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
+                    <li><a href="{{ url_for('shopkeeper.manage_bills') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
+                    <li><a href="{{ url_for('shopkeeper.products_stock') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="box" class="mr-3"></i>Products & Stock</a></li>
+                    <li><a href="{{ url_for('shopkeeper.sales_reports') }}" class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
+                    <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}" class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
+                </ul>
+            </nav>
         </div>
-        <div class="flex items-center gap-2">
-            <label class="font-semibold text-gray-700">To</label>
-            <input type="date" name="end" value="{{ end }}" max="{{ end }}" class="border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-        </div>
-        <button type="submit" class="bg-[#ed6a3e] text-white px-6 py-2 rounded shadow hover:bg-orange-700 transition duration-300">Filter</button>
-        <!-- <button type="button" onclick="window.print()" class="bg-gray-200 text-[#ed6a3e] px-6 py-2 rounded shadow hover:bg-orange-100 transition duration-300">Print</button> -->
-        <button type="button" onclick="downloadTableAsCSV()" class="bg-gray-200 text-[#ed6a3e] px-6 py-2 rounded shadow hover:bg-orange-100 transition duration-300">Download CSV</button>
-    </form>
-    <div class="bg-white rounded-lg shadow p-4 mt-6">
-        <canvas id="salesChart" height="80"></canvas>
-    </div>
-    <script>
-        window.CHART_LABELS = {{ chart_labels|tojson|safe }};
-        window.CHART_VALUES = {{ chart_values|tojson|safe }};
-    </script>
-    <div class="overflow-x-auto">
-        <table class="w-full text-base rounded-xl overflow-hidden shadow-md">
-            <thead>
-                <tr class="bg-[#f8bfa0] text-[#ed6a3e]">
-                    <th class="py-4 px-4 text-left font-semibold">Date</th>
-                    <th class="py-4 px-4 text-left font-semibold">Total Bills</th>
-                    <th class="py-4 px-4 text-left font-semibold">Total Amount</th>
-                    <th class="py-4 px-4 text-left font-semibold">Paid</th>
-                    <th class="py-4 px-4 text-left font-semibold">Unpaid</th>
-                    <th class="py-4 px-4 text-left font-semibold">Partial</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% set date_bills = {} %}
-                {% for bill in bills %}
-                    {% set d = bill.bill_date.strftime('%Y-%m-%d') %}
-                    {% if d not in date_bills %}
-                        {% set _ = date_bills.update({d: []}) %}
-                    {% endif %}
-                    {% set _ = date_bills[d].append(bill) %}
-                {% endfor %}
-                {% for i in range(chart_labels|length) %}
-                    {% set d = chart_labels[i] %}
-                    <tr class="border-b hover:bg-orange-50 transition duration-200">
-                        <td class="py-4 px-4">{{ d }}</td>
-                        <td class="py-4 px-4">{{ date_bills[d]|length if d in date_bills else 0 }}</td>
-                        <td class="py-4 px-4 font-bold">₹{{ chart_values[i] }}</td>
-                        <td class="py-4 px-4">{{ date_bills[d]|selectattr('payment_status', 'equalto', 'Paid')|list|length if d in date_bills else 0 }}</td>
-                        <td class="py-4 px-4">{{ date_bills[d]|selectattr('payment_status', 'equalto', 'Unpaid')|list|length if d in date_bills else 0 }}</td>
-                        <td class="py-4 px-4">{{ date_bills[d]|selectattr('payment_status', 'equalto', 'Partial')|list|length if d in date_bills else 0 }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+        <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
+    </aside>
 
+    <main class="flex-1 ml-64 p-8 bg-gray-100 min-h-screen">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-3xl font-bold text-[#ed6a3e] mb-6">Sales Reports</h2>
+
+            <div class="bg-white p-6 rounded-xl shadow-lg mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                <form class="flex flex-col md:flex-row md:items-center gap-4 w-full" method="get">
+                    <div class="flex items-center gap-2">
+                        <label class="font-semibold text-gray-700 whitespace-nowrap">From:</label>
+                        <input type="date" name="start" value="{{ start }}" max="{{ end }}" class="border rounded-full px-4 py-2 w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="font-semibold text-gray-700 whitespace-nowrap">To:</label>
+                        <input type="date" name="end" value="{{ end }}" max="{{ end }}" class="border rounded-full px-4 py-2 w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
+                    </div>
+                    <button type="submit" class="bg-[#ed6a3e] text-white px-6 py-2 rounded-full shadow-md hover:bg-orange-700 transition duration-300">Filter</button>
+                </form>
+                <div class="w-full md:w-auto flex justify-end">
+                    <button type="button" onclick="downloadTableAsCSV()" class="bg-gray-200 text-[#ed6a3e] px-6 py-2 rounded-full shadow-md hover:bg-orange-100 transition duration-300 flex items-center justify-center">
+                        <i data-feather="download" class="mr-2 w-5 h-5"></i> Download CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Daily Sales Trend</h3>
+                <canvas id="salesChart" height="80"></canvas>
+            </div>
+            <script>
+                window.CHART_LABELS = {{ chart_labels|tojson|safe }};
+                window.CHART_VALUES = {{ chart_values|tojson|safe }};
+            </script>
+
+            <div class="overflow-x-auto bg-white rounded-xl shadow-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-[#f8bfa0]">
+                        <tr>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Date</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Total Bills</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Total Amount</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Paid</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Unpaid</th>
+                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Partial</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% set date_bills = {} %}
+                        {% for bill in bills %}
+                            {% set d = bill.bill_date.strftime('%Y-%m-%d') %}
+                            {% if d not in date_bills %}
+                                {% set _ = date_bills.update({d: []}) %}
+                            {% endif %}
+                            {% set _ = date_bills[d].append(bill) %}
+                        {% endfor %}
+                        {% for i in range(chart_labels|length) %}
+                            {% set d = chart_labels[i] %}
+                            <tr class="hover:bg-orange-50 transition duration-200">
+                                <td class="py-4 px-6 whitespace-nowrap text-gray-900">{{ d }}</td>
+                                <td class="py-4 px-6 whitespace-nowrap text-gray-700">{{ date_bills[d]|length if d in date_bills else 0 }}</td>
+                                <td class="py-4 px-6 whitespace-nowrap font-bold text-gray-900">₹{{ chart_values[i] }}</td>
+                                <td class="py-4 px-6 whitespace-nowrap text-green-600 font-medium">{{ date_bills[d]|selectattr('payment_status', 'equalto', 'Paid')|list|length if d in date_bills else 0 }}</td>
+                                <td class="py-4 px-6 whitespace-nowrap text-red-600 font-medium">{{ date_bills[d]|selectattr('payment_status', 'equalto', 'Unpaid')|list|length if d in date_bills else 0 }}</td>
+                                <td class="py-4 px-6 whitespace-nowrap text-yellow-600 font-medium">{{ date_bills[d]|selectattr('payment_status', 'equalto', 'Partial')|list|length if d in date_bills else 0 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
 <script>feather.replace()</script>
 <script src="{{ url_for('static', filename='js/sales_reports.js') }}"></script>
 {% endblock %}

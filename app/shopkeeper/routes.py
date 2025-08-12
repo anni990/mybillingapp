@@ -694,37 +694,6 @@ def connect_ca(ca_id):
 #         return redirect(url_for('shopkeeper.documents'))
 #     return send_file(doc.file_path, as_attachment=True)
 
-# Settings
-@shopkeeper_bp.route('/settings', methods=['GET', 'POST'])
-@login_required
-@shopkeeper_required
-def settings():
-    shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    if request.method == 'POST':
-        shop_name = request.form.get('shop_name')
-        domain = request.form.get('domain')
-        address = request.form.get('address')
-        gst_number = request.form.get('gst_number')
-        contact_number = request.form.get('contact_number')
-        bank_name = request.form.get('bank_name')
-        account_number = request.form.get('account_number')
-        ifsc_code = request.form.get('ifsc_code')
-        template_choice = request.form.get('template_choice')
-        
-        if shopkeeper:
-            shopkeeper.shop_name = shop_name
-            shopkeeper.domain = domain
-            shopkeeper.address = address
-            shopkeeper.gst_number = gst_number
-            shopkeeper.contact_number = contact_number
-            shopkeeper.bank_name = bank_name
-            shopkeeper.account_number = account_number
-            shopkeeper.ifsc_code = ifsc_code
-            shopkeeper.template_choice = template_choice
-            db.session.commit()
-            flash('Profile updated successfully.', 'success')
-        return redirect(url_for('shopkeeper.settings'))
-    return render_template('shopkeeper/profile_edit.html', shopkeeper=shopkeeper)
 
 # Products & Stock (already implemented above)
 @shopkeeper_bp.route('/products', methods=['GET'])
