@@ -27,9 +27,6 @@
                     <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
                             class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
                                 data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
-                    <li><a href="{{ url_for('shopkeeper.settings') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="settings" class="mr-3"></i>Settings</a></li>
                 </ul>
             </nav>
         </div>
@@ -38,9 +35,9 @@
     <main class="flex-1 ml-64 p-8 bg-gray-100 min-h-screen">
         <div class="flex justify-between items-center mb-8">
             <div>
-                <p class="text-3xl font-bold mt-6">Welcome, {{ current_user.username }}!</p>
+                <p class="text-3xl font-bold">Welcome, {{ current_user.username }}!</p>
             </div>
-            <div class="flex items-center space-x-4 mt-6">
+            <div class="flex items-center space-x-4">
                 <a href="{{ url_for('shopkeeper.profile') }}"
                     class="flex items-center space-x-2 bg-white px-3 py-2 rounded-full shadow hover:bg-orange-50 transition duration-300">
                     <span class="font-semibold text-[#ed6a3e]">{{ current_user.username }}</span>

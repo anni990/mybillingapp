@@ -48,4 +48,4 @@ function downloadTableAsCSV() {
     a.download = 'sales_report.csv';
     a.click();
     window.URL.revokeObjectURL(url);
-} 
+}
