@@ -179,6 +179,8 @@ def create_bill():
     if request.method == 'POST':
         customer_name = request.form.get('customer_name')
         customer_contact = request.form.get('customer_contact')
+        customer_address = request.form.get('customer_address')
+        customer_gstin=request.form.get('customer_gstin')
         gst_type = request.form.get('gst_type')
         bill_date = datetime.date.today()
         items = request.form.getlist('product_id')
@@ -190,6 +192,8 @@ def create_bill():
             bill_number=f"BILL{int(datetime.datetime.now().timestamp())}",
             customer_name=customer_name,
             customer_contact=customer_contact,
+            customer_address=customer_address,
+            customer_gstin=customer_gstin,
             bill_date=bill_date,
             gst_type=gst_type,
             total_amount=total_amount,
@@ -213,7 +217,13 @@ def create_bill():
         db.session.commit()
         flash('Bill created successfully.', 'success')
         return redirect(url_for('shopkeeper.manage_bills'))
-    return render_template('shopkeeper/create_bill.html', products=products, products_js=products_js, shopkeeper=shopkeeper)
+    return render_template(
+        'shopkeeper/create_bill.html',
+        products=products,
+        products_js=products_js,
+        shopkeeper=shopkeeper,
+        now=datetime.datetime.now()  # Pass current datetime as 'now'
+    )
 
 # Manage Bills
 @shopkeeper_bp.route('/manage_bills')
@@ -775,6 +785,8 @@ def generate_bill_pdf():
     products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
     customer_name = request.form.get('customer_name')
     customer_contact = request.form.get('customer_contact')
+    customer_address = request.form.get('customer_address')
+    customer_gstin=request.form.get('customer_gstin')
     gst_mode = request.form.get('gst_mode', 'exclusive')
     bill_gst_type = request.form.get('bill_gst_type', 'GST')
     bill_gst_rate = float(request.form.get('bill_gst_rate', 0))
@@ -782,7 +794,12 @@ def generate_bill_pdf():
     quantities = request.form.getlist('quantity')
     prices = request.form.getlist('price_per_unit')
     discounts = request.form.getlist('discount')
-    bill_date = datetime.date.today()
+    # Parse bill_date from form (datetime-local input)
+    bill_date_str = request.form.get('bill_date')
+    if bill_date_str:
+        bill_date = datetime.datetime.strptime(bill_date_str, '%Y-%m-%dT%H:%M')
+    else:
+        bill_date = datetime.datetime.now()
     total_amount = 0
     bill_number = f"BILL{int(datetime.datetime.now().timestamp())}"
     payment_status = request.form.get('bill_status', 'Paid').capitalize()
@@ -800,6 +817,8 @@ def generate_bill_pdf():
         bill_number=bill_number,
         customer_name=customer_name,
         customer_contact=customer_contact,
+        customer_address=customer_address,
+        customer_gstin=customer_gstin,
         bill_date=bill_date,
         gst_type=bill_gst_type,
         total_amount=0,
