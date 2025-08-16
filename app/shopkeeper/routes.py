@@ -1025,7 +1025,9 @@ def generate_bill_pdf():
     rendered = render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
     bills_dir = os.path.join('app', 'static', 'bills')
     os.makedirs(bills_dir, exist_ok=True)
-    filename = f"bill_{bill_date}_{bill_number}.html"
+    # Use current system date/time for filename
+    filename_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    filename = f"bill_{filename_date}_{bill_number}.html"
     filepath = os.path.join(bills_dir, filename)
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(rendered)
