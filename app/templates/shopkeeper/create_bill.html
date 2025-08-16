@@ -69,6 +69,24 @@
                        oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);">
                 <small class="text-gray-500">Enter 10 digit mobile number starting with 6-9</small>
             </div>
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Customer Address</label>
+                <input type="text" name="customer_address"
+                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]"
+                    required>
+            </div>
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Customer GSTIN</label>
+                <input type="text" name="customer_gstin"
+                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]"
+                    required>
+            </div>
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Bill Date & Time</label>
+                <input type="datetime-local" name="bill_date" id="bill-date"
+                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]"
+                    value="{{ now.strftime('%Y-%m-%dT%H:%M') }}" required>
+            </div>
         </div>
 
         <!-- GST Type / Mode -->
@@ -179,9 +197,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (billStatus.value === 'paid') {
             paid = total; unpaid = 0;
             amountPaidSection.style.display = 'none';
+            amountPaidInput.value = total.toFixed(2); // Auto update paid value
         } else if (billStatus.value === 'unpaid') {
             paid = 0; unpaid = total;
             amountPaidSection.style.display = 'none';
+            amountPaidInput.value = '0.00'; // Auto update paid value
         } else if (billStatus.value === 'partial') {
             amountPaidSection.style.display = '';
             paid = Math.round((parseFloat(amountPaidInput.value) || 0) * 100) / 100;
@@ -203,6 +223,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     updateGSTSectionVisibility();
     updatePaymentFields();
+
+    // Auto update paid/unpaid when total changes and bill status is paid
+    const billTotalObserver = new MutationObserver(function() {
+        if (billStatus.value === 'paid') {
+            updatePaymentFields();
+        }
+    });
+    billTotalObserver.observe(billTotal, { childList: true });
 });
 
 // Validation

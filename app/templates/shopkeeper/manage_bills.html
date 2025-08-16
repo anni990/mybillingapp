@@ -114,6 +114,21 @@
                                         <i data-feather="trash-2" class="w-5 h-5"></i>
                                     </button>
                                 </form>
+                                {% if bill.payment_status in ['Unpaid', 'Partial'] %}
+                                <button class="update-payment-btn bg-green-100 text-green-700 px-2 rounded-full shadow hover:bg-green-200 transition duration-300 animate-bounce-on-hover"
+                                    title="Update Payment"
+                                    data-bill-id="{{ bill.bill_id }}"
+                                    data-bill-number="{{ bill.bill_number }}"
+                                    data-customer="{{ bill.customer_name }}"
+                                    data-customer-phone="{{ bill.customer_contact }}"
+                                    data-bill-date="{{ bill.bill_date.strftime('%Y-%m-%d') }}"
+                                    data-amount="{{ bill.total_amount }}"
+                                    data-status="{{ bill.payment_status }}"
+                                    data-paid="{{ bill.amount_paid }}"
+                                    data-unpaid="{{ bill.amount_unpaid }}">
+                                    <i class="fas fa-rupee-sign"></i>
+                                </button>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}
@@ -127,6 +142,89 @@
         </div>
     </main>
 </div>
+<style>
+.animate-bounce-on-hover:hover {
+    animation: bounce 0.5s;
+}
+@keyframes bounce {
+    0%   { transform: translateY(0); }
+    30%  { transform: translateY(-8px); }
+    50%  { transform: translateY(0); }
+    70%  { transform: translateY(-4px); }
+    100% { transform: translateY(0); }
+}
+</style>
+
+<!-- 🔹 Updated Modern Modal -->
+<div id="update-payment-modal" class="fixed inset-0 flex items-center justify-center bg-white bg-opacity-50 backdrop-blur-sm z-50 hidden">
+    <div class="bg-slate-50 rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4">
+        
+        <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-4">
+            <h3 class="text-2xl font-bold text-slate-800">Update Payment</h3>
+            <button id="modal-close-btn" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form id="update-payment-form">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6 text-sm">
+                <div class="flex flex-col">
+                    <label class="font-medium text-slate-500">Customer</label>
+                    <span id="modal-customer" class="text-slate-900 font-semibold"></span>
+                </div>
+                <div class="flex flex-col">
+                    <label class="font-medium text-slate-500">Bill Number</label>
+                    <span id="modal-bill-number" class="text-slate-900"></span>
+                </div>
+                <div class="flex flex-col">
+                    <label class="font-medium text-slate-500">Phone</label>
+                    <span id="modal-customer-phone" class="text-slate-900"></span>
+                </div>
+                <div class="flex flex-col">
+                    <label class="font-medium text-slate-500">Bill Date</label>
+                    <span id="modal-bill-date" class="text-slate-900"></span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg p-4 border border-slate-200 mb-6">
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <label class="text-xs text-slate-500">Total Amount</label>
+                        <p id="modal-bill-amount" class="text-lg font-bold text-slate-800"></p>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500">Amount Paid</label>
+                        <p id="modal-bill-paid" class="text-lg font-bold text-green-600"></p>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500">Balance Due</label>
+                        <p id="modal-bill-unpaid" class="text-lg font-bold text-red-600"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label for="modal-new-payment" class="block text-sm font-medium text-slate-700 mb-2">Enter New Payment Amount</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">₹</span>
+                    <input type="number" id="modal-new-payment" class="border border-slate-300 rounded-md px-3 py-2 pl-7 w-full focus:ring-2 focus:ring-[#f0825d] focus:border-[#ed6a3e] transition" min="0" step="0.01" placeholder="0.00" required>
+                </div>
+            </div>
+
+            <div class="flex gap-4 mt-8">
+                <button type="submit" class="w-full bg-[#ed6a3e] text-white px-4 py-2.5 rounded-md font-semibold hover:bg-opacity-90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ed6a3e]">
+                    Save Payment
+                </button>
+                <button type="button" id="modal-cancel" class="w-full bg-slate-200 text-slate-700 px-4 py-2.5 rounded-md font-semibold hover:bg-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     feather.replace();
 
@@ -204,6 +302,56 @@
 
         // Initial filter on page load
         filterBills();
+
+        // Payment Modal Logic
+        const modal = document.getElementById('update-payment-modal');
+        const closeModal = () => modal.classList.add('hidden');
+
+        document.querySelectorAll('.update-payment-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                modal.classList.remove('hidden');
+                document.getElementById('modal-customer').textContent = btn.dataset.customer;
+                document.getElementById('modal-bill-number').textContent = btn.dataset.billNumber;
+                document.getElementById('modal-customer-phone').textContent = btn.dataset.customerPhone;
+                document.getElementById('modal-bill-date').textContent = btn.dataset.billDate;
+                document.getElementById('modal-bill-amount').textContent = btn.dataset.amount;
+                document.getElementById('modal-bill-paid').textContent = btn.dataset.paid;
+                document.getElementById('modal-bill-unpaid').textContent = btn.dataset.unpaid;
+                document.getElementById('modal-new-payment').value = '';
+                document.getElementById('update-payment-form').dataset.billId = btn.dataset.billId;
+                document.getElementById('update-payment-form').dataset.paid = btn.dataset.paid;
+                document.getElementById('update-payment-form').dataset.unpaid = btn.dataset.unpaid;
+                document.getElementById('update-payment-form').dataset.amount = btn.dataset.amount;
+            });
+        });
+
+        document.getElementById('modal-cancel').onclick = closeModal;
+        document.getElementById('modal-close-btn').onclick = closeModal;
+
+        document.getElementById('update-payment-form').onsubmit = function(e) {
+            e.preventDefault();
+            const billId = this.dataset.billId;
+            const newPayment = parseFloat(document.getElementById('modal-new-payment').value) || 0;
+            const paid = parseFloat(this.dataset.paid) || 0;
+            const amount = parseFloat(this.dataset.amount) || 0;
+            let newStatus = 'Partial';
+            if ((paid + newPayment) >= amount) {
+                newStatus = 'Paid';
+            } else if (paid === 0 && newPayment > 0) {
+                newStatus = 'Partial';
+            }
+            fetch(`/shopkeeper/update_payment/${billId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({new_payment: newPayment, new_status: newStatus})
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error updating payment');
+                }
+            });
+        };
     });
 </script>
 {% endblock %}
