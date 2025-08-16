@@ -6,6 +6,7 @@ from sqlalchemy import func
 import datetime
 import io
 import os
+from decimal import Decimal
 
 shopkeeper_bp = Blueprint('shopkeeper', __name__, url_prefix='/shopkeeper')
 
@@ -1210,3 +1211,17 @@ def handle_connection_request():
             db.session.commit()
             flash('Connection rejected.', 'info')
     return redirect(request.referrer or url_for('shopkeeper.dashboard'))
+
+@shopkeeper_bp.route('/update_payment/<int:bill_id>', methods=['POST'])
+@login_required
+@shopkeeper_required
+def update_payment(bill_id):
+    bill = Bill.query.get_or_404(bill_id)
+    data = request.get_json()
+    new_payment = Decimal(str(data.get('new_payment', 0)))
+    new_status = data.get('new_status', bill.payment_status)
+    bill.amount_paid += new_payment
+    bill.amount_unpaid = max(Decimal('0'), Decimal(str(bill.total_amount)) - bill.amount_paid)
+    bill.payment_status = new_status
+    db.session.commit()
+    return jsonify({'success': True})
