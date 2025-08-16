@@ -143,6 +143,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const gstSectionContainer = document.getElementById('gst-section-container');
         const billGstType = document.getElementById('bill_gst_type');
+        const gstMode = document.getElementById('gst_mode');
         const billStatus = document.getElementById('bill_status');
         const amountPaidSection = document.getElementById('amount-paid-section');
         const amountPaidInput = document.getElementById('amount_paid');
@@ -160,30 +161,72 @@
             }
         }
 
-        billGstType.addEventListener('change', updateGSTSectionVisibility);
-        updateGSTSectionVisibility(); // Initial call on page load
-
-    function updatePaymentFields() {
-        const total = parseFloat(billTotal.textContent) || 0;
-        let paid = 0, unpaid = 0;
-        if (billStatus.value === 'paid') {
-            paid = total;
-            unpaid = 0;
-            amountPaidSection.style.display = 'none';
-        } else if (billStatus.value === 'unpaid') {
-            paid = 0;
-            unpaid = total;
-            amountPaidSection.style.display = 'none';
-        } else if (billStatus.value === 'partial') {
-            amountPaidSection.style.display = '';
-            paid = parseFloat(amountPaidInput.value);
-            unpaid = total - paid;
-            if (unpaid < 0) unpaid = 0;
+        function updatePaymentFields() {
+            // Always use parseFloat and round to 2 decimal places
+            const total = Math.round((parseFloat(billTotal.textContent) || 0) * 100) / 100;
+            let paid = 0, unpaid = 0;
+            
+            if (billStatus.value === 'paid') {
+                paid = total;
+                unpaid = 0;
+                amountPaidSection.style.display = 'none';
+            } else if (billStatus.value === 'unpaid') {
+                paid = 0;
+                unpaid = total;
+                amountPaidSection.style.display = 'none';
+            } else if (billStatus.value === 'partial') {
+                amountPaidSection.style.display = '';
+                paid = Math.round((parseFloat(amountPaidInput.value) || 0) * 100) / 100;
+                unpaid = Math.round((total - paid) * 100) / 100;
+                
+                // Ensure unpaid doesn't go negative
+                if (unpaid < 0) unpaid = 0;
+                
+                // If paid is more than total, cap it
+                if (paid > total) {
+                    paid = total;
+                    unpaid = 0;
+                    amountPaidInput.value = total.toFixed(2);
+                }
+            }
+            
+            // Update display with 2 decimal places
+            paidAmountDisplay.textContent = paid.toFixed(2);
+            unpaidAmountDisplay.textContent = unpaid.toFixed(2);
+            calculatedPaidAmount.value = paid.toFixed(2);
+            calculatedUnpaidAmount.value = unpaid.toFixed(2);
         }
+
+        // Add event listeners
+        billGstType.addEventListener('change', updateGSTSectionVisibility);
         billStatus.addEventListener('change', updatePaymentFields);
         amountPaidInput.addEventListener('input', updatePaymentFields);
-        // Call on page load
+        
+        // Initial calls
+        updateGSTSectionVisibility();
         updatePaymentFields();
+    });
+
+    document.getElementById('create-bill-form').addEventListener('submit', function(e) {
+        const billTotal = parseFloat(document.getElementById('bill-total').textContent);
+        const paidAmount = parseFloat(document.getElementById('calculated_paid_amount').value);
+        const unpaidAmount = parseFloat(document.getElementById('calculated_unpaid_amount').value);
+        
+        // Verify payment amounts match total
+        if (Math.abs((paidAmount + unpaidAmount) - billTotal) > 0.01) {
+            alert('Error: Paid + Unpaid amounts do not match the total bill amount.');
+            e.preventDefault();
+            return false;
+        }
+        
+        // Verify at least one product was added
+        if (document.querySelectorAll('.product-row').length === 0) {
+            alert('Please add at least one product to the bill.');
+            e.preventDefault();
+            return false;
+        }
+        
+        return true;
     });
 </script>
 <script>feather.replace()</script>
