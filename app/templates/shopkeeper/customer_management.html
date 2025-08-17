@@ -1,0 +1,602 @@
+{% extends 'shopkeeper/s_base.html' %}
+{% block title %}Customer Management | MyBillingApp{% endblock %}
+{% block content %}
+<script src="https://unpkg.com/feather-icons"></script>
+
+<div class="p-4 md:p-8">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                <i data-feather="users" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
+                Customer Management
+            </h1>
+            <p class="text-gray-600 text-sm md:text-base mt-1">Manage your customer database and relationships</p>
+        </div>
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+            <button onclick="openAddCustomerModal()" 
+                    class="flex items-center justify-center space-x-2 bg-[#ed6a3e] hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition duration-300 text-sm font-medium">
+                <i data-feather="user-plus" class="w-4 h-4"></i>
+                <span>Add Customer</span>
+            </button>
+            <button onclick="exportCustomers()" 
+                    class="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-300 text-sm font-medium">
+                <i data-feather="download" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Export</span>
+                <span class="sm:hidden">Export</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Customers</p>
+                    <p class="text-2xl md:text-3xl font-bold text-gray-900">{{ customers|length if customers else 0 }}</p>
+                </div>
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i data-feather="users" class="w-5 h-5 md:w-6 md:h-6 text-blue-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Active Customers</p>
+                    <p class="text-2xl md:text-3xl font-bold text-green-600">{{ active_customers_count if active_customers_count else 0 }}</p>
+                </div>
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <i data-feather="user-check" class="w-5 h-5 md:w-6 md:h-6 text-green-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Sales</p>
+                    <p class="text-2xl md:text-3xl font-bold text-[#ed6a3e]">₹{{ "{:,.0f}".format(total_sales) if total_sales else 0 }}</p>
+                </div>
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <i data-feather="trending-up" class="w-5 h-5 md:w-6 md:h-6 text-[#ed6a3e]"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Avg Order Value</p>
+                    <p class="text-2xl md:text-3xl font-bold text-purple-600">₹{{ "{:,.0f}".format(avg_order_value) if avg_order_value else 0 }}</p>
+                </div>
+                <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <i data-feather="bar-chart" class="w-5 h-5 md:w-6 md:h-6 text-purple-600"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 border border-gray-200">
+        <div class="flex items-center mb-4">
+            <i data-feather="search" class="w-5 h-5 text-[#ed6a3e] mr-2"></i>
+            <h2 class="text-lg md:text-xl font-bold text-gray-800">Search & Filter</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-2">
+                <label for="customer-search" class="block text-sm font-medium text-gray-700 mb-2">Search Customers</label>
+                <div class="relative">
+                    <input type="text" id="customer-search" 
+                           placeholder="Search by name, phone, or email..." 
+                           class="w-full pl-10 pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                    <i data-feather="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                </div>
+            </div>
+
+            <div>
+                <label for="location-filter" class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <select id="location-filter" 
+                        class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                    <option value="">All Locations</option>
+                    {% for location in unique_locations %}
+                    <option value="{{ location }}">{{ location }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="sort-by" class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                <select id="sort-by" 
+                        class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                    <option value="name">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                    <option value="recent">Recently Added</option>
+                    <option value="sales-high">Sales (High to Low)</option>
+                    <option value="sales-low">Sales (Low to High)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mt-4 space-y-2 md:space-y-0">
+            <div class="flex items-center space-x-4">
+                <button type="button" id="clear-filters" 
+                        class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition duration-300 text-sm font-medium">
+                    Clear Filters
+                </button>
+            </div>
+            <div class="text-sm text-gray-500">
+                Showing <span id="showing-count">{{ customers|length if customers else 0 }}</span> customers
+            </div>
+        </div>
+    </div>
+
+    <!-- Customers List -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <!-- Desktop Table View -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Orders</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Spent</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Order</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customers-table-body" class="bg-white divide-y divide-gray-200">
+                    {% if customers %}
+                    {% for customer in customers %}
+                    <tr class="customer-row hover:bg-gray-50 transition duration-200" 
+                        data-name="{{ customer.name|lower }}"
+                        data-phone="{{ customer.phone|lower }}"
+                        data-email="{{ customer.email|lower if customer.email else '' }}"
+                        data-location="{{ customer.address|lower if customer.address else '' }}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-gradient-to-r from-[#ed6a3e] to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm mr-3">
+                                    {{ customer.name[0]|upper }}
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">{{ customer.name }}</div>
+                                    {% if customer.email %}
+                                    <div class="text-sm text-gray-500">{{ customer.email }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ customer.phone }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ customer.address or 'N/A' }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ customer.total_orders or 0 }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">₹{{ "{:,.0f}".format(customer.total_spent) if customer.total_spent else 0 }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ customer.last_order_date.strftime('%d %b %Y') if customer.last_order_date else 'No orders' }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                <button onclick="viewCustomer('{{ customer.customer_id }}')" 
+                                        class="text-blue-600 hover:text-blue-900 transition duration-200">
+                                    <i data-feather="eye" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="editCustomer('{{ customer.customer_id }}')" 
+                                        class="text-green-600 hover:text-green-900 transition duration-200">
+                                    <i data-feather="edit" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteCustomer('{{ customer.customer_id }}')" 
+                                        class="text-red-600 hover:text-red-900 transition duration-200">
+                                    <i data-feather="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <i data-feather="users" class="w-16 h-16 text-gray-300 mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
+                                <p class="text-gray-500 mb-4">Start by adding your first customer to the database.</p>
+                                <button onclick="openAddCustomerModal()" 
+                                        class="px-4 py-2 bg-[#ed6a3e] hover:bg-orange-700 text-white rounded-lg transition duration-300">
+                                    Add Customer
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="md:hidden" id="customers-mobile-view">
+            {% if customers %}
+            {% for customer in customers %}
+            <div class="customer-card border-b border-gray-200 p-4" 
+                 data-name="{{ customer.name|lower }}"
+                 data-phone="{{ customer.phone|lower }}"
+                 data-email="{{ customer.email|lower if customer.email else '' }}"
+                 data-location="{{ customer.address|lower if customer.address else '' }}">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-gradient-to-r from-[#ed6a3e] to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-lg mr-3">
+                            {{ customer.name[0]|upper }}
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900">{{ customer.name }}</h3>
+                            <p class="text-sm text-gray-600">{{ customer.phone }}</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="viewCustomer('{{ customer.customer_id }}')" 
+                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition duration-200">
+                            <i data-feather="eye" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="editCustomer('{{ customer.customer_id }}')" 
+                                class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition duration-200">
+                            <i data-feather="edit" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteCustomer('{{ customer.customer_id }}')" 
+                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition duration-200">
+                            <i data-feather="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <span class="text-gray-500">Location:</span>
+                        <div class="font-medium">{{ customer.address or 'N/A' }}</div>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Total Orders:</span>
+                        <div class="font-medium">{{ customer.total_orders or 0 }}</div>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Total Spent:</span>
+                        <div class="font-medium text-[#ed6a3e]">₹{{ "{:,.0f}".format(customer.total_spent) if customer.total_spent else 0 }}</div>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Last Order:</span>
+                        <div class="font-medium">{{ customer.last_order_date.strftime('%d %b %Y') if customer.last_order_date else 'No orders' }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="p-8 text-center">
+                <i data-feather="users" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
+                <p class="text-gray-500 mb-4">Start by adding your first customer to the database.</p>
+                <button onclick="openAddCustomerModal()" 
+                        class="px-4 py-2 bg-[#ed6a3e] hover:bg-orange-700 text-white rounded-lg transition duration-300">
+                    Add Customer
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Customer Modal -->
+<div id="customer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full max-h-screen overflow-y-auto">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 id="modal-title" class="text-xl font-bold text-gray-800">Add Customer</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600 transition duration-200">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <form id="customer-form" class="space-y-4">
+                <input type="hidden" id="customer-id" name="customer_id">
+                
+                <div>
+                    <label for="customer-name" class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                    <input type="text" id="customer-name" name="name" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                </div>
+                
+                <div>
+                    <label for="customer-phone" class="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+                    <input type="tel" id="customer-phone" name="phone" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                </div>
+                
+                <div>
+                    <label for="customer-email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="customer-email" name="email"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                </div>
+                
+                <div>
+                    <label for="customer-address" class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <textarea id="customer-address" name="address" rows="3"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 resize-none"></textarea>
+                </div>
+                
+                <div class="flex space-x-3 pt-6">
+                    <button type="submit" 
+                            class="flex-1 bg-[#ed6a3e] hover:bg-orange-700 text-white font-medium py-3 rounded-lg transition duration-300">
+                        Save Customer
+                    </button>
+                    <button type="button" id="cancel-modal" 
+                            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-lg transition duration-300">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Details Modal -->
+<div id="customer-details-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">Customer Details</h3>
+                <button id="close-details-modal" class="text-gray-400 hover:text-gray-600 transition duration-200">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div id="customer-details-content">
+                <!-- Customer details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    feather.replace();
+    
+    // Search and filter functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('customer-search');
+        const locationFilter = document.getElementById('location-filter');
+        const sortBy = document.getElementById('sort-by');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        const showingCount = document.getElementById('showing-count');
+        
+        function filterAndSortCustomers() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedLocation = locationFilter.value.toLowerCase();
+            const sortValue = sortBy.value;
+            
+            // Get all customer rows (both desktop and mobile)
+            const customerRows = document.querySelectorAll('.customer-row');
+            const customerCards = document.querySelectorAll('.customer-card');
+            
+            let visibleCount = 0;
+            let visibleElements = [];
+            
+            // Filter customers
+            [...customerRows, ...customerCards].forEach(element => {
+                const name = element.dataset.name || '';
+                const phone = element.dataset.phone || '';
+                const email = element.dataset.email || '';
+                const location = element.dataset.location || '';
+                
+                let isVisible = true;
+                
+                // Search filter
+                if (searchTerm && !name.includes(searchTerm) && !phone.includes(searchTerm) && !email.includes(searchTerm)) {
+                    isVisible = false;
+                }
+                
+                // Location filter
+                if (selectedLocation && !location.includes(selectedLocation)) {
+                    isVisible = false;
+                }
+                
+                if (isVisible) {
+                    element.style.display = '';
+                    visibleElements.push(element);
+                    if (element.classList.contains('customer-row') || element.classList.contains('customer-card')) {
+                        visibleCount++;
+                    }
+                } else {
+                    element.style.display = 'none';
+                }
+            });
+            
+            // Update count (divide by 2 since we have both desktop and mobile views)
+            if (showingCount) {
+                showingCount.textContent = Math.floor(visibleCount / 2);
+            }
+        }
+        
+        // Attach event listeners
+        [searchInput, locationFilter, sortBy].forEach(input => {
+            input.addEventListener('input', filterAndSortCustomers);
+            input.addEventListener('change', filterAndSortCustomers);
+        });
+        
+        // Clear filters
+        clearFiltersBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            locationFilter.value = '';
+            sortBy.value = 'name';
+            filterAndSortCustomers();
+        });
+        
+        // Modal event listeners
+        document.getElementById('close-modal').addEventListener('click', closeModal);
+        document.getElementById('cancel-modal').addEventListener('click', closeModal);
+        document.getElementById('close-details-modal').addEventListener('click', closeDetailsModal);
+        
+        // Form submission
+        document.getElementById('customer-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveCustomer();
+        });
+    });
+    
+    function openAddCustomerModal() {
+        document.getElementById('modal-title').textContent = 'Add Customer';
+        document.getElementById('customer-form').reset();
+        document.getElementById('customer-id').value = '';
+        document.getElementById('customer-modal').classList.remove('hidden');
+    }
+    
+    function editCustomer(customerId) {
+        // Load customer data and open modal
+        fetch(`/shopkeeper/get_customer/${customerId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const customer = data.customer;
+                    document.getElementById('modal-title').textContent = 'Edit Customer';
+                    document.getElementById('customer-id').value = customer.customer_id;
+                    document.getElementById('customer-name').value = customer.name;
+                    document.getElementById('customer-phone').value = customer.phone;
+                    document.getElementById('customer-email').value = customer.email || '';
+                    document.getElementById('customer-address').value = customer.address || '';
+                    document.getElementById('customer-modal').classList.remove('hidden');
+                } else {
+                    alert('Error loading customer data');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error loading customer data');
+            });
+    }
+    
+    function viewCustomer(customerId) {
+        // Load and display customer details
+        fetch(`/shopkeeper/get_customer_details/${customerId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayCustomerDetails(data.customer, data.orders);
+                    document.getElementById('customer-details-modal').classList.remove('hidden');
+                } else {
+                    alert('Error loading customer details');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error loading customer details');
+            });
+    }
+    
+    function deleteCustomer(customerId) {
+        if (confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
+            fetch(`/shopkeeper/delete_customer/${customerId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Customer deleted successfully');
+                    location.reload();
+                } else {
+                    alert('Error deleting customer: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting customer');
+            });
+        }
+    }
+    
+    function saveCustomer() {
+        const formData = new FormData(document.getElementById('customer-form'));
+        const customerId = document.getElementById('customer-id').value;
+        
+        const url = customerId ? `/shopkeeper/update_customer/${customerId}` : '/shopkeeper/add_customer';
+        const method = customerId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(customerId ? 'Customer updated successfully' : 'Customer added successfully');
+                closeModal();
+                location.reload();
+            } else {
+                alert('Error saving customer: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving customer');
+        });
+    }
+    
+    function exportCustomers() {
+        window.location.href = '/shopkeeper/export_customers';
+    }
+    
+    function displayCustomerDetails(customer, orders) {
+        const content = document.getElementById('customer-details-content');
+        content.innerHTML = `
+            <div class="space-y-6">
+                <!-- Customer Info -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-800 mb-3">Customer Information</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div><span class="text-gray-600">Name:</span> <span class="font-medium">${customer.name}</span></div>
+                        <div><span class="text-gray-600">Phone:</span> <span class="font-medium">${customer.phone}</span></div>
+                        <div><span class="text-gray-600">Email:</span> <span class="font-medium">${customer.email || 'N/A'}</span></div>
+                        <div><span class="text-gray-600">Address:</span> <span class="font-medium">${customer.address || 'N/A'}</span></div>
+                    </div>
+                </div>
+                
+                <!-- Order History -->
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-3">Order History (${orders.length} orders)</h4>
+                    ${orders.length > 0 ? `
+                        <div class="space-y-2 max-h-60 overflow-y-auto">
+                            ${orders.map(order => `
+                                <div class="bg-white border rounded-lg p-3">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <div class="font-medium">Bill #${order.bill_id}</div>
+                                            <div class="text-sm text-gray-600">${order.date}</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="font-medium text-[#ed6a3e]">₹${order.total}</div>
+                                            <div class="text-sm text-gray-600">${order.items_count} items</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<p class="text-gray-500 text-center py-4">No orders found</p>'}
+                </div>
+            </div>
+        `;
+    }
+    
+    function closeModal() {
+        document.getElementById('customer-modal').classList.add('hidden');
+    }
+    
+    function closeDetailsModal() {
+        document.getElementById('customer-details-modal').classList.add('hidden');
+    }
+</script>
+{% endblock %}

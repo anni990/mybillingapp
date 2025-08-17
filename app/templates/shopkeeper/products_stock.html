@@ -3,321 +3,402 @@
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
-<div class="flex min-h-screen bg-gray-100">
-    <aside
-        class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
+
+<style>
+    .modal-backdrop {
+        backdrop-filter: blur(5px);
+    }
+    
+    .stock-indicator {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-responsive table {
+            min-width: 700px;
+        }
+    }
+</style>
+
+<div class="p-4 md:p-8">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
         <div>
-            <nav class="mt-5 flex-1">
-                <ul class="space-y-2">
-                    <li><a href="{{ url_for('shopkeeper.dashboard') }}"
-                            class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/20 transition duration-300"><i
-                                data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
-                    <li><a href="{{ url_for('shopkeeper.create_bill') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
-                    <li><a href="{{ url_for('shopkeeper.manage_bills') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
-                    <li><a href="{{ url_for('shopkeeper.products_stock') }}"
-                            class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i
-                                data-feather="box" class="mr-3"></i>Products & Stock</a></li>
-                    <li><a href="{{ url_for('shopkeeper.sales_reports') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
-                    <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
-                </ul>
-            </nav>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                <i data-feather="package" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
+                Products & Stock
+            </h1>
+            <p class="text-gray-600 text-sm md:text-base mt-1">Manage your inventory and stock levels</p>
         </div>
-        <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
-    </aside>
-    <main class="flex-1 ml-64 p-8 bg-gray-100 min-h-screen">
-        <div class="max-w-7xl mx-auto">
-            <h2 class="text-3xl font-bold text-[#ed6a3e] mb-6">Products & Stock</h2>
+        <div class="flex items-center space-x-2 md:space-x-4">
+            <button id="add-product-btn"
+                class="flex items-center space-x-2 bg-[#ed6a3e] hover:bg-orange-700 text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                <i data-feather="plus" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Add Product</span>
+                <span class="md:hidden">Add</span>
+            </button>
+            <a href="{{ url_for('shopkeeper.dashboard') }}"
+                class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                <i data-feather="home" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Dashboard</span>
+                <span class="md:hidden">Home</span>
+            </a>
+        </div>
+    </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-lg mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                <button id="add-product-btn" class="bg-[#ed6a3e] text-white px-6 py-3 rounded-full shadow-md hover:bg-orange-700 transition duration-300 flex items-center justify-center w-full md:w-auto">
-                    <i data-feather="plus-circle" class="mr-2 w-5 h-5"></i> Add New Product
+    <!-- Search and Filter Section -->
+    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 border border-gray-200">
+        <div class="flex items-center mb-4">
+            <i data-feather="filter" class="w-5 h-5 text-[#ed6a3e] mr-2"></i>
+            <h2 class="text-lg md:text-xl font-bold text-gray-800">Search & Filter</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Search Box -->
+            <div class="relative">
+                <label for="product-search" class="block text-sm font-medium text-gray-700 mb-2">Search Products</label>
+                <div class="relative">
+                    <input type="text" id="product-search" placeholder="Search by name, barcode..."
+                        class="w-full pl-10 pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                    <i data-feather="search"
+                        class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                </div>
+            </div>
+
+            <!-- Stock Filter -->
+            <div>
+                <label for="stock-filter" class="block text-sm font-medium text-gray-700 mb-2">Stock Level</label>
+                <select id="stock-filter"
+                    class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                    <option value="">All Products</option>
+                    <option value="low">Low Stock</option>
+                    <option value="out">Out of Stock</option>
+                    <option value="good">Good Stock</option>
+                </select>
+            </div>
+            
+            <div class="flex items-end">
+                <button id="clear-filters" 
+                        class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 md:py-3 rounded-lg transition duration-300 text-sm md:text-base font-medium">
+                    Clear Filters
                 </button>
-                
-                <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                    <div class="relative w-full">
-                        <i data-feather="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" id="product-search" placeholder="Search products..." class="pl-10 pr-4 py-2 border rounded-full w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
-                    </div>
+            </div>
+        </div>
+    </div>
 
-                    <div class="relative w-full">
-                        <button type="button" id="stock-filter-btn" class="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent flex items-center justify-between bg-white">
-                            Filter Stock <i data-feather="chevron-down" class="ml-2 w-4 h-4"></i>
-                        </button>
-                        <div id="stock-dropdown" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10 hidden">
-                            <label class="block px-4 py-2 hover:bg-gray-50 cursor-pointer"><input type="checkbox" name="stock_status" value="All" class="mr-2"> All</label>
-                            <label class="block px-4 py-2 hover:bg-gray-50 cursor-pointer"><input type="checkbox" name="stock_status" value="In Stock" class="mr-2"> In Stock</label>
-                            <label class="block px-4 py-2 hover:bg-gray-50 cursor-pointer"><input type="checkbox" name="stock_status" value="Low Stock" class="mr-2"> Low Stock</label>
+    <!-- Products Table Section -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200">
+        <div class="table-responsive">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barcode</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GST Rate</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HSN Code</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="products-table-body">
+                    {% for product in products %}
+                    <tr class="product-row hover:bg-gray-50 transition duration-200"
+                        data-name="{{ product.product_name|lower }}"
+                        data-barcode="{{ product.barcode|lower if product.barcode else '' }}"
+                        data-stock="{{ product.stock_qty }}"
+                        data-threshold="{{ product.low_stock_threshold }}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ product.product_name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ product.barcode or '-' }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">₹{{ "{:,.2f}".format(product.price) }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ product.gst_rate }}%</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <span class="text-sm font-medium 
+                                    {% if product.stock_qty == 0 %}text-red-600
+                                    {% elif product.stock_qty <= product.low_stock_threshold %}text-yellow-600 stock-indicator
+                                    {% else %}text-green-600{% endif %}">
+                                    {{ product.stock_qty }}
+                                </span>
+                                {% if product.stock_qty <= product.low_stock_threshold %}
+                                <i data-feather="alert-triangle" class="w-4 h-4 ml-2 text-yellow-500"></i>
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-gray-500">Threshold: {{ product.low_stock_threshold }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ product.hsn_code or '-' }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                <button class="edit-product-btn text-blue-600 hover:text-blue-900 transition duration-200"
+                                        title="Edit Product"
+                                        data-product-id="{{ product.product_id }}"
+                                        data-name="{{ product.product_name }}"
+                                        data-barcode="{{ product.barcode or '' }}"
+                                        data-price="{{ product.price }}"
+                                        data-gst="{{ product.gst_rate }}"
+                                        data-hsn="{{ product.hsn_code or '' }}"
+                                        data-stock="{{ product.stock_qty }}"
+                                        data-threshold="{{ product.low_stock_threshold }}">
+                                    <i data-feather="edit" class="w-4 h-4"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-900 transition duration-200"
+                                        title="Delete Product"
+                                        onclick="deleteProduct('{{ product.product_id }}')">
+                                    <i data-feather="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty State -->
+        {% if not products %}
+        <div class="text-center py-12">
+            <i data-feather="package" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+            <p class="text-gray-500 mb-6">Start building your inventory by adding your first product.</p>
+            <button id="add-first-product-btn" 
+                    class="inline-flex items-center px-4 py-2 bg-[#ed6a3e] text-white rounded-lg hover:bg-orange-700 transition duration-300">
+                <i data-feather="plus" class="w-4 h-4 mr-2"></i>
+                Add Product
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add/Edit Product Modal -->
+<div id="product-modal" class="fixed inset-0 modal-backdrop hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all duration-300">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modal-title" class="text-lg font-bold text-gray-800">Add Product</h3>
+            <button id="close-modal" class="text-gray-400 hover:text-gray-600 transition duration-200">
+                <i data-feather="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <form id="product-form" method="POST">
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <label for="product_name" class="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
+                    <input type="text" id="product_name" name="product_name" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                </div>
+                
+                <div>
+                    <label for="barcode" class="block text-sm font-medium text-gray-700 mb-2">Barcode</label>
+                    <input type="text" id="barcode" name="barcode"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price *</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
+                            <input type="number" id="price" name="price" step="0.01" min="0" required
+                                   class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="gst_rate" class="block text-sm font-medium text-gray-700 mb-2">GST Rate</label>
+                        <div class="relative">
+                            <input type="number" id="gst_rate" name="gst_rate" step="0.01" min="0" max="100"
+                                   class="w-full px-4 pr-8 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                            <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="overflow-x-auto bg-white rounded-xl shadow-lg">
-                <table class="min-w-full divide-y divide-gray-200" id="products-table">
-                    <thead class="bg-[#f8bfa0]">
-                        <tr>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Name</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Barcode</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Price</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Stock</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">GST Rate</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">HSN Code</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider">Status</th>
-                            <th class="py-4 px-6 text-left text-sm font-semibold text-[#ed6a3e] uppercase tracking-wider text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for product in products %}
-                        <tr class="product-row hover:bg-orange-50 transition duration-200 {% if product.stock_qty <= product.low_stock_threshold %}bg-red-50{% endif %}">
-                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-900">{{ product.product_name }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-500">{{ product.barcode }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base font-bold text-gray-900">₹{{ product.price }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-900 stock-qty" data-stock="{{ product.stock_qty }}" data-threshold="{{ product.low_stock_threshold }}">{{ product.stock_qty }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-500">{{ product.gst_rate }}%</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-500">{{ product.hsn_code }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base">
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold product-status
-                                    {% if product.stock_qty <= product.low_stock_threshold %}bg-red-100 text-red-700
-                                    {% else %}bg-green-100 text-green-700{% endif %}">
-                                    {% if product.stock_qty <= product.low_stock_threshold %}Low Stock{% else %}In Stock{% endif %}
-                                </span>
-                            </td>
-                            <td class="py-4 px-6 whitespace-nowrap text-right text-base font-medium flex gap-2 justify-end items-center">
-                                <button class="text-[#ed6a3e] hover:text-orange-700 edit-product-btn" title="Edit Product"
-                                        data-product-id="{{ product.product_id }}"
-                                        data-product-name="{{ product.product_name }}"
-                                        data-barcode="{{ product.barcode }}"
-                                        data-price="{{ product.price }}"
-                                        data-gst-rate="{{ product.gst_rate }}"
-                                        data-hsn-code="{{ product.hsn_code }}"
-                                        data-stock-qty="{{ product.stock_qty }}"
-                                        data-low-stock-threshold="{{ product.low_stock_threshold }}">
-                                    <i data-feather="edit" class="w-5 h-5"></i>
-                                </button>
-                                <form action="{{ url_for('shopkeeper.delete_product', product_id=product.product_id) }}" method="post" class="inline">
-                                    <button type="submit" class="text-red-500 hover:text-red-700" title="Delete Product" onclick="return confirm('Are you sure you want to delete this product?');">
-                                        <i data-feather="trash-2" class="w-5 h-5"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="8" class="text-gray-400 py-8 text-center text-lg">No products found.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
-
-    <div id="product-modal" class="fixed inset-0 flex items-center justify-center z-50 p-4 hidden backdrop-filter backdrop-blur-sm bg-opacity-30 transition-all duration-300">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg mx-4 transform transition-all scale-95 opacity-0 duration-300" id="modal-content">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-[#ed6a3e]" id="modal-title">Add New Product</h3>
-                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600">
-                    <i data-feather="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <form id="product-form" method="post" action="{{ url_for('shopkeeper.add_product') }}">
-                <input type="hidden" name="product_id" id="product-id">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="mb-4">
-                        <label for="product_name" class="block text-gray-700 text-sm font-semibold mb-2">Product Name</label>
-                        <input type="text" name="product_name" id="product_name" class="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent" required>
+                
+                <div>
+                    <label for="hsn_code" class="block text-sm font-medium text-gray-700 mb-2">HSN Code</label>
+                    <input type="text" id="hsn_code" name="hsn_code"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="stock_qty" class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
+                        <input type="number" id="stock_qty" name="stock_qty" min="0"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
                     </div>
-                    <div class="mb-4">
-                        <label for="barcode" class="block text-gray-700 text-sm font-semibold mb-2">Barcode (Optional)</label>
-                        <input type="text" name="barcode" id="barcode" class="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
-                    </div>
-                    <div class="mb-4">
-                        <label for="price" class="block text-gray-700 text-sm font-semibold mb-2">Price (₹)</label>
-                        <input type="number" step="0.01" name="price" id="price" class="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent" required>
-                    </div>
-                    <div class="mb-4">
-                        <label for="gst_rate" class="block text-gray-700 text-sm font-semibold mb-2">GST Rate (%)</label>
-                        <input type="number" step="0.01" name="gst_rate" id="gst_rate" class="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent" required>
-                    </div>
-                    <div class="mb-4">
-                        <label for="hsn_code" class="block text-gray-700 text-sm font-semibold mb-2">HSN Code</label>
-                        <input type="text" name="hsn_code" id="hsn_code" class="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent" required>
-                    </div>
-                    <div class="mb-4">
-                        <label for="stock_qty" class="block text-gray-700 text-sm font-semibold mb-2">Stock Quantity</label>
-                        <input type="number" min="0" name="stock_qty" id="stock_qty" class="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent" required>
-                    </div>
-                    <div class="mb-6 col-span-1 md:col-span-2">
-                        <label for="low_stock_threshold" class="block text-gray-700 text-sm font-semibold mb-2">Low Stock Threshold</label>
-                        <input type="number" min="0" name="low_stock_threshold" id="low_stock_threshold" class="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent" required>
+                    
+                    <div>
+                        <label for="low_stock_threshold" class="block text-sm font-medium text-gray-700 mb-2">Low Stock Alert</label>
+                        <input type="number" id="low_stock_threshold" name="low_stock_threshold" min="0"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
                     </div>
                 </div>
-                <button type="submit" class="bg-[#ed6a3e] text-white px-6 py-3 rounded-full shadow-md hover:bg-orange-700 transition duration-300 w-full font-semibold">
-                    Save Product
+            </div>
+            
+            <div class="flex space-x-3 mt-6">
+                <button type="button" id="cancel-modal" 
+                        class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-300 font-medium">
+                    Cancel
                 </button>
-            </form>
-        </div>
+                <button type="submit" 
+                        class="flex-1 px-4 py-3 bg-[#ed6a3e] text-white rounded-lg hover:bg-orange-700 transition duration-300 font-medium">
+                    <span id="submit-text">Add Product</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     feather.replace();
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const productSearchInput = document.getElementById('product-search');
-        const stockFilterBtn = document.getElementById('stock-filter-btn');
-        const stockDropdown = document.getElementById('stock-dropdown');
-        const stockCheckboxes = document.querySelectorAll('#stock-dropdown input[type="checkbox"]');
-        const productsTable = document.getElementById('products-table');
-        const productRows = productsTable.querySelectorAll('tbody tr.product-row');
+    
+    // Search and Filter functionality
+    const searchInput = document.getElementById('product-search');
+    const stockFilter = document.getElementById('stock-filter');
+    const clearFiltersBtn = document.getElementById('clear-filters');
+    
+    function filterProducts() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const stockValue = stockFilter.value;
         
-        // Modal elements
-        const addProductBtn = document.getElementById('add-product-btn');
-        const productModal = document.getElementById('product-modal');
-        const closeModalBtn = document.getElementById('close-modal-btn');
-        const modalContent = document.getElementById('modal-content');
-        const productForm = document.getElementById('product-form');
-        const modalTitle = document.getElementById('modal-title');
-        const productIdInput = document.getElementById('product-id');
-
-        // Form fields for product data
-        const productNameInput = document.getElementById('product_name');
-        const barcodeInput = document.getElementById('barcode');
-        const priceInput = document.getElementById('price');
-        const gstRateInput = document.getElementById('gst_rate');
-        const hsnCodeInput = document.getElementById('hsn_code');
-        const stockQtyInput = document.getElementById('stock_qty');
-        const lowStockThresholdInput = document.getElementById('low_stock_threshold');
-
-        const showModal = () => {
-            productModal.classList.remove('hidden');
-            // Animate modal in
-            setTimeout(() => {
-                modalContent.classList.remove('opacity-0', 'scale-95');
-                modalContent.classList.add('opacity-100', 'scale-100');
-            }, 10);
-        };
-
-        const hideModal = () => {
-            modalContent.classList.remove('opacity-100', 'scale-100');
-            modalContent.classList.add('opacity-0', 'scale-95');
-            setTimeout(() => {
-                productModal.classList.add('hidden');
-            }, 300); // Match this duration with the transition duration
-        };
-
-        addProductBtn.addEventListener('click', () => {
-            modalTitle.textContent = 'Add New Product';
-            productForm.action = "{{ url_for('shopkeeper.add_product') }}";
-            productForm.reset();
-            productIdInput.value = ''; // Clear product ID for new product
-            showModal();
-        });
-
-        closeModalBtn.addEventListener('click', hideModal);
-
-        // Close modal when clicking outside of modal content
-        productModal.addEventListener('click', (event) => {
-            if (event.target === productModal) {
-                hideModal();
+        const rows = document.querySelectorAll('.product-row');
+        
+        rows.forEach(row => {
+            const name = row.dataset.name || '';
+            const barcode = row.dataset.barcode || '';
+            const stock = parseInt(row.dataset.stock) || 0;
+            const threshold = parseInt(row.dataset.threshold) || 0;
+            
+            let showRow = true;
+            
+            // Search filter
+            if (searchTerm && !name.includes(searchTerm) && !barcode.includes(searchTerm)) {
+                showRow = false;
             }
-        });
-
-        // Add event listeners for edit buttons
-        document.addEventListener('click', (event) => {
-            if (event.target.closest('.edit-product-btn')) {
-                const editBtn = event.target.closest('.edit-product-btn');
-                
-                // Get product data from data attributes
-                const productId = editBtn.dataset.productId;
-                const productName = editBtn.dataset.productName;
-                const barcode = editBtn.dataset.barcode;
-                const price = editBtn.dataset.price;
-                const gstRate = editBtn.dataset.gstRate;
-                const hsnCode = editBtn.dataset.hsnCode;
-                const stockQty = editBtn.dataset.stockQty;
-                const lowStockThreshold = editBtn.dataset.lowStockThreshold;
-                
-                // Update modal title and form action
-                modalTitle.textContent = 'Edit Product';
-                productForm.action = `{{ url_for('shopkeeper.edit_product', product_id=0) }}`.replace('0', productId);
-                
-                // Prefill form fields
-                productIdInput.value = productId;
-                productNameInput.value = productName || '';
-                barcodeInput.value = barcode || '';
-                priceInput.value = price || '';
-                gstRateInput.value = gstRate || '';
-                hsnCodeInput.value = hsnCode || '';
-                stockQtyInput.value = stockQty || '';
-                lowStockThresholdInput.value = lowStockThreshold || '';
-                
-                // Show modal
-                showModal();
+            
+            // Stock level filter
+            if (stockValue) {
+                if (stockValue === 'out' && stock > 0) showRow = false;
+                if (stockValue === 'low' && (stock > threshold || stock === 0)) showRow = false;
+                if (stockValue === 'good' && stock <= threshold) showRow = false;
             }
+            
+            row.style.display = showRow ? '' : 'none';
         });
-
-
-        // Filtering logic
-        const applyFilters = () => {
-            const searchTerm = productSearchInput.value.toLowerCase();
-            const selectedStockStatuses = Array.from(stockCheckboxes)
-                .filter(checkbox => checkbox.checked)
-                .map(checkbox => checkbox.value);
-
-            productRows.forEach(row => {
-                const productName = row.cells[0].textContent.toLowerCase();
-                const stockQty = parseInt(row.querySelector('.stock-qty').dataset.stock);
-                const lowStockThreshold = parseInt(row.querySelector('.stock-qty').dataset.threshold);
-                
-                let matchesSearch = searchTerm === '' || productName.includes(searchTerm);
-                
-                let matchesStockStatus = false;
-                if (selectedStockStatuses.includes('All') || selectedStockStatuses.length === 0) {
-                    matchesStockStatus = true;
-                } else {
-                    if (selectedStockStatuses.includes('In Stock') && stockQty > lowStockThreshold) {
-                        matchesStockStatus = true;
-                    }
-                    if (selectedStockStatuses.includes('Low Stock') && stockQty <= lowStockThreshold) {
-                        matchesStockStatus = true;
-                    }
-                }
-
-                if (matchesSearch && matchesStockStatus) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        };
-
-        // Event listeners for filters
-        productSearchInput.addEventListener('keyup', applyFilters);
-        stockFilterBtn.addEventListener('click', () => {
-            stockDropdown.classList.toggle('hidden');
-        });
-        document.addEventListener('click', (event) => {
-            if (!stockFilterBtn.contains(event.target) && !stockDropdown.contains(event.target)) {
-                stockDropdown.classList.add('hidden');
-            }
-        });
-        stockCheckboxes.forEach(checkbox => checkbox.addEventListener('change', applyFilters));
-
-        // Set 'All' checkbox as checked by default on load, then apply filters
-        const allCheckbox = document.querySelector('#stock-dropdown input[value="All"]');
-        if (allCheckbox) {
-            allCheckbox.checked = true;
-        }
-        applyFilters(); // Initial filter application
+    }
+    
+    searchInput.addEventListener('input', filterProducts);
+    stockFilter.addEventListener('change', filterProducts);
+    
+    clearFiltersBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        stockFilter.value = '';
+        filterProducts();
     });
+    
+    // Modal functionality
+    const modal = document.getElementById('product-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const submitText = document.getElementById('submit-text');
+    const productForm = document.getElementById('product-form');
+    
+    function openModal(isEdit = false, productData = {}) {
+        modal.classList.remove('hidden');
+        modalTitle.textContent = isEdit ? 'Edit Product' : 'Add Product';
+        submitText.textContent = isEdit ? 'Update Product' : 'Add Product';
+        
+        if (isEdit) {
+            productForm.action = `/shopkeeper/products/edit/${productData.id}`;
+            document.getElementById('product_name').value = productData.name || '';
+            document.getElementById('barcode').value = productData.barcode || '';
+            document.getElementById('price').value = productData.price || '';
+            document.getElementById('gst_rate').value = productData.gst || '';
+            document.getElementById('hsn_code').value = productData.hsn || '';
+            document.getElementById('stock_qty').value = productData.stock || '';
+            document.getElementById('low_stock_threshold').value = productData.threshold || '';
+        } else {
+            productForm.action = '/shopkeeper/products/add';
+            productForm.reset();
+        }
+    }
+    
+    function closeModal() {
+        modal.classList.add('hidden');
+        productForm.reset();
+    }
+    
+    // Add product button
+    document.getElementById('add-product-btn').addEventListener('click', () => openModal(false));
+    document.getElementById('add-first-product-btn')?.addEventListener('click', () => openModal(false));
+    
+    // Edit product buttons
+    document.querySelectorAll('.edit-product-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const productData = {
+                id: this.dataset.productId,
+                name: this.dataset.name,
+                barcode: this.dataset.barcode,
+                price: this.dataset.price,
+                gst: this.dataset.gst,
+                hsn: this.dataset.hsn,
+                stock: this.dataset.stock,
+                threshold: this.dataset.threshold
+            };
+            openModal(true, productData);
+        });
+    });
+    
+    // Close modal
+    document.getElementById('close-modal').addEventListener('click', closeModal);
+    document.getElementById('cancel-modal').addEventListener('click', closeModal);
+    
+    // Click outside modal to close
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+});
+
+function deleteProduct(productId) {
+    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+        fetch(`/shopkeeper/products/delete/${productId}`, {
+            method: 'POST',
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Product deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error deleting product. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting product. Please try again.');
+        });
+    }
+}
 </script>
 {% endblock %}
