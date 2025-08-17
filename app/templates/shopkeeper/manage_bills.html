@@ -142,6 +142,20 @@
         </div>
     </main>
 </div>
+
+<!-- Flash Popup HTML -->
+<div id="flash-popup" class="hidden">
+    <div class="flash-title">Payment Updated!</div>
+    <div class="flash-row"><span class="flash-label">Customer:</span> <span class="flash-value" id="flash-customer"></span></div>
+    <div class="flash-row"><span class="flash-label">Bill Number:</span> <span class="flash-value" id="flash-bill-number"></span></div>
+    <div class="flash-row"><span class="flash-label">Phone:</span> <span class="flash-value" id="flash-customer-phone"></span></div>
+    <div class="flash-row"><span class="flash-label">Bill Date:</span> <span class="flash-value" id="flash-bill-date"></span></div>
+    <div class="flash-row"><span class="flash-label">Total Amount:</span> <span class="flash-value" id="flash-bill-amount"></span></div>
+    <div class="flash-row"><span class="flash-label">Amount Paid:</span> <span class="flash-value" id="flash-bill-paid"></span></div>
+    <div class="flash-row"><span class="flash-label">Balance Due:</span> <span class="flash-value" id="flash-bill-unpaid"></span></div>
+    <div class="flash-row"><span class="flash-label">Bill Status:</span> <span class="flash-value" id="flash-bill-status"></span></div>
+    <button class="flash-ok-btn" id="flash-ok-btn">OK</button>
+</div>
 <style>
 .animate-bounce-on-hover:hover {
     animation: bounce 0.5s;
@@ -153,8 +167,70 @@
     70%  { transform: translateY(-4px); }
     100% { transform: translateY(0); }
 }
-</style>
 
+/* Flash Popup Styles */
+#flash-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    z-index: 100;
+    min-width: 320px;
+    max-width: 90vw;
+    padding: 2rem 2.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    font-family: 'Inter', sans-serif;
+}
+#flash-popup.popup-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1.04);
+}
+#flash-popup .flash-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #ed6a3e;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+#flash-popup .flash-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+#flash-popup .flash-label {
+    font-weight: 500;
+    color: #555;
+}
+#flash-popup .flash-value {
+    font-weight: 600;
+    color: #222;
+}
+#flash-popup .flash-ok-btn {
+    display: block;
+    margin: 1.5rem auto 0 auto;
+    background: #ed6a3e;
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.7rem 2.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(237,106,62,0.08);
+    transition: background 0.2s;
+}
+#flash-popup .flash-ok-btn:hover {
+    background: #f0825d;
+}
+
+</style>
 <!-- 🔹 Updated Modern Modal -->
 <div id="update-payment-modal" class="fixed inset-0 flex items-center justify-center bg-white bg-opacity-50 backdrop-blur-sm z-50 hidden">
     <div class="bg-slate-50 rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4">
@@ -204,9 +280,16 @@
                     </div>
                 </div>
             </div>
-            
+            <div class="my-4">
+                <button 
+                    type="button" 
+                    id="complete-payment-btn" 
+                    class="w-full bg-green-500 text-white px-4 py-2.5 rounded-md font-semibold hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400">
+                    Complete Payment
+                </button>
+            </div>
             <div>
-                <label for="modal-new-payment" class="block text-sm font-medium text-slate-700 mb-2">Enter New Payment Amount</label>
+                <label for="modal-new-payment" class="block text-sm font-medium text-slate-700 mb-2">Or Enter New Payment Amount</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">₹</span>
                     <input type="number" id="modal-new-payment" class="border border-slate-300 rounded-md px-3 py-2 pl-7 w-full focus:ring-2 focus:ring-[#f0825d] focus:border-[#ed6a3e] transition" min="0" step="0.01" placeholder="0.00" required>
@@ -335,10 +418,12 @@
             const paid = parseFloat(this.dataset.paid) || 0;
             const amount = parseFloat(this.dataset.amount) || 0;
             let newStatus = 'Partial';
-            if ((paid + newPayment) >= amount) {
+            let finalPaid = paid + newPayment;
+            let finalUnpaid = amount - finalPaid;
+            if (finalPaid >= amount) {
                 newStatus = 'Paid';
-            } else if (paid === 0 && newPayment > 0) {
-                newStatus = 'Partial';
+                finalPaid = amount;
+                finalUnpaid = 0;
             }
             fetch(`/shopkeeper/update_payment/${billId}`, {
                 method: 'POST',
@@ -346,12 +431,76 @@
                 body: JSON.stringify({new_payment: newPayment, new_status: newStatus})
             }).then(res => res.json()).then(data => {
                 if (data.success) {
-                    location.reload();
+                    showFlashPopup({
+                        customer: document.getElementById('modal-customer').textContent,
+                        billNumber: document.getElementById('modal-bill-number').textContent,
+                        customerPhone: document.getElementById('modal-customer-phone').textContent,
+                        billDate: document.getElementById('modal-bill-date').textContent,
+                        amount: document.getElementById('modal-bill-amount').textContent,
+                        paid: `₹${finalPaid.toFixed(2)}`,
+                        unpaid: `₹${finalUnpaid.toFixed(2)}`,
+                        status: newStatus
+                    });
+                    closeModal();
                 } else {
                     alert('Error updating payment');
                 }
             });
         };
+
+        // Complete Payment Button Logic
+        document.getElementById('complete-payment-btn').onclick = function() {
+            const billId = document.getElementById('update-payment-form').dataset.billId;
+            const amount = parseFloat(document.getElementById('update-payment-form').dataset.amount) || 0;
+            fetch(`/shopkeeper/update_payment/${billId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({new_payment: amount, new_status: 'Paid'})
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    showFlashPopup({
+                        customer: document.getElementById('modal-customer').textContent,
+                        billNumber: document.getElementById('modal-bill-number').textContent,
+                        customerPhone: document.getElementById('modal-customer-phone').textContent,
+                        billDate: document.getElementById('modal-bill-date').textContent,
+                        amount: document.getElementById('modal-bill-amount').textContent,
+                        paid: `₹${amount.toFixed(2)}`,
+                        unpaid: `₹0.00`,
+                        status: 'Paid'
+                    });
+                    closeModal();
+                } else {
+                    alert('Error updating payment');
+                }
+            });
+        };
+
+        // --- Flash Popup Logic ---
+        function showFlashPopup(billData) {
+            const popup = document.getElementById('flash-popup');
+            document.getElementById('flash-customer').textContent = billData.customer;
+            document.getElementById('flash-bill-number').textContent = billData.billNumber;
+            document.getElementById('flash-customer-phone').textContent = billData.customerPhone;
+            document.getElementById('flash-bill-date').textContent = billData.billDate;
+            document.getElementById('flash-bill-amount').textContent = billData.amount;
+            document.getElementById('flash-bill-paid').textContent = billData.paid;
+            document.getElementById('flash-bill-unpaid').textContent = billData.unpaid;
+            document.getElementById('flash-bill-status').textContent = billData.status;
+            popup.classList.remove('hidden');
+            popup.classList.add('popup-visible');
+            // Auto-hide after 30 seconds
+            if (popup._timeout) clearTimeout(popup._timeout);
+            popup._timeout = setTimeout(() => {
+                hideFlashPopup();
+            }, 30000);
+        }
+        function hideFlashPopup() {
+            const popup = document.getElementById('flash-popup');
+            popup.classList.remove('popup-visible');
+            popup.classList.add('hidden');
+            if (popup._timeout) clearTimeout(popup._timeout);
+        }
+        document.getElementById('flash-ok-btn').addEventListener('click', hideFlashPopup);
     });
 </script>
 {% endblock %}
