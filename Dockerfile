@@ -2,17 +2,23 @@
 FROM python:3.10-slim
 
 # Set environment variables for Python
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# --- CORRECTED SECTION ---
+# --- FIXED SECTION ---
 # Install prerequisites, add the Microsoft repo, and install the ODBC driver
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
         gnupg \
-    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+        ca-certificates \
+    # Import Microsoft GPG key (without apt-key)
+    && curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
+        | gpg --dearmor \
+        | tee /usr/share/keyrings/microsoft-prod.gpg > /dev/null \
+    # Add Microsoft SQL Server repo (with signed-by and arch in one line)
+    && echo "deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/11/prod bullseye main" \
+        | tee /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 \
     && apt-get clean \
@@ -24,13 +30,12 @@ WORKDIR /app
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
-# --- OPTIMIZED SECTION ---
-# Install Python dependencies from requirements.txt
-# (Ensure pyodbc is listed in your requirements.txt file)
+# Install Python dependencies
+# (Ensure pyodbc is in requirements.txt if needed)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application
 COPY . .
 
-# Command to run the application (chmod +x is not needed when using this format)
+# Command to run the application
 CMD gunicorn --bind 0.0.0.0:$PORT run:app

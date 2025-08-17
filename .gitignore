@@ -61,3 +61,5 @@ logs/
 Thumbs.db 
 app/.env
 app/.env
+
+flask_session/
