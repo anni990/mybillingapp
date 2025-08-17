@@ -231,6 +231,40 @@
             }
         });
 
+        // Add event listeners for edit buttons
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('.edit-product-btn')) {
+                const editBtn = event.target.closest('.edit-product-btn');
+                
+                // Get product data from data attributes
+                const productId = editBtn.dataset.productId;
+                const productName = editBtn.dataset.productName;
+                const barcode = editBtn.dataset.barcode;
+                const price = editBtn.dataset.price;
+                const gstRate = editBtn.dataset.gstRate;
+                const hsnCode = editBtn.dataset.hsnCode;
+                const stockQty = editBtn.dataset.stockQty;
+                const lowStockThreshold = editBtn.dataset.lowStockThreshold;
+                
+                // Update modal title and form action
+                modalTitle.textContent = 'Edit Product';
+                productForm.action = `{{ url_for('shopkeeper.edit_product', product_id=0) }}`.replace('0', productId);
+                
+                // Prefill form fields
+                productIdInput.value = productId;
+                productNameInput.value = productName || '';
+                barcodeInput.value = barcode || '';
+                priceInput.value = price || '';
+                gstRateInput.value = gstRate || '';
+                hsnCodeInput.value = hsnCode || '';
+                stockQtyInput.value = stockQty || '';
+                lowStockThresholdInput.value = lowStockThreshold || '';
+                
+                // Show modal
+                showModal();
+            }
+        });
+
 
         // Filtering logic
         const applyFilters = () => {

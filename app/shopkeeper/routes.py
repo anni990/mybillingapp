@@ -723,50 +723,6 @@ def connect_ca(ca_id):
             flash('Connection request resent.', 'success')
     return redirect(url_for('shopkeeper.ca_marketplace'))
 
-# # Documents
-# @shopkeeper_bp.route('/documents', methods=['GET', 'POST'])
-# @login_required
-# @shopkeeper_required
-# def documents():
-#     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-#     if request.method == 'POST':
-#         file = request.files.get('file')
-#         name = request.form.get('name')
-#         if file and name:
-#             path = f'static/uploads/{file.filename}'
-#             file.save(path)
-#             doc = Document(shopkeeper_id=shopkeeper.shopkeeper_id, document_name=name, file_path=path)
-#             db.session.add(doc)
-#             db.session.commit()
-#             flash('Document uploaded.', 'success')
-#         else:
-#             flash('File and name required.', 'danger')
-#     docs = Document.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
-#     return render_template('shopkeeper/documents.html', docs=docs)
-
-# @shopkeeper_bp.route('/documents/delete/<int:doc_id>', methods=['POST'])
-# @login_required
-# @shopkeeper_required
-# def delete_document(doc_id):
-#     doc = Document.query.get_or_404(doc_id)
-#     if doc.shopkeeper.user_id != current_user.user_id:
-#         flash('Access denied.', 'danger')
-#         return redirect(url_for('shopkeeper.documents'))
-#     db.session.delete(doc)
-#     db.session.commit()
-#     flash('Document deleted.', 'success')
-#     return redirect(url_for('shopkeeper.documents'))
-
-# @shopkeeper_bp.route('/documents/download/<int:doc_id>')
-# @login_required
-# @shopkeeper_required
-# def download_document(doc_id):
-#     doc = Document.query.get_or_404(doc_id)
-#     if doc.shopkeeper.user_id != current_user.user_id:
-#         flash('Access denied.', 'danger')
-#         return redirect(url_for('shopkeeper.documents'))
-#     return send_file(doc.file_path, as_attachment=True)
-
 
 # Products & Stock (already implemented above)
 @shopkeeper_bp.route('/products', methods=['GET'])
@@ -818,11 +774,16 @@ def edit_product(product_id):
     if product.shopkeeper.user_id != current_user.user_id:
         flash('Access denied.', 'danger')
         return redirect(url_for('shopkeeper.products_stock'))
+    
+    # Update all product fields
     product.product_name = request.form.get('product_name')
     product.barcode = request.form.get('barcode')
     product.price = request.form.get('price')
+    product.gst_rate = request.form.get('gst_rate')
+    product.hsn_code = request.form.get('hsn_code')
     product.stock_qty = request.form.get('stock_qty')
     product.low_stock_threshold = request.form.get('low_stock_threshold')
+    
     db.session.commit()
     flash('Product updated successfully.', 'success')
     return redirect(url_for('shopkeeper.products_stock'))
