@@ -56,3 +56,20 @@
 --   );
 -- ALTER TABLE employee_clients ADD CONSTRAINT unique_employee_client UNIQUE (employee_id, shopkeeper_id);
 
+-- Migration to support custom products in BillItem table (SQL Server syntax)
+-- This adds fields to store custom product information when product_id is null
+
+-- Step 1: Make product_id nullable (if it's currently NOT NULL)
+ALTER TABLE bill_items ALTER COLUMN product_id INT NULL;
+
+-- Step 2: Add new columns for custom products
+ALTER TABLE bill_items ADD custom_product_name NVARCHAR(100) NULL;
+ALTER TABLE bill_items ADD custom_gst_rate DECIMAL(5,2) NULL;
+ALTER TABLE bill_items ADD custom_hsn_code NVARCHAR(20) NULL;
+
+-- Step 3: Add a check constraint to ensure either product_id or custom_product_name is provided
+ALTER TABLE bill_items ADD CONSTRAINT chk_product_or_custom 
+CHECK (
+    (product_id IS NOT NULL AND custom_product_name IS NULL) OR 
+    (product_id IS NULL AND custom_product_name IS NOT NULL)
+);

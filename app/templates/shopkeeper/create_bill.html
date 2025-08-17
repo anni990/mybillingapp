@@ -3,153 +3,286 @@
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
-<!-- Sidebar (reuse your sidebar code here if needed) -->
-<aside
-    class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
-    <div>
-        <nav class="mt-5 flex-1">
-            <ul class="space-y-2">
-                <li><a href="{{ url_for('shopkeeper.dashboard') }}"
-                        class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/30 transition duration-300"><i
-                            data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
-                <li><a href="{{ url_for('shopkeeper.create_bill') }}"
-                        class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i
-                            data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
-                <li><a href="{{ url_for('shopkeeper.manage_bills') }}"
-                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                            data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
-                <li><a href="{{ url_for('shopkeeper.products_stock') }}"
-                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                            data-feather="box" class="mr-3"></i>Products & Stock</a></li>
-                <li><a href="{{ url_for('shopkeeper.sales_reports') }}"
-                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                            data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
-                <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
-                        class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                            data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
-            </ul>
-        </nav>
-    </div>
-    <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
-</aside>
-<div class="max-w-3xl mx-auto bg-white p-10 rounded-2xl shadow-lg mt-12 ml-80">
-    <div class="flex items-center mb-8">
-        {% if shopkeeper.logo_path %}
-        <img src="{{ url_for('static', filename=shopkeeper.logo_path) }}" alt="Shop Logo"
-            class="h-16 w-16 rounded-full object-cover mr-4">
-        {% endif %}
-        <div class="flex-1 text-center">
-            <h2 class="text-3xl font-bold text-[#ed6a3e]">{{ shopkeeper.shop_name }}</h2>
-        </div>
-    </div>
-    <h2 class="text-3xl font-bold text-[#ed6a3e] mb-8">Create Bill</h2>
-    <form id="create-bill-form" method="POST" action="{{ url_for('shopkeeper.generate_bill_pdf') }}">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">Customer Name</label>
-                <input type="text" name="customer_name"
-                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]"
-                    required>
-            </div>
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">Customer Contact</label>
-                <input type="tel" 
-                       name="customer_contact" 
-                       pattern="^[6-9]\d{9}$"
-                       maxlength="10"
-                       placeholder="Enter 10 digit mobile number"
-                       title="Please enter a valid 10 digit mobile number"
-                       class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]"
-                       oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);">
-                <small class="text-gray-500">Enter 10 digit mobile number starting with 6-9</small>
-            </div>
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">Customer Address</label>
-                <input type="text" name="customer_address"
-                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-            </div>
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">Customer GSTIN</label>
-                <input type="text" name="customer_gstin"
-                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-            </div>
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">Bill Date & Time</label>
-                <input type="datetime-local" name="bill_date" id="bill-date"
-                    class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]"
-                    value="{{ now.strftime('%Y-%m-%dT%H:%M') }}" required>
-            </div>
-        </div>
-        <div id="gst-type-row" class="mb-8">
-            <label class="block text-gray-700 font-semibold mb-1">GST Type:</label>
-            <select name="bill_gst_type" id="bill_gst_type"
-                class="border rounded px-2 py-1 max-w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-                <option value="GST">GST</option>
-                <option value="Non-GST">Non-GST</option>
-            </select>
-        </div>
-        <div id="gst-section-container" class="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-                <label class="block text-gray-700 font-semibold mb-1">GST Mode:</label>
-                <select name="gst_mode" id="gst_mode"
-                    class="border rounded px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-                    <option value="exclusive">GST Exclusive (add GST on top)</option>
-                    <option value="inclusive">GST Inclusive (price includes GST)</option>
-                </select>
-            </div>
-            <!-- GST Rate select removed: now taken from database per product -->
-        </div>
+<style>
+    /* Custom styles for the create bill page */
+    .product-search-container {
+        position: relative;
+    }
+    
+    #product-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .product-suggestion:hover,
+    .new-product-suggestion:hover {
+        background-color: #f9fafb;
+    }
+    
+    .product-row:hover {
+        background-color: #f9fafb;
+    }
+    
+    /* Custom scrollbar for suggestions */
+    #product-suggestions::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #product-suggestions::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    #product-suggestions::-webkit-scrollbar-thumb {
+        background: #ed6a3e;
+        border-radius: 3px;
+    }
+    
+    #product-suggestions::-webkit-scrollbar-thumb:hover {
+        background: #d45f34;
+    }
+</style>
 
-        <div class="mb-8">
-            <label class="block text-gray-700 font-semibold mb-3">Products</label>
-            <div class="flex space-x-1 mb-1 font-semibold text-gray-600 items-center">
-                <div style="width:10rem;">Product Name</div>
-                <div style="width:4rem;" class="text-center">Quantity</div>
-                <div style="width:6rem;" class="text-center">Price/qty</div>
-                <div style="width:7rem;" class="text-center">Discount %</div>
-                <div style="width:3rem;" class="text-center gst-col">GST Rate</div>
-                <div style="width:2rem;"></div>
-            </div>
-            <div id="product-rows">
-                <!-- JS will add product rows here, with editable GST rate input -->
-            </div>
-            <button type="button" id="add-product-btn"
-                class="mt-3 bg-[#ed6a3e] text-white px-5 py-2 rounded shadow hover:bg-orange-700 transition duration-300"><i
-                    class="fas fa-plus mr-2"></i>Add Product</button>
+<!-- Main Container with Sidebar -->
+<div class="flex min-h-screen bg-gray-100 -mt-20 -mb-8">
+    <!-- Sidebar -->
+    <aside class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 pt-16">
+        <div>
+            <nav class="mt-5 flex-1">
+                <ul class="space-y-2">
+                    <li><a href="{{ url_for('shopkeeper.dashboard') }}"
+                            class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/30 transition duration-300">
+                            <i data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
+                    <li><a href="{{ url_for('shopkeeper.create_bill') }}"
+                            class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300">
+                            <i data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
+                    <li><a href="{{ url_for('shopkeeper.manage_bills') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300">
+                            <i data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
+                    <li><a href="{{ url_for('shopkeeper.products_stock') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300">
+                            <i data-feather="box" class="mr-3"></i>Products & Stock</a></li>
+                    <li><a href="{{ url_for('shopkeeper.sales_reports') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300">
+                            <i data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
+                    <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
+                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300">
+                            <i data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
+                </ul>
+            </nav>
         </div>
-        <div class="mb-8 text-right">
-            <span class="text-2xl font-bold text-[#ed6a3e]">Total: ₹<span id="bill-total">0.00</span></span>
-            <div class="mt-2 text-gray-700">
-                <span>Paid: ₹<span id="paid-amount-display">0.00</span></span> |
-                <span>Unpaid: ₹<span id="unpaid-amount-display">0.00</span></span>
+        <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 ml-64 bg-gray-50 min-h-screen pt-16">
+        <div class="p-6 h-full overflow-y-auto">
+            <!-- Header Section -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        {% if shopkeeper.logo_path %}
+                        <img src="{{ url_for('static', filename=shopkeeper.logo_path) }}" alt="Shop Logo"
+                            class="h-12 w-12 rounded-full object-cover mr-4">
+                        {% endif %}
+                        <div>
+                            <h1 class="text-2xl font-bold text-[#ed6a3e]">{{ shopkeeper.shop_name }}</h1>
+                            <p class="text-gray-600">Create New Bill</p>
+                        </div>
+                    </div>
+                    <div class="text-right text-sm text-gray-500">
+                        <p>Bill Date: {{ now.strftime('%d %b %Y') }}</p>
+                        <p>Time: {{ now.strftime('%H:%M') }}</p>
+                    </div>
+                </div>
             </div>
+
+            <!-- Bill Form -->
+            <form id="create-bill-form" method="POST" action="{{ url_for('shopkeeper.generate_bill_pdf') }}" class="space-y-6">
+                <!-- Customer Details Section -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i data-feather="user" class="mr-2 text-[#ed6a3e]"></i>
+                        Customer Details
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Customer Name *</label>
+                            <input type="text" name="customer_name"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent"
+                                required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Customer Contact</label>
+                            <input type="tel" 
+                                   name="customer_contact" 
+                                   pattern="^[6-9]\d{9}$"
+                                   maxlength="10"
+                                   placeholder="10 digit mobile number"
+                                   title="Please enter a valid 10 digit mobile number"
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Customer Address</label>
+                            <input type="text" name="customer_address"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Customer GSTIN</label>
+                            <input type="text" name="customer_gstin"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Bill Date & Time *</label>
+                            <input type="datetime-local" name="bill_date" id="bill-date"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent"
+                                value="{{ now.strftime('%Y-%m-%dT%H:%M') }}" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">GST Type</label>
+                            <select name="bill_gst_type" id="bill_gst_type"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+                                <option value="GST">GST</option>
+                                <option value="Non-GST">Non-GST</option>
+                            </select>
+                        </div>
+                        <div id="gst-mode-section">
+                            <label class="block text-gray-700 font-medium mb-2">GST Mode</label>
+                            <select name="gst_mode" id="gst_mode"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+                                <option value="exclusive">GST Exclusive (add GST on top)</option>
+                                <option value="inclusive">GST Inclusive (price includes GST)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products Section -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i data-feather="package" class="mr-2 text-[#ed6a3e]"></i>
+                        Products
+                    </h3>
+                    
+                    <!-- Product Search -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">Search & Add Products</label>
+                        <div class="product-search-container">
+                            <input type="text" id="product-search" 
+                                placeholder="Search products by name or add new product..."
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+                            <i data-feather="search" class="absolute left-3 top-3 text-gray-400 w-4 h-4"></i>
+                            <div id="product-suggestions" class="bg-white border border-gray-300 rounded-lg mt-1 shadow-lg hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- Products Table -->
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                            <div class="grid grid-cols-12 gap-3 items-center text-sm font-medium text-gray-700">
+                                <div class="col-span-2">Product Name</div>
+                                <div class="col-span-2 text-center">Available Stock</div>
+                                <div class="col-span-1 text-center">Qty</div>
+                                <div class="col-span-2 text-center">Price/Unit</div>
+                                <div class="col-span-1 text-center">Discount %</div>
+                                <div class="col-span-2 text-center gst-col">GST Rate %</div>
+                                <div class="col-span-1 text-center">Total</div>
+                                <div class="col-span-1 text-center">Action</div>
+                            </div>
+                        </div>
+                        <div id="product-rows" class="divide-y divide-gray-200">
+                            <!-- Product rows will be added here -->
+                            <div id="no-products-message" class="px-4 py-8 text-center text-gray-500">
+                                <i data-feather="package" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                                <p class="text-lg font-medium mb-2">No products added yet</p>
+                                <p class="text-sm">Search for products above or click "Add Your First Product" to get started</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="add-product-btn"
+                        class="mt-4 bg-[#ed6a3e] text-white px-6 py-3 rounded-lg shadow hover:bg-orange-700 transition duration-300 flex items-center justify-center">
+                        <i data-feather="plus" class="mr-2 w-5 h-5"></i>Add Your First Product
+                    </button>
+                </div>
+
+                <!-- Bill Summary Section -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i data-feather="calculator" class="mr-2 text-[#ed6a3e]"></i>
+                        Bill Summary
+                    </h3>
+                    
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        <!-- Payment Details -->
+                        <div class="flex-1 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 font-medium mb-2">Bill Status</label>
+                                    <select name="bill_status" id="bill_status"
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+                                        <option value="paid">Paid</option>
+                                        <option value="unpaid">Unpaid</option>
+                                        <option value="partial">Partial</option>
+                                    </select>
+                                </div>
+                                <div id="amount-paid-section" style="display:none;">
+                                    <label class="block text-gray-700 font-medium mb-2">Amount Paid</label>
+                                    <input type="number" min="0" step="0.01" name="amount_paid" id="amount_paid"
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Total Summary -->
+                        <div class="lg:w-80">
+                            <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                                <div class="flex justify-between items-center text-2xl font-bold text-[#ed6a3e]">
+                                    <span>Total Amount:</span>
+                                    <span>₹<span id="bill-total">0.00</span></span>
+                                </div>
+                                <div class="pt-3 border-t border-gray-200 space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-green-600 font-medium">Paid Amount:</span>
+                                        <span class="text-green-600 font-medium">₹<span id="paid-amount-display">0.00</span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-red-600 font-medium">Unpaid Amount:</span>
+                                        <span class="text-red-600 font-medium">₹<span id="unpaid-amount-display">0.00</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" name="calculated_paid_amount" id="calculated_paid_amount">
+                    <input type="hidden" name="calculated_unpaid_amount" id="calculated_unpaid_amount">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex flex-col sm:flex-row gap-4 justify-end">
+                        <button type="submit" name="action" value="save"
+                            class="bg-[#ed6a3e] text-white px-6 py-3 rounded-lg shadow hover:bg-orange-700 transition duration-300 flex items-center justify-center">
+                            <i data-feather="save" class="mr-2 w-4 h-4"></i>Save Bill
+                        </button>
+                        <button type="submit" name="action" value="generate_pdf"
+                            class="bg-gray-600 text-white px-6 py-3 rounded-lg shadow hover:bg-gray-700 transition duration-300 flex items-center justify-center">
+                            <i data-feather="file-text" class="mr-2 w-4 h-4"></i>Generate PDF
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
-        <div class="mb-8 flex flex-col md:flex-row gap-6 items-center">
-            <div>
-                <label class="block text-gray-700 font-semibold mb-1">Bill Status:</label>
-                <select name="bill_status" id="bill_status"
-                    class="border rounded px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-                    <option value="paid">Paid</option>
-                    <option value="unpaid">Unpaid</option>
-                    <option value="partial">Partial</option>
-                </select>
-            </div>
-            <div id="amount-paid-section" style="display:none;">
-                <label class="block text-gray-700 font-semibold mb-1">Amount Paid:</label>
-                <input type="number" min="0" step="0.01" name="amount_paid" id="amount_paid"
-                    class="border rounded px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e]">
-            </div>
-            <input type="hidden" name="calculated_paid_amount" id="calculated_paid_amount">
-            <input type="hidden" name="calculated_unpaid_amount" id="calculated_unpaid_amount">
-        </div>
-        <div class="flex flex-col md:flex-row gap-4 justify-end">
-            <button type="submit" name="action" value="save"
-                class="bg-[#ed6a3e] text-white px-8 py-3 rounded shadow hover:bg-orange-700 transition duration-300">Save</button>
-            <button type="submit" name="action" value="generate_pdf"
-                class="bg-gray-200 text-[#ed6a3e] px-8 py-3 rounded shadow hover:bg-orange-100 transition duration-300">Generate
-                PDF</button>
-        </div>
-    </form>
+    </main>
 </div>
 <script type="text/javascript">
     const PRODUCTS = {{ products_js| tojson }};
@@ -157,7 +290,7 @@
 <script src="/static/js/create_bill.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const gstSectionContainer = document.getElementById('gst-section-container');
+        const gstModeSection = document.getElementById('gst-mode-section');
         const billGstType = document.getElementById('bill_gst_type');
         const billStatus = document.getElementById('bill_status');
         const amountPaidSection = document.getElementById('amount-paid-section');
@@ -170,76 +303,87 @@
 
         function updateGSTSectionVisibility() {
             if (billGstType.value === 'GST') {
-                gstSectionContainer.style.display = '';
+                gstModeSection.style.display = '';
+                document.querySelectorAll('.gst-col').forEach(el => el.style.display = '');
             } else {
-                gstSectionContainer.style.display = 'none';
+                gstModeSection.style.display = 'none';
+                document.querySelectorAll('.gst-col').forEach(el => el.style.display = 'none');
             }
         }
 
+        function updatePaymentFields() {
+            const total = parseFloat(billTotal.textContent) || 0;
+            let paid = 0, unpaid = 0;
+            if (billStatus.value === 'paid') {
+                paid = total;
+                unpaid = 0;
+                amountPaidSection.style.display = 'none';
+                amountPaidInput.value = total.toFixed(2);
+            } else if (billStatus.value === 'unpaid') {
+                paid = 0;
+                unpaid = total;
+                amountPaidSection.style.display = 'none';
+                amountPaidInput.value = '0.00';
+            } else if (billStatus.value === 'partial') {
+                amountPaidSection.style.display = '';
+                paid = parseFloat(amountPaidInput.value);
+                unpaid = total - paid;
+                if (unpaid < 0) unpaid = 0;
+                if (paid > total) { paid = total; unpaid = 0; amountPaidInput.value = total.toFixed(2); }
+            }
+
+            paidAmountDisplay.textContent = paid.toFixed(2);
+            unpaidAmountDisplay.textContent = unpaid.toFixed(2);
+            calculatedPaidAmount.value = paid.toFixed(2);
+            calculatedUnpaidAmount.value = unpaid.toFixed(2);
+        }
+
         billGstType.addEventListener('change', updateGSTSectionVisibility);
-        updateGSTSectionVisibility(); // Initial call on page load
+        billStatus.addEventListener('change', updatePaymentFields);
+        amountPaidInput.addEventListener('input', updatePaymentFields);
 
-    function updatePaymentFields() {
-        const total = parseFloat(billTotal.textContent) || 0;
-        let paid = 0, unpaid = 0;
-        if (billStatus.value === 'paid') {
-            paid = total;
-            unpaid = 0;
-            amountPaidSection.style.display = 'none';
-            amountPaidInput.value = total.toFixed(2); // Auto update paid value
-        } else if (billStatus.value === 'unpaid') {
-            paid = 0;
-            unpaid = total;
-            amountPaidSection.style.display = 'none';
-            amountPaidInput.value = '0.00'; // Auto update paid value
-        } else if (billStatus.value === 'partial') {
-            amountPaidSection.style.display = '';
-            paid = parseFloat(amountPaidInput.value);
-            unpaid = total - paid;
-            if (unpaid < 0) unpaid = 0;
-            if (paid > total) { paid = total; unpaid = 0; amountPaidInput.value = total.toFixed(2); }
-        }
+        updateGSTSectionVisibility();
+        updatePaymentFields();
 
-        paidAmountDisplay.textContent = paid.toFixed(2);
-        unpaidAmountDisplay.textContent = unpaid.toFixed(2);
-        calculatedPaidAmount.value = paid.toFixed(2);
-        calculatedUnpaidAmount.value = unpaid.toFixed(2);
-    }
-
-    billGstType.addEventListener('change', updateGSTSectionVisibility);
-    billStatus.addEventListener('change', updatePaymentFields);
-    amountPaidInput.addEventListener('input', updatePaymentFields);
-
-    updateGSTSectionVisibility();
-    updatePaymentFields();
-
-    // Auto update paid/unpaid when total changes and bill status is paid
-    const billTotalObserver = new MutationObserver(function() {
-        if (billStatus.value === 'paid') {
-            updatePaymentFields();
-        }
+        // Auto update paid/unpaid when total changes and bill status is paid
+        const billTotalObserver = new MutationObserver(function() {
+            if (billStatus.value === 'paid') {
+                updatePaymentFields();
+            }
+        });
+        billTotalObserver.observe(billTotal, { childList: true });
     });
-    billTotalObserver.observe(billTotal, { childList: true });
-});
 
-// Validation
-document.getElementById('create-bill-form').addEventListener('submit', function(e) {
-    const billTotal = parseFloat(document.getElementById('bill-total').textContent);
-    const paidAmount = parseFloat(document.getElementById('calculated_paid_amount').value);
-    const unpaidAmount = parseFloat(document.getElementById('calculated_unpaid_amount').value);
+    // Form Validation
+    document.getElementById('create-bill-form').addEventListener('submit', function(e) {
+        const billTotal = parseFloat(document.getElementById('bill-total').textContent);
+        const paidAmount = parseFloat(document.getElementById('calculated_paid_amount').value);
+        const unpaidAmount = parseFloat(document.getElementById('calculated_unpaid_amount').value);
+        const productRowsCount = document.querySelectorAll('.product-row').length;
+        
+        // Check if we have any non-blank product rows
+        const nonBlankRows = document.querySelectorAll('.product-row:not(.initial-blank-row)');
+        const hasBlankRowOnly = productRowsCount === 1 && document.querySelector('.initial-blank-row');
 
-    if (Math.abs((paidAmount + unpaidAmount) - billTotal) > 0.01) {
-        alert('Error: Paid + Unpaid amounts do not match the total bill amount.');
-        e.preventDefault();
-        return false;
-    }
-    if (document.querySelectorAll('.product-row').length === 0) {
-        alert('Please add at least one product to the bill.');
-        e.preventDefault();
-        return false;
-    }
-    return true;
-});
+        if (productRowsCount === 0 || hasBlankRowOnly || nonBlankRows.length === 0) {
+            showFlashMessage('Please add at least one product to the bill.', 'warning');
+            e.preventDefault();
+            return false;
+        }
+
+        if (Math.abs((paidAmount + unpaidAmount) - billTotal) > 0.01) {
+            showFlashMessage('Error: Paid + Unpaid amounts do not match the total bill amount.', 'error');
+            e.preventDefault();
+            return false;
+        }
+        
+        return true;
+    });
+
+    // Initialize feather icons
+    feather.replace();
+    
+    // Initialize the no products message icons
+    setTimeout(() => feather.replace(), 100);
 </script>
-<script>feather.replace()</script>
 {% endblock %}

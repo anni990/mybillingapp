@@ -285,7 +285,30 @@ def view_bill(bill_id):
     overall_grand_total = 0
 
     for item in bill_items:
-        product = products_dict[str(item.product_id)]
+        # Handle both existing products and custom products
+        if item.product_id:  # Existing product
+            product = products_dict.get(str(item.product_id))
+            if not product:
+                continue  # Skip if product not found
+            
+            gst_rate = float(product.gst_rate or 0)
+            hsn_code = product.hsn_code if hasattr(product, 'hsn_code') else ''
+            product_name = product.product_name
+            is_custom = False
+        else:  # Custom product
+            # Create a mock product object for custom products
+            product = type('Product', (), {
+                'product_name': item.custom_product_name,
+                'gst_rate': float(item.custom_gst_rate or 0),
+                'hsn_code': item.custom_hsn_code or '',
+                'product_id': f'custom_{item.bill_item_id}'
+            })()
+            
+            gst_rate = float(item.custom_gst_rate or 0)
+            hsn_code = item.custom_hsn_code or ''
+            product_name = item.custom_product_name
+            is_custom = True
+        
         base_price = float(item.price_per_unit)
         quantity = int(item.quantity)
         total_price = base_price * quantity
@@ -296,7 +319,6 @@ def view_bill(bill_id):
         discounted_price = total_price - discount_amount
         
         # GST calculations
-        gst_rate = float(product.gst_rate or 0)
         sgst_rate = cgst_rate = gst_rate / 2
         sgst_amount = (sgst_rate / 100) * discounted_price
         cgst_amount = (cgst_rate / 100) * discounted_price
@@ -304,7 +326,8 @@ def view_bill(bill_id):
 
         item_data = {
             'product': product,
-            'hsn_code': product.hsn_code if hasattr(product, 'hsn_code') else '',
+            'is_custom': is_custom,
+            'hsn_code': hsn_code,
             'quantity': quantity,
             'base_price': base_price,
             'discount': discount,
@@ -380,7 +403,28 @@ def download_bill_pdf(bill_id):
     overall_grand_total = 0
 
     for item in bill_items:
-        product = products_dict[str(item.product_id)]
+        # Handle both existing products and custom products
+        if item.product_id:  # Existing product
+            product = products_dict.get(str(item.product_id))
+            if not product:
+                continue  # Skip if product not found
+            
+            gst_rate = float(product.gst_rate or 0)
+            hsn_code = product.hsn_code if hasattr(product, 'hsn_code') else ''
+            is_custom = False
+        else:  # Custom product
+            # Create a mock product object for custom products
+            product = type('Product', (), {
+                'product_name': item.custom_product_name,
+                'gst_rate': float(item.custom_gst_rate or 0),
+                'hsn_code': item.custom_hsn_code or '',
+                'product_id': f'custom_{item.bill_item_id}'
+            })()
+            
+            gst_rate = float(item.custom_gst_rate or 0)
+            hsn_code = item.custom_hsn_code or ''
+            is_custom = True
+        
         base_price = float(item.price_per_unit)
         quantity = int(item.quantity)
         total_price = base_price * quantity
@@ -389,7 +433,6 @@ def download_bill_pdf(bill_id):
         discount_amount = (discount / 100) * total_price
         discounted_price = total_price - discount_amount
         
-        gst_rate = float(product.gst_rate or 0)
         sgst_rate = cgst_rate = gst_rate / 2
         sgst_amount = (sgst_rate / 100) * discounted_price
         cgst_amount = (cgst_rate / 100) * discounted_price
@@ -397,7 +440,8 @@ def download_bill_pdf(bill_id):
 
         item_data = {
             'product': product,
-            'hsn_code': product.hsn_code if hasattr(product, 'hsn_code') else '',
+            'is_custom': is_custom,
+            'hsn_code': hsn_code,
             'quantity': quantity,
             'base_price': base_price,
             'discount': discount,
@@ -810,9 +854,11 @@ def generate_bill_pdf():
     bill_gst_type = request.form.get('bill_gst_type', 'GST')
     bill_gst_rate = float(request.form.get('bill_gst_rate', 0))
     items = request.form.getlist('product_id')
+    product_names = request.form.getlist('product_name')  # Get custom product names
     quantities = request.form.getlist('quantity')
     prices = request.form.getlist('price_per_unit')
     discounts = request.form.getlist('discount')
+    gst_rates_custom = request.form.getlist('gst_rate')  # Get custom GST rates
     # Parse bill_date from form (datetime-local input)
     bill_date_str = request.form.get('bill_date')
     if bill_date_str:
@@ -853,18 +899,32 @@ def generate_bill_pdf():
     gst_summary_by_rate = {}
     overall_grand_total = 0.0
     
-    for idx, (pid, qty, price, discount) in enumerate(zip(items, quantities, prices, discounts)):
+    for idx, (pid, product_name, qty, price, discount, custom_gst) in enumerate(zip(items, product_names, quantities, prices, discounts, gst_rates_custom)):
         qty = float(qty)
         price = float(price)
         discount = float(discount) if discount else 0
-        product = Product.query.get(pid)
+        custom_gst = float(custom_gst) if custom_gst else 0
         
-        if not product:
-            continue
+        # Check if this is an existing product or a custom product
+        if pid and pid.strip():  # Existing product
+            product = Product.query.get(pid)
+            if not product:
+                continue
+                
+            # Get GST rate from product
+            gst_rate = float(product.gst_rate or 0)
+            hsn_code = product.hsn_code or ''
+            is_custom_product = False
             
-        # Get GST rate from product
-        gst_rate = float(product.gst_rate or 0)
-        hsn_code = product.hsn_code or ''
+        else:  # Custom product (no product_id)
+            product = None
+            gst_rate = custom_gst
+            hsn_code = ''  # Can be extended to accept HSN from form
+            is_custom_product = True
+            
+            # Skip if no product name for custom product
+            if not product_name or not product_name.strip():
+                continue
         
         # Calculate base price
         total_base_price = price * qty
@@ -887,34 +947,80 @@ def generate_bill_pdf():
         final_price_item = discounted_price + total_gst_item_amount
         
         # Create bill item
-        bill_item = BillItem(
-            bill_id=bill.bill_id,
-            product_id=pid,
-            quantity=qty,
-            price_per_unit=price,
-            total_price=final_price_item
-        )
+        if is_custom_product:
+            # Create bill item for custom product
+            bill_item = BillItem(
+                bill_id=bill.bill_id,
+                product_id=None,  # No product_id for custom products
+                custom_product_name=product_name.strip(),
+                custom_gst_rate=gst_rate,
+                custom_hsn_code=hsn_code,
+                quantity=qty,
+                price_per_unit=price,
+                total_price=final_price_item
+            )
+        else:
+            # Create bill item for existing product
+            bill_item = BillItem(
+                bill_id=bill.bill_id,
+                product_id=pid,
+                custom_product_name=None,
+                custom_gst_rate=None,
+                custom_hsn_code=None,
+                quantity=qty,
+                price_per_unit=price,
+                total_price=final_price_item
+            )
         db.session.add(bill_item)
         bill_items.append(bill_item)
         
         # Store calculated data for template
-        item_data = {
-            'product': product,
-            'quantity': qty,
-            'base_price': price,
-            'total_base_price': total_base_price,
-            'discount': discount,
-            'discount_amount': discount_amount,
-            'discounted_price': discounted_price,
-            'gst_rate': gst_rate,
-            'cgst_rate': cgst_rate_percentage,
-            'sgst_rate': sgst_rate_percentage,
-            'cgst_amount': cgst_amount,
-            'sgst_amount': sgst_amount,
-            'total_gst_amount': total_gst_item_amount,
-            'final_price': final_price_item,
-            'hsn_code': hsn_code
-        }
+        if is_custom_product:
+            # Create a mock product object for custom products
+            mock_product = type('Product', (), {
+                'product_name': product_name.strip(),
+                'gst_rate': gst_rate,
+                'hsn_code': hsn_code,
+                'product_id': f'custom_{idx}'  # Unique identifier for template
+            })()
+            
+            item_data = {
+                'product': mock_product,
+                'is_custom': True,
+                'quantity': qty,
+                'base_price': price,
+                'total_base_price': total_base_price,
+                'discount': discount,
+                'discount_amount': discount_amount,
+                'discounted_price': discounted_price,
+                'gst_rate': gst_rate,
+                'cgst_rate': cgst_rate_percentage,
+                'sgst_rate': sgst_rate_percentage,
+                'cgst_amount': cgst_amount,
+                'sgst_amount': sgst_amount,
+                'total_gst_amount': total_gst_item_amount,
+                'final_price': final_price_item,
+                'hsn_code': hsn_code
+            }
+        else:
+            item_data = {
+                'product': product,
+                'is_custom': False,
+                'quantity': qty,
+                'base_price': price,
+                'total_base_price': total_base_price,
+                'discount': discount,
+                'discount_amount': discount_amount,
+                'discounted_price': discounted_price,
+                'gst_rate': gst_rate,
+                'cgst_rate': cgst_rate_percentage,
+                'sgst_rate': sgst_rate_percentage,
+                'cgst_amount': cgst_amount,
+                'sgst_amount': sgst_amount,
+                'total_gst_amount': total_gst_item_amount,
+                'final_price': final_price_item,
+                'hsn_code': hsn_code
+            }
         bill_items_data.append(item_data)
         
         # Aggregate by GST rate
@@ -934,8 +1040,8 @@ def generate_bill_pdf():
         
         overall_grand_total += final_price_item
         
-        # Update product stock
-        if product:
+        # Update product stock only for existing products (not custom products)
+        if product and not is_custom_product:
             product.stock_qty = product.stock_qty - int(qty)
     
     bill.total_amount = overall_grand_total
@@ -987,18 +1093,18 @@ def generate_bill_pdf():
         'payment_status': payment_status
     }
     
-    rendered = render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
-    bills_dir = os.path.join('app', 'static', 'bills')
-    os.makedirs(bills_dir, exist_ok=True)
-    # Use current system date/time for filename
-    filename_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    filename = f"bill_{filename_date}_{bill_number}.html"
-    filepath = os.path.join(bills_dir, filename)
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(rendered)
-    bill.pdf_file_path = f'static/bills/{filename}'
+    # rendered = render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
+    # bills_dir = os.path.join('app', 'static', 'bills')
+    # os.makedirs(bills_dir, exist_ok=True)
+    # # Use current system date/time for filename
+    # filename_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    # filename = f"bill_{filename_date}_{bill_number}.html"
+    # filepath = os.path.join(bills_dir, filename)
+    # with open(filepath, 'w', encoding='utf-8') as f:
+    #     f.write(rendered)
+    # bill.pdf_file_path = f'static/bills/{filename}'
     db.session.commit()
-    return render_template('shopkeeper/bill_receipt.html', **bill_data, bill_file=filename, back_url=url_for('shopkeeper.manage_bills'))
+    return render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
 
 @shopkeeper_bp.route('/bills/<filename>')
 def serve_bill_file(filename):

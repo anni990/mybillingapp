@@ -144,7 +144,10 @@ class BillItem(db.Model):
     __tablename__ = 'bill_items'
     bill_item_id = db.Column(db.Integer, primary_key=True)
     bill_id = db.Column(db.Integer, db.ForeignKey('bills.bill_id', ondelete='CASCADE'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey('products.product_id', ondelete='CASCADE'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.product_id', ondelete='CASCADE'), nullable=True)  # Made nullable for custom products
+    custom_product_name = db.Column(db.String(100), nullable=True)  # For custom products not in products table
+    custom_gst_rate = db.Column(db.Numeric(5,2), nullable=True)  # GST rate for custom products
+    custom_hsn_code = db.Column(db.String(20), nullable=True)  # HSN code for custom products
     quantity = db.Column(db.Integer, nullable=False)
     price_per_unit = db.Column(db.Numeric(10,2), nullable=False)
     total_price = db.Column(db.Numeric(12,2), nullable=False)

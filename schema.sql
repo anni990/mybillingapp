@@ -123,7 +123,10 @@ CREATE TABLE bills (
 CREATE TABLE bill_items (
     bill_item_id INT AUTO_INCREMENT PRIMARY KEY,
     bill_id INT NOT NULL,
-    product_id INT NOT NULL,
+    product_id INT NULL,
+    custom_product_name VARCHAR(100) NULL,
+    custom_gst_rate DECIMAL(5,2) NULL,
+    custom_hsn_code VARCHAR(20) NULL,
     quantity INT NOT NULL,
     price_per_unit DECIMAL(10,2) NOT NULL,
     total_price DECIMAL(12,2) NOT NULL,
