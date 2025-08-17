@@ -107,6 +107,8 @@ CREATE TABLE bills (
     shopkeeper_id INT NOT NULL,
     bill_number VARCHAR(50) NOT NULL,
     customer_name VARCHAR(100),
+    customer_address VARCHAR(255) NULL,
+    customer_gstin VARCHAR(20) NULL,
     customer_contact VARCHAR(20),
     bill_date DATE NOT NULL,
     gst_type ENUM('GST', 'Non-GST') NOT NULL,
