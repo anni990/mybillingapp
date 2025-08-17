@@ -2,22 +2,6 @@
 {% block title %}Login | MyBillingApp{% endblock %}
 {% block content %}
 
-<!-- Flash Messages (overlay, top-right) -->
-<div class="fixed top-5 right-5 z-50 space-y-3">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="
-                    px-4 py-3 rounded-md shadow-lg text-white text-sm font-medium animate-slideIn
-                    {% if category == 'success' %} bg-green-500 {% elif category == 'error' %} bg-red-500 {% elif category == 'warning' %} bg-yellow-500 text-black {% else %} bg-gray-800 {% endif %}
-                ">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-</div>
-
 <!-- Main Content -->
 <div class="flex h-screen bg-gray-100 -mt-20 -mb-10">
 
@@ -80,16 +64,5 @@
         </div>
     </div>
 </div>
-
-<!-- Small fade-in animation -->
-<style>
-@keyframes slideIn {
-    from { opacity: 0; transform: translateX(30px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-.animate-slideIn {
-    animation: slideIn 0.5s ease-out;
-}
-</style>
 
 {% endblock %}

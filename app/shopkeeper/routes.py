@@ -614,19 +614,37 @@ def sales_reports():
 @shopkeeper_required
 def ca_marketplace():
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    cas = []
-    if request.method == 'POST':
-        area = request.form.get('area')
-        domain = request.form.get('domain')
-        query = CharteredAccountant.query
-        if area:
-            query = query.filter(CharteredAccountant.area.ilike(f'%{area}%'))
-        cas = query.all()
+    
+    # First check if shopkeeper has any approved CA connection
+    approved_connection = ShopConnection.query.filter_by(
+        shopkeeper_id=shopkeeper.shopkeeper_id,
+        status='approved'
+    ).first()
+    
+    # If there's an approved connection, only get that CA's details
+    if approved_connection:
+        connected_ca = CharteredAccountant.query.get(approved_connection.ca_id)
+        cas = [connected_ca] if connected_ca else []
     else:
-        cas = CharteredAccountant.query.all()
-    # Get connection status for each CA (shopkeeper-initiated)
+        # If no approved connection, show all CAs
+        cas = []
+        if request.method == 'POST':
+            area = request.form.get('area')
+            domain = request.form.get('domain')
+            query = CharteredAccountant.query
+            if area:
+                query = query.filter(CharteredAccountant.area.ilike(f'%{area}%'))
+            cas = query.all()
+        else:
+            cas = CharteredAccountant.query.all()
+    
+    # Get connection status for each CA
     connections = {c.ca_id: c for c in ShopConnection.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()}
-    return render_template('shopkeeper/ca_marketplace.html', cas=cas, connections=connections)
+    
+    return render_template('shopkeeper/ca_marketplace.html', 
+                         cas=cas, 
+                         connections=connections,
+                         has_approved_connection=bool(approved_connection))
 
 @shopkeeper_bp.route('/connect_ca/<int:ca_id>', methods=['POST'])
 @login_required
@@ -824,67 +842,29 @@ def generate_bill_pdf():
         if not product:
             continue
             
-        # Get GST rate from product - for Non-GST, treat as 0%
-        gst_rate = float(product.gst_rate or 0) if bill_gst_type == 'GST' else 0
+        # Get GST rate from product
+        gst_rate = float(product.gst_rate or 0)
         hsn_code = product.hsn_code or ''
         
         # Calculate base price
         total_base_price = price * qty
         
-        # Variables for calculations
-        discounted_price = 0
-        cgst_amount = 0
-        sgst_amount = 0
-        total_gst_item_amount = 0
-        final_price_item = 0
+        # Calculate discount
+        discount_amount = total_base_price * (discount / 100.0)
         
-        if bill_gst_type == 'GST':
-            if gst_mode == 'inclusive' and gst_rate > 0:
-                # CASE 1: GST-Inclusive Billing
-                
-                # Step 1: Extract the base price without GST
-                divisor = 1 + (gst_rate / 100)
-                actual_base_price = total_base_price / divisor
-                
-                # Step 2: Apply discount to base price
-                discount_amount = actual_base_price * (discount / 100)
-                discounted_price = actual_base_price - discount_amount
-                
-                # Step 3: Calculate GST components
-                cgst_rate_percentage = gst_rate / 2.0
-                sgst_rate_percentage = gst_rate / 2.0
-                
-                cgst_amount = discounted_price * (cgst_rate_percentage / 100)
-                sgst_amount = discounted_price * (sgst_rate_percentage / 100)
-                total_gst_item_amount = cgst_amount + sgst_amount
-                
-                # Step 4: Calculate final price
-                final_price_item = discounted_price + total_gst_item_amount
-            else:
-                # CASE 2: GST-Exclusive Billing
-                
-                # Step 1: Calculate discount on base price
-                discount_amount = total_base_price * (discount / 100)
-                discounted_price = total_base_price - discount_amount
-                
-                # Step 2: Calculate GST components
-                cgst_rate_percentage = gst_rate / 2.0
-                sgst_rate_percentage = gst_rate / 2.0
-                
-                cgst_amount = discounted_price * (cgst_rate_percentage / 100)
-                sgst_amount = discounted_price * (sgst_rate_percentage / 100)
-                total_gst_item_amount = cgst_amount + sgst_amount
-                
-                # Step 3: Calculate final price
-                final_price_item = discounted_price + total_gst_item_amount
-        else:
-            # Non-GST billing
-            discount_amount = total_base_price * (discount / 100)
-            discounted_price = total_base_price - discount_amount
-            cgst_amount = 0
-            sgst_amount = 0
-            total_gst_item_amount = 0
-            final_price_item = discounted_price
+        # Calculate discounted price (taxable value)
+        discounted_price = total_base_price - discount_amount
+        
+        # Calculate CGST and SGST (50/50 split)
+        cgst_rate_percentage = gst_rate / 2.0
+        sgst_rate_percentage = gst_rate / 2.0
+        
+        cgst_amount = discounted_price * (cgst_rate_percentage / 100.0)
+        sgst_amount = discounted_price * (sgst_rate_percentage / 100.0)
+        total_gst_item_amount = cgst_amount + sgst_amount
+        
+        # Final price for item
+        final_price_item = discounted_price + total_gst_item_amount
         
         # Create bill item
         bill_item = BillItem(
@@ -938,42 +918,26 @@ def generate_bill_pdf():
         if product:
             product.stock_qty = product.stock_qty - int(qty)
     
-    # Round grand total to 2 decimal places
-    overall_grand_total = round(overall_grand_total, 2)
     bill.total_amount = overall_grand_total
-    
-    # Calculate payment amounts based on status
-    if payment_status == 'Paid':
-        # For paid bills, amount_paid equals total
-        amount_paid = overall_grand_total
-        amount_unpaid = 0
-    elif payment_status == 'Unpaid':
-        # For unpaid bills, amount_unpaid equals total
-        amount_paid = 0
-        amount_unpaid = overall_grand_total
-    else:
-        # For partial payments, use input value but ensure they sum to total
-        try:
-            amount_paid = round(float(request.form.get('calculated_paid_amount', 0)), 2)
-            # Calculate unpaid as difference to ensure accuracy
-            amount_unpaid = round(overall_grand_total - amount_paid, 2)
-            
-            # Ensure paid doesn't exceed total
-            if amount_paid > overall_grand_total:
-                amount_paid = overall_grand_total
-                amount_unpaid = 0
-        except (ValueError, TypeError):
+    try:
+    # Update amount_paid and amount_unpaid based on final total if needed
+        if payment_status == 'Paid':
+            amount_paid = overall_grand_total
+            amount_unpaid = 0
+        elif payment_status == 'Unpaid':
             amount_paid = 0
             amount_unpaid = overall_grand_total
+        else:
+                # For partial payments, use the calculated amounts
+                amount_paid = float(request.form.get('calculated_paid_amount', 0))
+                amount_unpaid = float(request.form.get('calculated_unpaid_amount', 0))
+    except Exception:
+        # Fallback values
+        amount_paid = 0
+        amount_unpaid = 0
     
-    # Update bill with final payment values
     bill.amount_paid = amount_paid
     bill.amount_unpaid = amount_unpaid
-    
-    # Ensure the total = paid + unpaid (fix any rounding issues)
-    if round(bill.amount_paid + bill.amount_unpaid, 2) != round(bill.total_amount, 2):
-        bill.amount_unpaid = round(bill.total_amount - bill.amount_paid, 2)
-    
     db.session.commit()
     
     # Calculate grand total summary

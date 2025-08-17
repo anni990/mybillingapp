@@ -4,7 +4,8 @@
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
 <div class="flex min-h-screen bg-gray-100">
-    <aside class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
+    <aside
+        class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
         <div>
             <nav class="mt-5 flex-1">
                 <ul class="space-y-2">
@@ -33,43 +34,87 @@
     </aside>
 
     <main class="flex-1 ml-64 p-8 bg-gray-100 min-h-screen">
-        <div class="max-w-7xl mx-auto">
-            <h2 class="text-3xl font-bold text-[#ed6a3e] mb-6">CA Marketplace</h2>
-
-            <div class="bg-white p-6 rounded-xl shadow-lg mb-6">
-                <div class="relative">
-                    <i data-feather="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                    <input type="text" id="ca-search" placeholder="Search CAs by name or area..." class="pl-10 pr-4 py-3 border rounded-full w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-300">
+        {% if has_approved_connection %}
+        <!-- Connected CA Popup -->
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4 relative transform transition-all">
+                <button onclick="window.location.href='{{ url_for('shopkeeper.dashboard') }}'"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition duration-200">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+                <div class="text-center">
+                    <div class="mb-8">
+                        <div class="w-32 h-32 bg-green-100 rounded-full mx-auto flex items-center justify-center mb-4">
+                            <i data-feather="check-circle" class="w-16 h-16 text-green-500"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">Connected CA</h2>
+                    {% for ca in cas %}
+                    {% set conn = connections.get(ca.ca_id) %}
+                    {% if conn and conn.status == 'approved' %}
+                    <p class="text-2xl font-semibold text-[#ed6a3e] mb-8">{{ ca.firm_name }}</p>
+                    <a href="{{ url_for('shopkeeper.connected_ca_profile', ca_id=ca.ca_id) }}"
+                        class="inline-flex items-center justify-center px-8 py-4 bg-[#ed6a3e] text-white rounded-xl hover:bg-orange-700 transition duration-300 font-semibold text-lg shadow-lg hover:shadow-xl">
+                        <span>View CA Profile</span>
+                        <i data-feather="arrow-right" class="ml-2 w-6 h-6"></i>
+                    </a>
+                    {% endif %}
+                    {% endfor %}
                 </div>
             </div>
+        </div>
+        {% endif %}
 
+        <div class="max-w-7xl mx-auto {% if has_approved_connection %}hidden{% endif %}">
+            {% if not has_approved_connection %}
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+                <h2 class="text-3xl font-bold text-[#ed6a3e]">CA Marketplace</h2>
+                <div class="relative flex items-center w-full md:w-auto">
+                    <div class="relative flex-1 md:w-64">
+                        <i data-feather="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"></i>
+                        <input type="text" id="ca-search" 
+                            placeholder="Search CAs by name or area..." 
+                            class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-[#ed6a3e] transition-all duration-200"
+                        >
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             <div id="ca-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
                 {% for ca in cas %}
                 {% set conn = connections.get(ca.ca_id) %}
                 <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col justify-between hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 ca-card"
-                     data-name="{{ ca.firm_name|lower }}" data-area="{{ ca.area|lower }}">
+                    data-name="{{ ca.firm_name|lower }}" data-area="{{ ca.area|lower }}">
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-xl font-bold text-gray-800">{{ ca.firm_name }}</h3>
                             {% if not conn %}
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-600">Not Connected</span>
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-600">Not
+                                Connected</span>
                             {% elif conn.status == 'pending' %}
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Pending</span>
+                            <span
+                                class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Pending</span>
                             {% elif conn.status == 'approved' %}
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Connected</span>
+                            <span
+                                class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Connected</span>
                             {% elif conn.status == 'rejected' %}
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Rejected</span>
+                            <span
+                                class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Rejected</span>
                             {% endif %}
                         </div>
                         <ul class="space-y-3 text-gray-600 mb-6">
                             {% if ca.area %}
-                            <li class="flex items-center"><i data-feather="map-pin" class="mr-2 text-[#ed6a3e] w-5 h-5"></i><span>{{ ca.area }}</span></li>
+                            <li class="flex items-center"><i data-feather="map-pin"
+                                    class="mr-2 text-[#ed6a3e] w-5 h-5"></i><span>{{ ca.area }}</span></li>
                             {% endif %}
                             {% if ca.contact_number %}
-                            <li class="flex items-center"><i data-feather="phone" class="mr-2 text-[#ed6a3e] w-5 h-5"></i><span>{{ ca.contact_number }}</span></li>
+                            <li class="flex items-center"><i data-feather="phone"
+                                    class="mr-2 text-[#ed6a3e] w-5 h-5"></i><span>{{ ca.contact_number }}</span></li>
                             {% endif %}
                             {% if ca.email %}
-                            <li class="flex items-center"><i data-feather="mail" class="mr-2 text-[#ed6a3e] w-5 h-5"></i><span>{{ ca.email }}</span></li>
+                            <li class="flex items-center"><i data-feather="mail"
+                                    class="mr-2 text-[#ed6a3e] w-5 h-5"></i><span>{{ ca.email }}</span></li>
                             {% endif %}
                         </ul>
                     </div>
@@ -77,16 +122,21 @@
                     <div class="mt-auto">
                         {% if not conn or conn.status == 'rejected' %}
                         <form method="POST" action="{{ url_for('shopkeeper.connect_ca', ca_id=ca.ca_id) }}">
-                            <button type="submit" class="w-full bg-[#ed6a3e] text-white py-3 rounded-full shadow-md hover:bg-orange-700 transition duration-300 font-semibold flex items-center justify-center">
+                            <button type="submit"
+                                class="w-full bg-[#ed6a3e] text-white py-3 rounded-full shadow-md hover:bg-orange-700 transition duration-300 font-semibold flex items-center justify-center">
                                 <i data-feather="send" class="mr-2 w-5 h-5"></i> Connect
                             </button>
                         </form>
                         {% elif conn.status == 'pending' %}
-                        <button class="w-full bg-yellow-400 text-white py-3 rounded-full shadow-md cursor-not-allowed font-semibold flex items-center justify-center" disabled>
+                        <button
+                            class="w-full bg-yellow-400 text-white py-3 rounded-full shadow-md cursor-not-allowed font-semibold flex items-center justify-center"
+                            disabled>
                             <i data-feather="clock" class="mr-2 w-5 h-5"></i> Pending
                         </button>
                         {% elif conn.status == 'approved' %}
-                        <button class="w-full bg-green-500 text-white py-3 rounded-full shadow-md cursor-not-allowed font-semibold flex items-center justify-center" disabled>
+                        <button
+                            class="w-full bg-green-500 text-white py-3 rounded-full shadow-md cursor-not-allowed font-semibold flex items-center justify-center"
+                            disabled>
                             <i data-feather="check-circle" class="mr-2 w-5 h-5"></i> Connected
                         </button>
                         {% endif %}
@@ -105,20 +155,71 @@
 <script>
     feather.replace();
 
-    document.getElementById('ca-search').addEventListener('keyup', function() {
-        const searchTerm = this.value.toLowerCase();
-        const cards = document.querySelectorAll('.ca-card');
+    // Search functionality
+    const searchInput = document.getElementById('ca-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.ca-card');
+            let hasResults = false;
 
-        cards.forEach(card => {
-            const name = card.getAttribute('data-name');
-            const area = card.getAttribute('data-area');
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name');
+                const area = card.getAttribute('data-area');
+                
+                if (name.includes(searchTerm) || area.includes(searchTerm) || searchTerm === '') {
+                    card.style.display = '';
+                    card.classList.remove('hidden');
+                    hasResults = true;
+                } else {
+                    card.style.display = 'none';
+                    card.classList.add('hidden');
+                }
+            });
 
-            if (name.includes(searchTerm) || area.includes(searchTerm)) {
-                card.style.display = '';
-            } else {
-                card.style.display = 'none';
+            // Show/hide no results message
+            const noResults = document.getElementById('no-results');
+            const container = document.getElementById('ca-list-container');
+            
+            if (searchTerm && !hasResults) {
+                if (!noResults) {
+                    const message = document.createElement('div');
+                    message.id = 'no-results';
+                    message.className = 'col-span-1 md:col-span-2 lg:col-span-3 text-center text-gray-500 py-8 animate-fade-in';
+                    message.innerHTML = `
+                        <div class="flex flex-col items-center">
+                            <i data-feather="search" class="w-12 h-12 text-gray-300 mb-3"></i>
+                            <p class="text-xl">No CAs found matching "${searchTerm}"</p>
+                        </div>
+                    `;
+                    container.appendChild(message);
+                    feather.replace();
+                }
+            } else if (noResults) {
+                noResults.remove();
             }
         });
+
+        // Auto-focus search on page load
+        setTimeout(() => {
+            searchInput.focus();
+        }, 100);
+    }
+
+
+    // Handle ESC key to close popup and go back
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            const backButton = document.querySelector('.fixed.inset-0 button');
+            if (backButton) {
+                window.location.href = '{{ url_for('shopkeeper.dashboard') }}';
+            }
+        }
+    });
+
+    // Re-run feather icons after dynamic content changes
+    window.addEventListener('DOMContentLoaded', (event) => {
+        feather.replace();
     });
 </script>
 {% endblock %}

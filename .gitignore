@@ -61,4 +61,3 @@ logs/
 Thumbs.db 
 app/.env
 app/.env
-flask_session/d58c801de305cd140972b67b66ebe16e
