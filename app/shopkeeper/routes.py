@@ -1256,3 +1256,9 @@ def update_payment(bill_id):
     bill.payment_status = new_status
     db.session.commit()
     return jsonify({'success': True})
+
+@shopkeeper_bp.route('/customer_management')
+@login_required
+@shopkeeper_required
+def customer_management():
+    return render_template('shopkeeper/customer_management.html')

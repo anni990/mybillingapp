@@ -256,11 +256,18 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ url_for('shopkeeper.customer_management') }}" class="flex items-center px-4 py-3 text-white hover:bg-white/20 rounded-lg transition duration-300 group">
+                            <i data-feather="user" class="w-5 h-5 flex-shrink-0"></i>
+                            <span class="sidebar-text ml-3">Customers</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ url_for('shopkeeper.ca_marketplace') }}" class="flex items-center px-4 py-3 text-white hover:bg-white/20 rounded-lg transition duration-300 group">
                             <i data-feather="users" class="w-5 h-5 flex-shrink-0"></i>
                             <span class="sidebar-text ml-3">CA Marketplace</span>
                         </a>
                     </li>
+                    
                     <li class="hidden md:block">
                         <a href="{{ url_for('shopkeeper.profile') }}" class="flex items-center px-4 py-3 text-white hover:bg-white/20 rounded-lg transition duration-300 group">
                             <i data-feather="user" class="w-5 h-5 flex-shrink-0"></i>
