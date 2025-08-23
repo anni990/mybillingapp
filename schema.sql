@@ -9,7 +9,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('shopkeeper', 'CA', 'employee') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    plain_password VARCHAR(255),
+    plain_password VARCHAR(255)
 );
 
 -- 2. Shopkeeper Profile
