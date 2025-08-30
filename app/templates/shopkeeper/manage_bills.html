@@ -147,10 +147,10 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">₹{{ "{:,.2f}".format(bill.total_amount)
                                     }}</div>
-                                {% if bill.payment_status != 'Paid' %}
+                                <!-- {% if bill.payment_status != 'Paid' %}
                                 <div class="text-sm text-red-600">₹{{ "{:,.2f}".format(bill.amount_unpaid) }} pending
                                 </div>
-                                {% endif %}
+                                {% endif %} -->
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full
@@ -167,7 +167,7 @@
                                         title="View Bill">
                                         <i data-feather="eye" class="w-4 h-4"></i>
                                     </a>
-                                    {% if bill.payment_status in ['Unpaid', 'Partial'] %}
+                                    <!-- {% if bill.payment_status in ['Unpaid', 'Partial'] %}
                                     <button
                                         class="update-payment-btn text-green-600 hover:text-green-900 transition duration-200"
                                         title="Update Payment" data-bill-id="{{ bill.bill_id }}"
@@ -179,7 +179,7 @@
                                         data-paid="{{ bill.amount_paid }}" data-unpaid="{{ bill.amount_unpaid }}">
                                         <i data-feather="credit-card" class="w-4 h-4"></i>
                                     </button>
-                                    {% endif %}
+                                    {% endif %} -->
                                     <button class="text-red-600 hover:text-red-900 transition duration-200"
                                         title="Delete Bill" onclick="deleteBill('{{ bill.bill_id }}')">
                                         <i data-feather="trash-2" class="w-4 h-4"></i>

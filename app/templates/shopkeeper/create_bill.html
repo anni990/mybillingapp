@@ -14,7 +14,6 @@
     }
     
     .remove-product {
-        opacity: 0;
         transition: opacity 0.3s ease;
     }
     
@@ -111,6 +110,33 @@
                 <h2 class="text-lg md:text-xl font-bold text-gray-800">Customer Details</h2>
             </div>
             
+            <!-- Customer Selection -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Customer Type</label>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <label class="flex items-center">
+                        <input type="radio" name="customer_type" value="existing" class="mr-2" onchange="toggleCustomerFields()">
+                        <span class="text-sm">Existing Customer</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="customer_type" value="new" class="mr-2" checked onchange="toggleCustomerFields()">
+                        <span class="text-sm">New/Guest Customer</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Existing Customer Selection -->
+            <div id="existing-customer-section" class="hidden mb-4">
+                <label for="existing_customer" class="block text-sm font-medium text-gray-700 mb-2">
+                    Select Customer <span class="text-red-500">*</span>
+                </label>
+                <select id="existing_customer" name="existing_customer_id" 
+                        class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base"
+                        onchange="fillCustomerDetails()">
+                    <option value="">Select a customer...</option>
+                </select>
+            </div>
+            
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div>
                     <label for="customer_name" class="block text-sm font-medium text-gray-700 mb-2">
@@ -145,6 +171,32 @@
                     <label for="customer_gstin" class="block text-sm font-medium text-gray-700 mb-2">Customer GSTIN</label>
                     <input type="text" name="customer_gstin" id="customer_gstin"
                            placeholder="Enter GSTIN"
+                           class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                </div>
+            </div>
+
+            <!-- Payment Status for Existing Customers -->
+            <div id="payment-status-section" class="hidden mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <label class="flex items-center">
+                        <input type="radio" name="payment_status" value="Paid" class="mr-2" checked>
+                        <span class="text-sm">Paid</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="payment_status" value="Partial" class="mr-2">
+                        <span class="text-sm">Partial Payment</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="payment_status" value="Unpaid" class="mr-2">
+                        <span class="text-sm">Credit (Unpaid)</span>
+                    </label>
+                </div>
+                
+                <div id="partial-payment-section" class="hidden mt-3">
+                    <label for="paid_amount" class="block text-sm font-medium text-gray-700 mb-2">Amount Paid</label>
+                    <input type="number" name="paid_amount" id="paid_amount" step="0.01" min="0"
+                           placeholder="Enter amount paid"
                            class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
                 </div>
             </div>
@@ -416,5 +468,90 @@
 
     // Initialize feather icons
     setTimeout(() => feather.replace(), 100);
+
+    // Customer management functions
+    let customersData = [];
+
+    // Load customers on page load
+    function loadCustomers() {
+        fetch('/shopkeeper/get_customers_list')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    customersData = data.customers;
+                    populateCustomerDropdown();
+                }
+            })
+            .catch(error => console.error('Error loading customers:', error));
+    }
+
+    function populateCustomerDropdown() {
+        const dropdown = document.getElementById('existing_customer');
+        dropdown.innerHTML = '<option value="">Select a customer...</option>';
+        
+        customersData.forEach(customer => {
+            const option = document.createElement('option');
+            option.value = customer.customer_id;
+            option.textContent = `${customer.name} - ${customer.phone}`;
+            option.dataset.customer = JSON.stringify(customer);
+            dropdown.appendChild(option);
+        });
+    }
+
+    function toggleCustomerFields() {
+        const customerType = document.querySelector('input[name="customer_type"]:checked').value;
+        const existingSection = document.getElementById('existing-customer-section');
+        const paymentStatusSection = document.getElementById('payment-status-section');
+        
+        if (customerType === 'existing') {
+            existingSection.classList.remove('hidden');
+            paymentStatusSection.classList.remove('hidden');
+            document.getElementById('existing_customer').required = true;
+        } else {
+            existingSection.classList.add('hidden');
+            paymentStatusSection.classList.add('hidden');
+            document.getElementById('existing_customer').required = false;
+            clearCustomerFields();
+        }
+    }
+
+    function fillCustomerDetails() {
+        const dropdown = document.getElementById('existing_customer');
+        const selectedOption = dropdown.options[dropdown.selectedIndex];
+        
+        if (selectedOption.value) {
+            const customer = JSON.parse(selectedOption.dataset.customer);
+            document.getElementById('customer_name').value = customer.name;
+            document.getElementById('customer_contact').value = customer.phone;
+            document.getElementById('customer_address').value = customer.address || '';
+            // We can add email field if needed
+        } else {
+            clearCustomerFields();
+        }
+    }
+
+    function clearCustomerFields() {
+        document.getElementById('customer_name').value = '';
+        document.getElementById('customer_contact').value = '';
+        document.getElementById('customer_address').value = '';
+        document.getElementById('customer_gstin').value = '';
+    }
+
+    // Show/hide partial payment field
+    document.addEventListener('change', function(e) {
+        if (e.target.name === 'payment_status') {
+            const partialSection = document.getElementById('partial-payment-section');
+            if (e.target.value === 'Partial') {
+                partialSection.classList.remove('hidden');
+                document.getElementById('paid_amount').required = true;
+            } else {
+                partialSection.classList.add('hidden');
+                document.getElementById('paid_amount').required = false;
+            }
+        }
+    });
+
+    // Load customers when page loads
+    loadCustomers();
 </script>
 {% endblock %}

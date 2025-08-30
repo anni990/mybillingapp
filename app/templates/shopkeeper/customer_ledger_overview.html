@@ -1,0 +1,245 @@
+{% extends "shopkeeper/s_base.html" %}
+
+{% block title %}Customer Ledger Overview - MyBillingApp{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-6 py-8">
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                <i data-feather="book-open" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#667eea]"></i>Customer Ledger Overview
+            </h1>
+            <p class="text-gray-600">Manage customer accounts and transaction history</p>
+        </div>
+        <div class="flex flex-wrap gap-2 mt-4 sm:mt-0">
+            <a href="{{ url_for('shopkeeper.customer_management') }}"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 text-sm font-medium">
+                <i data-feather="users" class="w-4 h-4 inline mr-1"></i>
+                Manage Customers
+            </a>
+            <a href="{{ url_for('shopkeeper.create_bill') }}"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200 text-sm font-medium">
+                <i data-feather="file-plus" class="w-4 h-4 inline mr-1"></i>
+                Create Bill
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Customers</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_customers }}</p>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-full">
+                    <i data-feather="users" class="w-6 h-6 text-blue-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Outstanding</p>
+                    <p class="text-2xl font-bold text-red-600">₹{{ "{:,.2f}".format(total_outstanding) }}</p>
+                </div>
+                <div class="p-3 bg-red-100 rounded-full">
+                    <i data-feather="trending-up" class="w-6 h-6 text-red-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Advance</p>
+                    <p class="text-2xl font-bold text-green-600">₹{{ "{:,.2f}".format(total_advance) }}</p>
+                </div>
+                <div class="p-3 bg-green-100 rounded-full">
+                    <i data-feather="trending-down" class="w-6 h-6 text-green-600"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Ledger Table -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 sm:mb-0">Customer Ledger</h2>
+
+                <!-- Search and Filter -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative">
+                        <input type="text" id="searchCustomer" placeholder="Search customers..."
+                            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-64">
+                        <i data-feather="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                    </div>
+                    <select id="balanceFilter"
+                        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All Customers</option>
+                        <option value="positive">Outstanding (₹ > 0)</option>
+                        <option value="negative">Advance (₹ < 0)</option>
+                        <option value="zero">Zero Balance</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200" id="customersTable">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Customer</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Contact</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Balance</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for customer in customers %}
+                    <tr class="hover:bg-gray-50 customer-row" data-customer-name="{{ customer.name.lower() }}"
+                        data-balance="{{ customer.total_balance }}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <div
+                                        class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                                        {{ customer.name[0].upper() }}
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ customer.name }}</div>
+                                    {% if customer.email %}
+                                    <div class="text-sm text-gray-500">{{ customer.email }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ customer.phone }}</div>
+                            {% if customer.address %}
+                            <div class="text-sm text-gray-500 truncate max-w-xs">{{ customer.address }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if customer.total_balance > 0 %}
+                            <span class="text-lg font-semibold text-red-600">₹{{
+                                "{:,.2f}".format(customer.total_balance) }}</span>
+                            <div class="text-xs text-red-500">Outstanding</div>
+                            {% elif customer.total_balance < 0 %} <span class="text-lg font-semibold text-green-600">₹{{
+                                "{:,.2f}".format(abs(customer.total_balance)) }}</span>
+                                <div class="text-xs text-green-500">Advance</div>
+                                {% else %}
+                                <span class="text-lg font-semibold text-gray-600">₹0.00</span>
+                                <div class="text-xs text-gray-500">Cleared</div>
+                                {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if customer.total_balance > 0 %}
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <i data-feather="alert-circle" class="w-3 h-3 mr-1"></i>
+                                Due
+                            </span>
+                            {% elif customer.total_balance < 0 %} <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i data-feather="check-circle" class="w-3 h-3 mr-1"></i>
+                                Advance
+                                </span>
+                                {% else %}
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    <i data-feather="minus-circle" class="w-3 h-3 mr-1"></i>
+                                    Cleared
+                                </span>
+                                {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <a href="{{ url_for('shopkeeper.customer_ledger', customer_id=customer.customer_id) }}"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md transition duration-200 text-xs">
+                                <i data-feather="book-open" class="w-3 h-3 inline mr-1"></i>
+                                View Ledger
+                            </a>
+                            <a href="{{ url_for('shopkeeper.create_bill') }}?customer_id={{ customer.customer_id }}"
+                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md transition duration-200 text-xs">
+                                <i data-feather="file-plus" class="w-3 h-3 inline mr-1"></i>
+                                New Bill
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if not customers %}
+        <div class="text-center py-12">
+            <i data-feather="users" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
+            <p class="text-gray-500 mb-6">Get started by adding your first customer.</p>
+            <a href="{{ url_for('shopkeeper.customer_management') }}"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition duration-200 font-medium">
+                <i data-feather="plus" class="w-4 h-4 inline mr-2"></i>
+                Add Customer
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    feather.replace();
+
+    // Search functionality
+    document.getElementById('searchCustomer').addEventListener('input', function () {
+        const searchTerm = this.value.toLowerCase();
+        filterTable();
+    });
+
+    // Balance filter functionality
+    document.getElementById('balanceFilter').addEventListener('change', function () {
+        filterTable();
+    });
+
+    function filterTable() {
+        const searchTerm = document.getElementById('searchCustomer').value.toLowerCase();
+        const balanceFilter = document.getElementById('balanceFilter').value;
+        const rows = document.querySelectorAll('.customer-row');
+
+        rows.forEach(row => {
+            const customerName = row.getAttribute('data-customer-name');
+            const balance = parseFloat(row.getAttribute('data-balance'));
+
+            // Check search term
+            const matchesSearch = customerName.includes(searchTerm);
+
+            // Check balance filter
+            let matchesBalance = true;
+            if (balanceFilter === 'positive') {
+                matchesBalance = balance > 0;
+            } else if (balanceFilter === 'negative') {
+                matchesBalance = balance < 0;
+            } else if (balanceFilter === 'zero') {
+                matchesBalance = balance === 0;
+            }
+
+            // Show/hide row
+            if (matchesSearch && matchesBalance) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}
