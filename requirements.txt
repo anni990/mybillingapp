@@ -15,4 +15,5 @@ pyodbc==4.0.39
 pandas
 gunicorn
 python-dateutil
+pymysql
 # For frontend (Tailwind CSS is managed via CDN or npm, not pip)
