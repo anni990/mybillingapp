@@ -1,0 +1,39 @@
+name: Deploy Flask App to Hostinger VPS
+
+on:
+  push:
+    branches: [ deploy ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH Key
+        env:
+          SSH_KEY: ${{ secrets.VPS_KEY }}
+        run: |
+          echo "$SSH_KEY" > key.pem
+          chmod 600 key.pem
+          mkdir -p ~/.ssh
+          ssh-keyscan 72.60.98.76 >> ~/.ssh/known_hosts
+
+      - name: Sync Files to VPS
+        run: |
+          rsync -avz --exclude='.git' --exclude='venv' -e "ssh -i key.pem -o StrictHostKeyChecking=yes" ./ root@72.60.98.76:/home/mybillingapp.in/public_html
+
+      - name: Install Dependencies and Restart App
+        run: |
+          ssh -i key.pem -o StrictHostKeyChecking=yes root@72.60.98.76 << 'EOF'
+          cd /home/mybillingapp.in/public_html
+          source venv/bin/activate
+          pip install -r requirements.txt
+          # Restart Gunicorn if used, otherwise adjust for your Flask server
+          pkill -f "gunicorn"
+          nohup gunicorn --bind 0.0.0.0:8000 wsgi:app &
+          # Restart LiteSpeed web server
+          systemctl restart lsws
+          EOF
