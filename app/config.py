@@ -18,7 +18,11 @@ class Config:
     #     "&TrustServerCertificate=no"
     # )
 
-    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{os.environ.get('DB_USER')}:{os.environ.get('DB_PASSWORD')}@{os.environ.get('DB_HOST')}/{os.environ.get('DB_NAME')}"
+    # Xampp database url
+    # SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{os.environ.get('DB_USER')}:{os.environ.get('DB_PASSWORD')}@{os.environ.get('DB_HOST')}/{os.environ.get('DB_NAME')}"
+
+    # Hostinger database url
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{os.environ.get('HOST_DB_USER')}:{os.environ.get('HOST_DB_PASSWORD')}@{os.environ.get('HOST_DB_HOST')}:{os.environ.get('HOST_DB_PORT')}/{os.environ.get('HOST_DB_NAME')}"
     
     # SQLAlchemy settings
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -32,3 +36,9 @@ class Config:
         SESSION_COOKIE_HTTPONLY = True
         REMEMBER_COOKIE_SECURE = True
         REMEMBER_COOKIE_HTTPONLY = True
+
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,   # refresh every 280 sec
+        "pool_timeout": 30
+    }
