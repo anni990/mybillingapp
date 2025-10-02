@@ -1,0 +1,179 @@
+{% extends 'ca/ca_base.html' %}
+{% block title %}Export Reports | MyBillingApp{% endblock %}
+{% block firm_name %} {{ firm_name }} {% endblock %}
+{% block ca_content %}
+
+<!-- Header Section -->
+<div class="mb-6">
+    <h2 class="text-2xl lg:text-3xl font-bold text-[#ed6a3e] mb-2">Export Reports</h2>
+    <p class="text-gray-600 text-sm lg:text-base">Generate Tally-compatible reports for your clients</p>
+</div>
+
+<!-- Export Form -->
+<div class="bg-white rounded-xl shadow-lg p-4 lg:p-8 max-w-4xl mx-auto">
+    <form method="post" action="/ca/reports" class="space-y-6">
+        
+        <!-- Filter Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+            <!-- Shopkeeper Selection -->
+            <div class="lg:col-span-1">
+                <label class="block text-gray-700 font-semibold mb-2 text-sm lg:text-base">Select Shopkeeper</label>
+                <select name="shopkeeper_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm lg:text-base focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition-colors">
+                    <option value="">All Shopkeepers</option>
+                    {% for sk in shopkeepers %}
+                    <option value="{{ sk.shopkeeper_id }}" {% if selected_shopkeeper_id == sk.shopkeeper_id|string %}selected{% endif %}>
+                        {{ sk.shop_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Date Range -->
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2 text-sm lg:text-base">Start Date</label>
+                <input type="date" name="start_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm lg:text-base focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition-colors" value="{{ selected_start_date or '' }}">
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2 text-sm lg:text-base">End Date</label>
+                <input type="date" name="end_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm lg:text-base focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition-colors" value="{{ selected_end_date or '' }}">
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button type="submit" name="preview" value="1" 
+                    class="flex items-center justify-center px-6 py-3 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition-colors duration-300 text-sm lg:text-base font-medium">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                Preview Data
+            </button>
+            
+            <button type="submit" formaction="/ca/export_bills" formmethod="post" 
+                    class="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-[#ed6a3e] to-[#d45f34] text-white rounded-lg shadow hover:shadow-lg transition-all duration-300 text-sm lg:text-base font-medium">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Export Bills (Excel)
+            </button>
+        </div>
+    </form>
+    
+    <!-- Preview Section -->
+    {% if preview_bills %}
+    <div class="mt-8">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+            <h3 class="font-semibold text-lg text-[#ed6a3e] mb-2 sm:mb-0">Data Preview</h3>
+            <span class="text-sm text-gray-500">Showing first 5 records</span>
+        </div>
+        
+        <!-- Desktop Table View -->
+        <div class="hidden lg:block bg-gray-50 rounded-lg overflow-hidden">
+            <div class="table-container overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gradient-to-r from-[#ed6a3e] to-[#d45f34] text-white">
+                        <tr>
+                            <th class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Date</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Voucher Type</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Party Name</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Bill No</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">GST Type</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Amount</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for row in preview_bills %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-200">
+                            <td class="py-3 px-4 text-sm text-gray-900">{{ row['Date'] }}</td>
+                            <td class="py-3 px-4 text-sm text-gray-900">{{ row['Voucher Type'] }}</td>
+                            <td class="py-3 px-4 text-sm text-gray-900">{{ row['Party Name'] }}</td>
+                            <td class="py-3 px-4 text-sm font-mono text-gray-900">{{ row['Bill No'] }}</td>
+                            <td class="py-3 px-4 text-sm text-gray-900">{{ row['GST Type'] }}</td>
+                            <td class="py-3 px-4 text-sm font-semibold text-gray-900">₹{{ row['Total Amount'] }}</td>
+                            <td class="py-3 px-4">
+                                <span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold
+                                    {% if row['Payment Status'] == 'Paid' %}
+                                        bg-green-100 text-green-800
+                                    {% elif row['Payment Status'] == 'Unpaid' %}
+                                        bg-red-100 text-red-800
+                                    {% else %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% endif %}">
+                                    {{ row['Payment Status'] }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Mobile Card View -->
+        <div class="lg:hidden space-y-4">
+            {% for row in preview_bills %}
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h4 class="font-semibold text-gray-900">{{ row['Party Name'] }}</h4>
+                        <p class="text-sm text-gray-500 font-mono">{{ row['Bill No'] }}</p>
+                    </div>
+                    <span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold
+                        {% if row['Payment Status'] == 'Paid' %}
+                            bg-green-100 text-green-800
+                        {% elif row['Payment Status'] == 'Unpaid' %}
+                            bg-red-100 text-red-800
+                        {% else %}
+                            bg-yellow-100 text-yellow-800
+                        {% endif %}">
+                        {{ row['Payment Status'] }}
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                        <span class="font-medium text-gray-600">Date:</span>
+                        <span class="text-gray-900">{{ row['Date'] }}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-600">Type:</span>
+                        <span class="text-gray-900">{{ row['Voucher Type'] }}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-600">GST:</span>
+                        <span class="text-gray-900">{{ row['GST Type'] }}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-600">Amount:</span>
+                        <span class="font-semibold text-gray-900">₹{{ row['Total Amount'] }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Information Note -->
+    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex items-start">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div class="text-sm text-blue-800">
+                <h4 class="font-semibold mb-1">Export Information</h4>
+                <ul class="list-disc list-inside space-y-1">
+                    <li>The exported Excel file is formatted for direct Tally import</li>
+                    <li>You can filter by specific shopkeepers and date ranges</li>
+                    <li>All bill data including GST details will be included</li>
+                    <li>Payment status helps track outstanding amounts</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %} 

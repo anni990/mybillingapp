@@ -1,0 +1,574 @@
+{% extends 'ca/ca_base.html' %}
+{% block title %}CA Profile | MyBillingApp{% endblock %}
+{% block firm_name %} {{ firm_name }} {% endblock %}
+{% block ca_content %}
+
+<style>
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+
+  .fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  .hover-pulse:hover {
+    animation: pulse 0.3s ease-in-out;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .document-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+  }
+
+  .document-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: #667eea;
+  }
+
+  .info-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #667eea;
+  }
+
+  .info-card:hover {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    transform: translateX(5px);
+  }
+</style>
+
+<!-- Hero Section -->
+<div class="fade-in-up gradient-bg rounded-3xl p-8 md:p-12 mb-8 text-white shadow-2xl">
+  <div class="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
+    <!-- Profile Image -->
+    <div class="relative group">
+      <div class="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-xl ring-8 ring-white/20 hover-pulse">
+        {% if ca.photo_file %}
+          <img src="{{ url_for('static', filename=ca.photo_file) }}" alt="Firm Photograph" 
+               class="object-cover w-full h-full transform group-hover:scale-110 transition-all duration-500 ease-in-out" />
+        {% else %}
+          <div class="w-full h-full flex items-center justify-center bg-white/20 backdrop-blur-sm">
+            <svg class="w-16 h-16 md:w-20 md:h-20 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+          </div>
+        {% endif %}
+      </div>
+      <div class="absolute -bottom-2 -right-2 bg-green-500 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+    </div>
+    
+    <!-- Profile Info -->
+    <div class="flex-1 text-center md:text-left">
+      <h1 class="text-3xl md:text-5xl font-bold mb-3 tracking-tight">{{ ca.firm_name }}</h1>
+      <div class="flex items-center justify-center md:justify-start mb-4">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <p class="text-xl opacity-90">{{ ca.area or 'Location not specified' }}</p>
+      </div>
+      
+      <div class="flex flex-wrap justify-center md:justify-start gap-3 mb-6">
+        <span class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
+          Chartered Accountant
+        </span>
+        <span class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
+          Tax Consultant
+        </span>
+        <span class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
+          GST Expert
+        </span>
+      </div>
+
+      {% if ca.about_me %}
+        <p class="text-lg opacity-90 leading-relaxed max-w-2xl">{{ ca.about_me }}</p>
+      {% else %}
+        <p class="text-lg opacity-75 italic">Professional chartered accountant providing comprehensive financial services.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Contact Information Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+  <!-- Contact Details -->
+  <div class="bg-white rounded-2xl p-8 shadow-xl border border-gray-100 fade-in-up">
+    <div class="flex items-center mb-6">
+      <div class="p-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] rounded-xl">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-800 ml-4">Contact Information</h2>
+    </div>
+    
+    <div class="space-y-4">
+      <div class="info-card p-4 bg-gray-50 rounded-xl">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-[#667eea] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+          </svg>
+          <div>
+            <p class="text-sm text-gray-600">Phone Number</p>
+            <p class="font-semibold text-gray-800">{{ ca.contact_number or 'Not provided' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card p-4 bg-gray-50 rounded-xl">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-[#667eea] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          </svg>
+          <div>
+            <p class="text-sm text-gray-600">Address</p>
+            <p class="font-semibold text-gray-800">{{ ca.address or 'Address not provided' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="info-card p-4 bg-gray-50 rounded-xl">
+          <p class="text-sm text-gray-600">City</p>
+          <p class="font-semibold text-gray-800">{{ ca.city or 'N/A' }}</p>
+        </div>
+        <div class="info-card p-4 bg-gray-50 rounded-xl">
+          <p class="text-sm text-gray-600">State</p>
+          <p class="font-semibold text-gray-800">{{ ca.state or 'N/A' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Professional Details -->
+  <div class="bg-white rounded-2xl p-8 shadow-xl border border-gray-100 fade-in-up">
+    <div class="flex items-center mb-6">
+      <div class="p-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] rounded-xl">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-800 ml-4">Professional Details</h2>
+    </div>
+    
+    <div class="space-y-4">
+      <div class="info-card p-4 bg-gray-50 rounded-xl">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-[#667eea] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <div>
+            <p class="text-sm text-gray-600">GST Number</p>
+            <p class="font-semibold text-gray-800">{{ ca.gst_number or 'Not provided' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card p-4 bg-gray-50 rounded-xl">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-[#667eea] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
+          </svg>
+          <div>
+            <p class="text-sm text-gray-600">PAN Number</p>
+            <p class="font-semibold text-gray-800">{{ ca.pan_number or 'Not provided' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card p-4 bg-gray-50 rounded-xl">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-[#667eea] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+          <div>
+            <p class="text-sm text-gray-600">GSTIN</p>
+            <p class="font-semibold text-gray-800">{{ ca.gstin or 'Not provided' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card p-4 bg-gray-50 rounded-xl">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-[#667eea] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+          </svg>
+          <div>
+            <p class="text-sm text-gray-600">Pincode</p>
+            <p class="font-semibold text-gray-800">{{ ca.pincode or 'Not provided' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Documents Section -->
+<div class="bg-white rounded-2xl p-8 shadow-xl border border-gray-100 fade-in-up mb-8">
+  <div class="flex items-center mb-8">
+    <div class="p-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] rounded-xl">
+      <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+    </div>
+    <h2 class="text-2xl font-bold text-gray-800 ml-4">Professional Documents</h2>
+  </div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Aadhaar Card -->
+    <div class="document-card p-6 bg-gray-50 rounded-xl">
+      <div class="flex items-center mb-4">
+        <div class="p-2 bg-blue-100 rounded-lg">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-gray-800 ml-3">Aadhaar Card</h3>
+      </div>
+      <div class="text-center">
+        {% if ca.aadhaar_file %}
+          <a href="{{ url_for('static', filename=ca.aadhaar_file) }}" target="_blank" 
+             class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            View Document
+          </a>
+        {% else %}
+          <div class="flex flex-col items-center">
+            <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="text-gray-500 text-sm">Not uploaded</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- PAN Card -->
+    <div class="document-card p-6 bg-gray-50 rounded-xl">
+      <div class="flex items-center mb-4">
+        <div class="p-2 bg-purple-100 rounded-lg">
+          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-gray-800 ml-3">PAN Card</h3>
+      </div>
+      <div class="text-center">
+        {% if ca.pan_file %}
+          <a href="{{ url_for('static', filename=ca.pan_file) }}" target="_blank" 
+             class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            View Document
+          </a>
+        {% else %}
+          <div class="flex flex-col items-center">
+            <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="text-gray-500 text-sm">Not uploaded</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ICAI Membership -->
+    <div class="document-card p-6 bg-gray-50 rounded-xl">
+      <div class="flex items-center mb-4">
+        <div class="p-2 bg-yellow-100 rounded-lg">
+          <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-gray-800 ml-3">ICAI Certificate</h3>
+      </div>
+      <div class="text-center">
+        {% if ca.icai_certificate_file %}
+          <a href="{{ url_for('static', filename=ca.icai_certificate_file) }}" target="_blank" 
+             class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            View Document
+          </a>
+        {% else %}
+          <div class="flex flex-col items-center">
+            <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="text-gray-500 text-sm">Not uploaded</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Certificate of Practice -->
+    <div class="document-card p-6 bg-gray-50 rounded-xl">
+      <div class="flex items-center mb-4">
+        <div class="p-2 bg-green-100 rounded-lg">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-gray-800 ml-3">COP Certificate</h3>
+      </div>
+      <div class="text-center">
+        {% if ca.cop_certificate_file %}
+          <a href="{{ url_for('static', filename=ca.cop_certificate_file) }}" target="_blank" 
+             class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            View Document
+          </a>
+        {% else %}
+          <div class="flex flex-col items-center">
+            <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="text-gray-500 text-sm">Not uploaded</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Business Registration -->
+    <div class="document-card p-6 bg-gray-50 rounded-xl">
+      <div class="flex items-center mb-4">
+        <div class="p-2 bg-indigo-100 rounded-lg">
+          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-gray-800 ml-3">Business Registration</h3>
+      </div>
+      <div class="text-center">
+        {% if ca.business_reg_file %}
+          <a href="{{ url_for('static', filename=ca.business_reg_file) }}" target="_blank" 
+             class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            View Document
+          </a>
+        {% else %}
+          <div class="flex flex-col items-center">
+            <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="text-gray-500 text-sm">Not uploaded</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Bank Details -->
+    <div class="document-card p-6 bg-gray-50 rounded-xl">
+      <div class="flex items-center mb-4">
+        <div class="p-2 bg-red-100 rounded-lg">
+          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-gray-800 ml-3">Bank Details</h3>
+      </div>
+      <div class="text-center">
+        {% if ca.bank_details_file %}
+          <a href="{{ url_for('static', filename=ca.bank_details_file) }}" target="_blank" 
+             class="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            View Document
+          </a>
+        {% else %}
+          <div class="flex flex-col items-center">
+            <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="text-gray-500 text-sm">Not uploaded</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Action Button -->
+<div class="text-center mb-8">
+  <a href="?edit=1" 
+     class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 text-lg font-medium">
+    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+    </svg>
+    Edit Profile
+  </a>
+</div>
+
+{% if edit_mode %}
+  <form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-xl p-8 max-w-4xl mx-auto mt-10 border border-gray-200">
+    {{ form.hidden_tag() }}
+    <h2 class="text-xl md:text-2xl font-bold text-[#667eea] mb-4 md:mb-6 border-b-2 border-purple-100 pb-3">Edit Profile Details</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+      <div>
+        <div class="mb-5">
+          {{ form.firm_name.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.firm_name(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter firm name") }}
+          {% for error in form.firm_name.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <!-- About Me field -->
+        <div class="mb-5">
+          {{ form.about_me.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.about_me(class_="w-full border border-gray-300 rounded-lg px-4 py-2 min-h-[100px] focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Write something about yourself, your firm, or your expertise...") }}
+          {% for error in form.about_me.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.area.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.area(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter area/location") }}
+          {% for error in form.area.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.contact_number.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.contact_number(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter contact number") }}
+          {% for error in form.contact_number.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.gst_number.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.gst_number(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter GST number (optional)") }}
+          {% for error in form.gst_number.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.pan_number.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.pan_number(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter PAN number (optional)") }}
+          {% for error in form.pan_number.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.gstin.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.gstin(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter GSTIN (optional)") }}
+          {% for error in form.gstin.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.address.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.address(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter address (optional)") }}
+          {% for error in form.address.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.city.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.city(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter city") }}
+          {% for error in form.city.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.state.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.state(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter state") }}
+          {% for error in form.state.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.pincode.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.pincode(class_="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-300 focus:border-transparent transition duration-200", placeholder="Enter pincode") }}
+          {% for error in form.pincode.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+      <div>
+        <div class="mb-5">
+          {{ form.photo_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.photo_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.photo_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.photo_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.signature_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.signature_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.signature_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.signature_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.aadhaar_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.aadhaar_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.aadhaar_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.aadhaar_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.pan_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.pan_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.pan_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.pan_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.icai_certificate_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.icai_certificate_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.icai_certificate_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.icai_certificate_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.cop_certificate_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.cop_certificate_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.cop_certificate_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.cop_certificate_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.business_reg_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.business_reg_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.business_reg_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.business_reg_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.bank_details_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.bank_details_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.bank_details_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.bank_details_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-5">
+          {{ form.office_address_proof_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.office_address_proof_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.office_address_proof_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.office_address_proof_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+    </div>
+        <div class="mb-5">
+          {{ form.self_declaration_file.label(class_="block text-gray-700 font-semibold mb-2 text-sm") }}
+          {{ form.self_declaration_file(class_="w-full text-gray-700 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition duration-200") }}
+          {% if ca.self_declaration_file %}<span class="text-xs text-green-600 ml-2 mt-1 block">Currently uploaded. Choose new file to replace.</span>{% endif %}
+          {% for error in form.self_declaration_file.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+    </div>
+    </div>
+    </div>
+    <div class="flex gap-4 mt-8 justify-end">
+      <button type="submit" class="bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white px-6 md:px-8 py-2 md:py-3 rounded-lg md:rounded-xl shadow-lg hover:from-[#5a67d8] hover:to-[#667eea] transition duration-300 ease-in-out transform hover:-translate-y-0.5 text-sm md:text-base">Save Changes</button>
+      <a href="?edit=0" class="bg-gray-200 text-gray-700 px-6 md:px-8 py-2 md:py-3 rounded-lg md:rounded-xl shadow-md hover:bg-gray-300 transition duration-300 ease-in-out text-sm md:text-base">Cancel</a>
+    </div>
+  </form>
+{% endif %}
+{% endblock %} 

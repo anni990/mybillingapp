@@ -1,0 +1,568 @@
+{% extends 'shopkeeper/s_base.html' %}
+{% block title %}Profile | MyBillingApp{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
+<script src="https://unpkg.com/feather-icons"></script>
+
+<div class="p-4 md:p-8">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                <i data-feather="user" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
+                My Profile
+            </h1>
+            <p class="text-gray-600 text-sm md:text-base mt-1">Manage your account information and business details</p>
+        </div>
+        <div class="flex items-center space-x-2 md:space-x-4">
+            <a href="{{ url_for('shopkeeper.profile_edit') }}" 
+               class="flex items-center space-x-2 bg-[#ed6a3e] hover:bg-orange-700 text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                <i data-feather="edit-3" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Edit Profile</span>
+                <span class="md:hidden">Edit</span>
+            </a>
+            <a href="{{ url_for('shopkeeper.dashboard') }}" 
+               class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                <i data-feather="home" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Dashboard</span>
+                <span class="md:hidden">Home</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <!-- Profile Summary Card -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 border border-gray-200 text-center">
+                <div class="mb-6">
+                    {% if shopkeeper.logo_path %}
+                    <img src="{{ url_for('static', filename=shopkeeper.logo_path) }}" 
+                         alt="Shop Logo" 
+                         class="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto object-cover border-4 border-[#ed6a3e] shadow-lg">
+                    {% else %}
+                    <div class="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto bg-gradient-to-r from-[#ed6a3e] to-orange-600 flex items-center justify-center text-white text-3xl md:text-4xl font-bold border-4 border-white shadow-lg">
+                        {{ shopkeeper.shop_name[0]|upper if shopkeeper.shop_name else 'S' }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-2">{{ shopkeeper.shop_name or 'Shop Name' }}</h2>
+                <p class="text-gray-600 mb-4">{{ shopkeeper.email or 'email@example.com' }}</p>
+                
+                <div class="flex items-center justify-center space-x-4 text-sm text-gray-500 mb-6">
+                    <div class="flex items-center">
+                        <i data-feather="calendar" class="w-4 h-4 mr-1"></i>
+                        <span>Member Since 2024</span>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="space-y-3">
+                    <a href="{{ url_for('shopkeeper.create_bill') }}" 
+                       class="w-full flex items-center justify-center p-3 bg-[#ed6a3e] hover:bg-orange-700 text-white rounded-lg transition duration-200">
+                        <i data-feather="file-plus" class="w-4 h-4 mr-2"></i>
+                        <span class="text-sm font-medium">Create New Bill</span>
+                    </a>
+                    
+                    <a href="{{ url_for('shopkeeper.manage_bills') }}" 
+                       class="w-full flex items-center justify-center p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition duration-200">
+                        <i data-feather="file-text" class="w-4 h-4 mr-2"></i>
+                        <span class="text-sm font-medium">Manage Bills</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Details -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Business Information -->
+            <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg md:text-xl font-bold text-gray-800 flex items-center">
+                        <i data-feather="briefcase" class="w-5 h-5 mr-2 text-[#ed6a3e]"></i>
+                        Contact & Identity
+                    </h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Contact Number</label>
+                        <p class="text-gray-900">{{ shopkeeper.contact_number or 'N/A' }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">GST Number</label>
+                        <p class="text-gray-900">{{ shopkeeper.gst_number or 'N/A' }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">PAN Number</label>
+                        <p class="text-gray-900">{{ shopkeeper.pan_number or 'N/A' }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">City</label>
+                        <p class="text-gray-900">{{ shopkeeper.city or 'N/A' }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">State</label>
+                        <p class="text-gray-900">{{ shopkeeper.state or 'N/A' }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Pincode</label>
+                        <p class="text-gray-900">{{ shopkeeper.pincode or 'N/A' }}</p>
+                    </div>
+                    
+                    <div class="md:col-span-2 lg:col-span-3">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Address</label>
+                        <p class="text-gray-900">{{ shopkeeper.address or 'N/A' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bill Template Settings -->
+            <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200">
+                <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i data-feather="file-text" class="w-5 h-5 mr-2 text-[#ed6a3e]"></i>
+                    Bill Template Settings
+                </h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Current Template</label>
+                    <p class="text-gray-900">
+                        {% if shopkeeper.template_choice == 'template1' %}
+                            Classic Left-Aligned
+                        {% elif shopkeeper.template_choice == 'template3' %}
+                            Compact & Minimalist
+                        {% else %}
+                            Modern Centered (Default)
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Bank Details -->
+            <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200">
+                <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i data-feather="credit-card" class="w-5 h-5 mr-2 text-[#ed6a3e]"></i>
+                    Bank Details
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Bank Name</label>
+                        <p class="text-gray-900">{{ shopkeeper.bank_name or 'N/A' }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Account Number</label>
+                        <p class="text-gray-900">{{ shopkeeper.account_number or 'N/A' }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">IFSC Code</label>
+                        <p class="text-gray-900">{{ shopkeeper.ifsc_code or 'N/A' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Management -->
+            <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200">
+                <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i data-feather="folder" class="w-5 h-5 mr-2 text-[#ed6a3e]"></i>
+                    Required Documents
+                </h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                    <!-- GST Certificate -->
+                    <div class="bg-gray-50 rounded-lg p-4 text-center hover:shadow-md transition-shadow duration-300">
+                        <div class="text-sm font-semibold text-gray-800 mb-3">
+                            GST Certificate 
+                            <span class="text-xs text-red-500">(Required)</span>
+                        </div>
+                        {% if shopkeeper.gst_doc_path %}
+                        <a href="{{ url_for('static', filename=shopkeeper.gst_doc_path) }}" target="_blank" class="mb-4 block">
+                            {% if shopkeeper.gst_doc_path.endswith('.pdf') %}
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <span class="text-xs text-gray-500">PDF</span>
+                            </div>
+                            {% else %}
+                            <img src="{{ url_for('static', filename=shopkeeper.gst_doc_path) }}" alt="GST Certificate"
+                                class="h-20 w-auto rounded border object-cover mx-auto">
+                            {% endif %}
+                        </a>
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='gst') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <button type="submit"
+                                class="w-full bg-blue-500 text-white py-1 px-2 rounded text-xs hover:bg-blue-600 transition duration-200">
+                                Replace
+                            </button>
+                        </form>
+                        <form action="{{ url_for('shopkeeper.delete_document', doc_type='gst') }}" method="post" class="mt-2">
+                            <button type="submit" class="text-xs text-red-600 hover:underline">Delete</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='gst') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100">
+                            <button type="submit"
+                                class="w-full bg-[#ed6a3e] text-white py-1 px-2 rounded text-xs hover:bg-orange-700 transition duration-200">
+                                Upload
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- PAN Card -->
+                    <div class="bg-gray-50 rounded-lg p-4 text-center hover:shadow-md transition-shadow duration-300">
+                        <div class="text-sm font-semibold text-gray-800 mb-3">
+                            PAN Card 
+                            <span class="text-xs text-red-500">(Required)</span>
+                        </div>
+                        {% if shopkeeper.pan_doc_path %}
+                        <a href="{{ url_for('static', filename=shopkeeper.pan_doc_path) }}" target="_blank" class="mb-4 block">
+                            {% if shopkeeper.pan_doc_path.endswith('.pdf') %}
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <span class="text-xs text-gray-500">PDF</span>
+                            </div>
+                            {% else %}
+                            <img src="{{ url_for('static', filename=shopkeeper.pan_doc_path) }}" alt="PAN Card"
+                                class="h-20 w-auto rounded border object-cover mx-auto">
+                            {% endif %}
+                        </a>
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='pan') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <button type="submit"
+                                class="w-full bg-blue-500 text-white py-1 px-2 rounded text-xs hover:bg-blue-600 transition duration-200">
+                                Replace
+                            </button>
+                        </form>
+                        <form action="{{ url_for('shopkeeper.delete_document', doc_type='pan') }}" method="post" class="mt-2">
+                            <button type="submit" class="text-xs text-red-600 hover:underline">Delete</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='pan') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100">
+                            <button type="submit"
+                                class="w-full bg-[#ed6a3e] text-white py-1 px-2 rounded text-xs hover:bg-orange-700 transition duration-200">
+                                Upload
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- Address Proof -->
+                    <div class="bg-gray-50 rounded-lg p-4 text-center hover:shadow-md transition-shadow duration-300">
+                        <div class="text-sm font-semibold text-gray-800 mb-3">
+                            Address Proof 
+                            <span class="text-xs text-red-500">(Required)</span>
+                        </div>
+                        {% if shopkeeper.address_proof_path %}
+                        <a href="{{ url_for('static', filename=shopkeeper.address_proof_path) }}" target="_blank" class="mb-4 block">
+                            {% if shopkeeper.address_proof_path.endswith('.pdf') %}
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <span class="text-xs text-gray-500">PDF</span>
+                            </div>
+                            {% else %}
+                            <img src="{{ url_for('static', filename=shopkeeper.address_proof_path) }}" alt="Address Proof"
+                                class="h-20 w-auto rounded border object-cover mx-auto">
+                            {% endif %}
+                        </a>
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='address_proof') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <button type="submit"
+                                class="w-full bg-blue-500 text-white py-1 px-2 rounded text-xs hover:bg-blue-600 transition duration-200">
+                                Replace
+                            </button>
+                        </form>
+                        <form action="{{ url_for('shopkeeper.delete_document', doc_type='address_proof') }}" method="post" class="mt-2">
+                            <button type="submit" class="text-xs text-red-600 hover:underline">Delete</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='address_proof') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100">
+                            <button type="submit"
+                                class="w-full bg-[#ed6a3e] text-white py-1 px-2 rounded text-xs hover:bg-orange-700 transition duration-200">
+                                Upload
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- Logo Upload -->
+                    <div class="bg-gray-50 rounded-lg p-4 text-center hover:shadow-md transition-shadow duration-300">
+                        <div class="text-sm font-semibold text-gray-800 mb-3">Logo Upload</div>
+                        {% if shopkeeper.logo_path %}
+                        <a href="{{ url_for('static', filename=shopkeeper.logo_path) }}" target="_blank" class="mb-4 block">
+                            {% if shopkeeper.logo_path.endswith('.pdf') %}
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <span class="text-xs text-gray-500">PDF</span>
+                            </div>
+                            {% else %}
+                            <img src="{{ url_for('static', filename=shopkeeper.logo_path) }}" alt="Shop Logo"
+                                class="h-20 w-auto rounded border object-cover mx-auto">
+                            {% endif %}
+                        </a>
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='logo') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <button type="submit"
+                                class="w-full bg-blue-500 text-white py-1 px-2 rounded text-xs hover:bg-blue-600 transition duration-200">
+                                Replace
+                            </button>
+                        </form>
+                        <form action="{{ url_for('shopkeeper.delete_document', doc_type='logo') }}" method="post" class="mt-2">
+                            <button type="submit" class="text-xs text-red-600 hover:underline">Delete</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='logo') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100">
+                            <button type="submit"
+                                class="w-full bg-[#ed6a3e] text-white py-1 px-2 rounded text-xs hover:bg-orange-700 transition duration-200">
+                                Upload
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- Aadhaar / Driver's License -->
+                    <div class="bg-gray-50 rounded-lg p-4 text-center hover:shadow-md transition-shadow duration-300">
+                        <div class="text-sm font-semibold text-gray-800 mb-3">
+                            Aadhaar / Driver's License 
+                            <span class="text-xs text-red-500">(Required)</span>
+                        </div>
+                        {% if shopkeeper.aadhaar_dl_path %}
+                        <a href="{{ url_for('static', filename=shopkeeper.aadhaar_dl_path) }}" target="_blank" class="mb-4 block">
+                            {% if shopkeeper.aadhaar_dl_path.endswith('.pdf') %}
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <span class="text-xs text-gray-500">PDF</span>
+                            </div>
+                            {% else %}
+                            <img src="{{ url_for('static', filename=shopkeeper.aadhaar_dl_path) }}" alt="Aadhaar/Driver's License"
+                                class="h-20 w-auto rounded border object-cover mx-auto">
+                            {% endif %}
+                        </a>
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='aadhaar_dl') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <button type="submit"
+                                class="w-full bg-blue-500 text-white py-1 px-2 rounded text-xs hover:bg-blue-600 transition duration-200">
+                                Replace
+                            </button>
+                        </form>
+                        <form action="{{ url_for('shopkeeper.delete_document', doc_type='aadhaar_dl') }}" method="post" class="mt-2">
+                            <button type="submit" class="text-xs text-red-600 hover:underline">Delete</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='aadhaar_dl') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100">
+                            <button type="submit"
+                                class="w-full bg-[#ed6a3e] text-white py-1 px-2 rounded text-xs hover:bg-orange-700 transition duration-200">
+                                Upload
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- Selfie -->
+                    <div class="bg-gray-50 rounded-lg p-4 text-center hover:shadow-md transition-shadow duration-300">
+                        <div class="text-sm font-semibold text-gray-800 mb-3">
+                            Selfie 
+                            <span class="text-xs text-red-500">(Required)</span>
+                        </div>
+                        {% if shopkeeper.selfie_path %}
+                        <a href="{{ url_for('static', filename=shopkeeper.selfie_path) }}" target="_blank" class="mb-4 block">
+                            {% if shopkeeper.selfie_path.endswith('.pdf') %}
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <span class="text-xs text-gray-500">PDF</span>
+                            </div>
+                            {% else %}
+                            <img src="{{ url_for('static', filename=shopkeeper.selfie_path) }}" alt="Selfie"
+                                class="h-20 w-auto rounded border object-cover mx-auto">
+                            {% endif %}
+                        </a>
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='selfie') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <button type="submit"
+                                class="w-full bg-blue-500 text-white py-1 px-2 rounded text-xs hover:bg-blue-600 transition duration-200">
+                                Replace
+                            </button>
+                        </form>
+                        <form action="{{ url_for('shopkeeper.delete_document', doc_type='selfie') }}" method="post" class="mt-2">
+                            <button type="submit" class="text-xs text-red-600 hover:underline">Delete</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='selfie') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100">
+                            <button type="submit"
+                                class="w-full bg-[#ed6a3e] text-white py-1 px-2 rounded text-xs hover:bg-orange-700 transition duration-200">
+                                Upload
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- Gumasta Certificate -->
+                    <div class="bg-gray-50 rounded-lg p-4 text-center hover:shadow-md transition-shadow duration-300">
+                        <div class="text-sm font-semibold text-gray-800 mb-3">
+                            Gumasta Certificate 
+                            <span class="text-xs text-red-500">(Required)</span>
+                        </div>
+                        {% if shopkeeper.gumasta_path %}
+                        <a href="{{ url_for('static', filename=shopkeeper.gumasta_path) }}" target="_blank" class="mb-4 block">
+                            {% if shopkeeper.gumasta_path.endswith('.pdf') %}
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <span class="text-xs text-gray-500">PDF</span>
+                            </div>
+                            {% else %}
+                            <img src="{{ url_for('static', filename=shopkeeper.gumasta_path) }}" alt="Gumasta Certificate"
+                                class="h-20 w-auto rounded border object-cover mx-auto">
+                            {% endif %}
+                        </a>
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='gumasta') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <button type="submit"
+                                class="w-full bg-blue-500 text-white py-1 px-2 rounded text-xs hover:bg-blue-600 transition duration-200">
+                                Replace
+                            </button>
+                        </form>
+                        <form action="{{ url_for('shopkeeper.delete_document', doc_type='gumasta') }}" method="post" class="mt-2">
+                            <button type="submit" class="text-xs text-red-600 hover:underline">Delete</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='gumasta') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100">
+                            <button type="submit"
+                                class="w-full bg-[#ed6a3e] text-white py-1 px-2 rounded text-xs hover:bg-orange-700 transition duration-200">
+                                Upload
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- Udyam/MSME Certificate -->
+                    <div class="bg-gray-50 rounded-lg p-4 text-center hover:shadow-md transition-shadow duration-300">
+                        <div class="text-sm font-semibold text-gray-800 mb-3">Udyam/MSME Certificate</div>
+                        {% if shopkeeper.udyam_path %}
+                        <a href="{{ url_for('static', filename=shopkeeper.udyam_path) }}" target="_blank" class="mb-4 block">
+                            {% if shopkeeper.udyam_path.endswith('.pdf') %}
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <span class="text-xs text-gray-500">PDF</span>
+                            </div>
+                            {% else %}
+                            <img src="{{ url_for('static', filename=shopkeeper.udyam_path) }}" alt="Udyam/MSME Certificate"
+                                class="h-20 w-auto rounded border object-cover mx-auto">
+                            {% endif %}
+                        </a>
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='udyam') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <button type="submit"
+                                class="w-full bg-blue-500 text-white py-1 px-2 rounded text-xs hover:bg-blue-600 transition duration-200">
+                                Replace
+                            </button>
+                        </form>
+                        <form action="{{ url_for('shopkeeper.delete_document', doc_type='udyam') }}" method="post" class="mt-2">
+                            <button type="submit" class="text-xs text-red-600 hover:underline">Delete</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='udyam') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100">
+                            <button type="submit"
+                                class="w-full bg-[#ed6a3e] text-white py-1 px-2 rounded text-xs hover:bg-orange-700 transition duration-200">
+                                Upload
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <!-- Bank Statement/Invoice -->
+                    <div class="bg-gray-50 rounded-lg p-4 text-center hover:shadow-md transition-shadow duration-300">
+                        <div class="text-sm font-semibold text-gray-800 mb-3">
+                            Bank Statement/Invoice 
+                            <span class="text-xs text-red-500">(Required)</span>
+                        </div>
+                        {% if shopkeeper.bank_statement_path %}
+                        <a href="{{ url_for('static', filename=shopkeeper.bank_statement_path) }}" target="_blank" class="mb-4 block">
+                            {% if shopkeeper.bank_statement_path.endswith('.pdf') %}
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                <span class="text-xs text-gray-500">PDF</span>
+                            </div>
+                            {% else %}
+                            <img src="{{ url_for('static', filename=shopkeeper.bank_statement_path) }}" alt="Bank Statement/Invoice"
+                                class="h-20 w-auto rounded border object-cover mx-auto">
+                            {% endif %}
+                        </a>
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='bank_statement') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <button type="submit"
+                                class="w-full bg-blue-500 text-white py-1 px-2 rounded text-xs hover:bg-blue-600 transition duration-200">
+                                Replace
+                            </button>
+                        </form>
+                        <form action="{{ url_for('shopkeeper.delete_document', doc_type='bank_statement') }}" method="post" class="mt-2">
+                            <button type="submit" class="text-xs text-red-600 hover:underline">Delete</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('shopkeeper.upload_document', doc_type='bank_statement') }}" method="post"
+                            enctype="multipart/form-data" class="space-y-2">
+                            <input type="file" name="document" accept="image/*,application/pdf"
+                                class="w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-orange-50 file:text-[#ed6a3e] hover:file:bg-orange-100">
+                            <button type="submit"
+                                class="w-full bg-[#ed6a3e] text-white py-1 px-2 rounded text-xs hover:bg-orange-700 transition duration-200">
+                                Upload
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    feather.replace();
+</script>
+{% endblock %}

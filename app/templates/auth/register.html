@@ -1,0 +1,108 @@
+{% extends 'auth/auth_base.html' %}
+{% block title %}Register | MyBillingApp{% endblock %}
+{% block content %}
+
+<!-- Full section height = 100vh - pt-16 64px from auth_base.html main -->
+<div class="grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-64px)] overflow-hidden bg-gray-100 -mt-10 -mb-10">
+
+  <!-- Left Side -->
+  <div class="hidden lg:flex items-center justify-center bg-[#f4f7f9] p-10">
+    <div class="text-center max-w-xl">
+      <h1 class="text-3xl xl:text-4xl font-extrabold text-gray-900 mb-3 tracking-tight">
+        Join <span class="text-[#ed6a3e]">MyBillingApp</span> Today!
+      </h1>
+      <p class="text-base xl:text-lg text-gray-600 max-w-md mx-auto leading-relaxed">
+        Effortlessly manage your finances and connect with your clients. Get started in minutes.
+      </p>
+      <img
+        src="../../static/images/regsiter-image.png"
+        alt="Financial management illustration"
+        class="mt-6 rounded-lg shadow-lg max-h-[60vh] object-cover mx-auto "
+      >
+    </div>
+  </div>
+
+  <!-- Right Side -->
+  <div class="flex items-center justify-center bg-white p-5 md:p-8">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mt-4">Create Your Account</h2>
+        <p class="text-gray-500 text-sm md:text-base">Sign up to get started</p>
+      </div>
+
+      <form method="POST" class="space-y-3">
+        {{ form.hidden_tag() }}
+
+        <!-- Username -->
+        <div>
+          {{ form.username.label(class_="block text-sm font-medium text-gray-700") }}
+          {{ form.username(class_="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#ed6a3e] focus:border-[#ed6a3e] transition-all", placeholder="Choose a username") }}
+          {% for error in form.username.errors %}
+          <span class="text-red-500 text-xs mt-1 block">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <!-- Email -->
+        <div>
+          {{ form.email.label(class_="block text-sm font-medium text-gray-700") }}
+          {{ form.email(class_="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#ed6a3e] focus:border-[#ed6a3e] transition-all", placeholder="your.email@example.com") }}
+          {% for error in form.email.errors %}
+          <span class="text-red-500 text-xs mt-1 block">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <!-- Password -->
+        <div>
+          {{ form.password.label(class_="block text-sm font-medium text-gray-700") }}
+          {{ form.password(class_="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#ed6a3e] focus:border-[#ed6a3e] transition-all", placeholder="••••••••") }}
+          {% for error in form.password.errors %}
+          <span class="text-red-500 text-xs mt-1 block">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <!-- Confirm Password -->
+        <div>
+          {{ form.confirm_password.label(class_="block text-sm font-medium text-gray-700") }}
+          {{ form.confirm_password(class_="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#ed6a3e] focus:border-[#ed6a3e] transition-all", placeholder="••••••••") }}
+          {% for error in form.confirm_password.errors %}
+          <span class="text-red-500 text-xs mt-1 block">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <!-- Role -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">I am a...</label>
+          <div class="flex space-x-3">
+            <label for="role-shopkeeper" class="flex-1 cursor-pointer">
+              <input type="radio" id="role-shopkeeper" name="role" value="shopkeeper" class="sr-only peer" checked>
+              <div class="flex items-center justify-center py-3 px-4 rounded-md border-2 border-gray-300 text-gray-700 hover:border-[#ed6a3e] transition-colors duration-300 peer-checked:bg-[#ed6a3e] peer-checked:text-white peer-checked:border-[#ed6a3e]">
+                <span class="font-medium">Shopkeeper</span>
+              </div>
+            </label>
+            <label for="role-ca" class="flex-1 cursor-pointer">
+              <input type="radio" id="role-ca" name="role" value="CA" class="sr-only peer">
+              <div class="flex items-center justify-center py-3 px-4 rounded-md border-2 border-gray-300 text-gray-700 hover:border-[#ed6a3e] transition-colors duration-300 peer-checked:bg-[#ed6a3e] peer-checked:text-white peer-checked:border-[#ed6a3e]">
+                <span class="font-medium">CA</span>
+              </div>
+            </label>
+          </div>
+          {% for error in form.role.errors %}
+          <span class="text-red-500 text-xs mt-1 block">{{ error }}</span>
+          {% endfor %}
+        </div>
+
+        <!-- Submit -->
+        <button type="submit"
+          class="w-full bg-[#ed6a3e] text-white py-3 rounded-md font-semibold hover:bg-orange-700 transition-colors duration-300">
+          Register
+        </button>
+      </form>
+
+      <p class="mt-5 text-center text-sm text-gray-600">
+        Already have an account?
+        <a href="{{ url_for('auth.login') }}" class="text-[#ed6a3e] font-semibold hover:underline">Login here</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

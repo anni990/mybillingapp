@@ -1,0 +1,231 @@
+{% extends 'ca/ca_base.html' %}
+{% block title %}Bills Panel | MyBillingApp{% endblock %}
+{% block firm_name %} {{ firm_name }} {% endblock %}
+{% block ca_content %}
+
+<!-- Header Section -->
+<div class="mb-6">
+  <h2 class="text-2xl lg:text-3xl font-bold text-[#ed6a3e] mb-2">Bills Panel</h2>
+  <p class="text-gray-600 text-sm lg:text-base">Manage and monitor all client bills</p>
+</div>
+
+<!-- Filters Section -->
+<div class="bg-white rounded-xl shadow-lg p-4 lg:p-6 mb-6">
+  <h3 class="text-lg font-semibold text-gray-800 mb-4">Filter Bills</h3>
+  <form method="get" class="space-y-4 lg:space-y-0 lg:flex lg:flex-wrap lg:gap-4 lg:items-end">
+    <!-- Shopkeeper Selection -->
+    <div class="flex-1 min-w-0 lg:min-w-[200px]">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Shopkeeper</label>
+      <select name="shopkeeper_id" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
+        <option value="">All Shopkeepers</option>
+        {% for sk in shopkeepers %}
+        <option value="{{ sk.shopkeeper_id }}" {% if request.args.get('shopkeeper_id')==sk.shopkeeper_id|string %}selected{% endif %}>
+          {{ sk.shop_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <!-- Date Range -->
+    <div class="flex-1 min-w-0 lg:min-w-[150px]">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+      <input type="date" name="start_date" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent" value="{{ request.args.get('start_date', '') }}">
+    </div>
+    
+    <div class="flex-1 min-w-0 lg:min-w-[150px]">
+      <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+      <input type="date" name="end_date" class="w-full rounded-lg border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent" value="{{ request.args.get('end_date', '') }}">
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="flex space-x-2">
+      <button type="submit" class="bg-[#ed6a3e] text-white px-4 py-2 rounded-lg shadow hover:bg-orange-600 transition duration-300 flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
+        </svg>
+        Filter
+      </button>
+      
+      <a href="{{ url_for('ca.bills_panel') }}" class="bg-gray-500 text-white px-4 py-2 rounded-lg shadow hover:bg-gray-600 transition duration-300 flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Clear
+      </a>
+    </div>
+  </form>
+</div>
+
+<!-- Bills Table -->
+<div class="bg-white rounded-xl shadow-lg overflow-hidden">
+  <!-- Mobile Header -->
+  <div class="p-4 bg-gray-50 border-b md:hidden">
+    <h3 class="font-semibold text-gray-800">Total Bills: {{ bills|length }}</h3>
+  </div>
+  
+  <!-- Desktop Table -->
+  <div class="hidden md:block table-container">
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white">
+        <thead class="bg-gradient-to-r from-[#ed6a3e] to-[#d45f34] text-white">
+          <tr>
+            <th class="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider">Shopkeeper</th>
+            <th class="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider">Bill #</th>
+            <th class="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider">Date</th>
+            <th class="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider">Amount</th>
+            <th class="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider">Status</th>
+            <th class="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider">Paid</th>
+            <th class="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider">Unpaid</th>
+            <th class="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for bill in bills %}
+          <tr class="hover:bg-gray-50 transition-colors duration-200">
+            <td class="py-4 px-6">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-8 w-8">
+                  <div class="h-8 w-8 rounded-full bg-gradient-to-br from-[#ed6a3e] to-[#d45f34] flex items-center justify-center text-white text-xs font-bold">
+                    {{ bill.shopkeeper_name[0].upper() }}
+                  </div>
+                </div>
+                <div class="ml-3">
+                  <div class="text-sm font-medium text-gray-900">{{ bill.shopkeeper_name }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="py-4 px-6">
+              <div class="text-sm font-mono text-gray-900">{{ bill.bill_number }}</div>
+            </td>
+            <td class="py-4 px-6">
+              <div class="text-sm text-gray-900">{{ bill.bill_date.strftime('%d %b %Y') }}</div>
+            </td>
+            <td class="py-4 px-6">
+              <div class="text-sm font-semibold text-gray-900">₹{{ "%.2f"|format(bill.total_amount) }}</div>
+            </td>
+            <td class="py-4 px-6">
+              <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold
+                {% if bill.payment_status == 'Paid' %}
+                  bg-green-100 text-green-800
+                {% elif bill.payment_status == 'Unpaid' %}
+                  bg-red-100 text-red-800
+                {% else %}
+                  bg-yellow-100 text-yellow-800
+                {% endif %}">
+                {{ bill.payment_status }}
+              </span>
+            </td>
+            <td class="py-4 px-6">
+              <div class="text-sm font-medium text-green-600">₹{{ "%.2f"|format(bill.amount_paid) }}</div>
+            </td>
+            <td class="py-4 px-6">
+              <div class="text-sm font-medium text-red-600">₹{{ "%.2f"|format(bill.amount_unpaid) }}</div>
+            </td>
+            <td class="py-4 px-6">
+              <a href="{{ url_for('ca.view_bill', bill_id=bill.bill_id) }}" 
+                 class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 transition-colors duration-200">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                View
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="py-12 text-center">
+              <div class="flex flex-col items-center">
+                <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-400 mb-2">No bills found</h3>
+                <p class="text-gray-400">Try adjusting your filters or check back later.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Mobile Card View -->
+  <div class="md:hidden divide-y divide-gray-100">
+    {% for bill in bills %}
+    <div class="p-4 hover:bg-gray-50 transition-colors duration-200">
+      <div class="flex items-start space-x-3">
+        <!-- Avatar -->
+        <div class="flex-shrink-0">
+          <div class="h-12 w-12 rounded-full bg-gradient-to-br from-[#ed6a3e] to-[#d45f34] flex items-center justify-center text-white font-bold">
+            {{ bill.shopkeeper_name[0].upper() }}
+          </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-lg font-bold text-gray-900 truncate">{{ bill.shopkeeper_name }}</h3>
+            <span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold
+              {% if bill.payment_status == 'Paid' %}
+                bg-green-100 text-green-800
+              {% elif bill.payment_status == 'Unpaid' %}
+                bg-red-100 text-red-800
+              {% else %}
+                bg-yellow-100 text-yellow-800
+              {% endif %}">
+              {{ bill.payment_status }}
+            </span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2 mb-3 text-sm text-gray-600">
+            <div>
+              <span class="font-medium">Bill #:</span>
+              <span class="font-mono">{{ bill.bill_number }}</span>
+            </div>
+            <div>
+              <span class="font-medium">Date:</span>
+              <span>{{ bill.bill_date.strftime('%d %b %Y') }}</span>
+            </div>
+            <div>
+              <span class="font-medium">Total:</span>
+              <span class="font-semibold text-gray-900">₹{{ "%.2f"|format(bill.total_amount) }}</span>
+            </div>
+            <div>
+              <span class="font-medium">Paid:</span>
+              <span class="text-green-600 font-medium">₹{{ "%.2f"|format(bill.amount_paid) }}</span>
+            </div>
+          </div>
+          
+          {% if bill.amount_unpaid > 0 %}
+          <div class="mb-3">
+            <span class="text-sm font-medium text-gray-600">Unpaid Amount:</span>
+            <span class="text-red-600 font-semibold">₹{{ "%.2f"|format(bill.amount_unpaid) }}</span>
+          </div>
+          {% endif %}
+          
+          <!-- Action -->
+          <a href="{{ url_for('ca.view_bill', bill_id=bill.bill_id) }}" 
+             class="w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            View Bill Details
+          </a>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="p-8 text-center">
+      <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+      <h3 class="text-lg font-medium text-gray-400 mb-2">No bills found</h3>
+      <p class="text-gray-400">Try adjusting your filters or check back later.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'auth/auth_base.html' %}
+{% block title %}Login | MyBillingApp{% endblock %}
+{% block content %}
+
+<!-- Main Content -->
+<div class="flex h-screen bg-gray-100 -mt-16 -mb-10">
+
+    <!-- Left Side -->
+    <div class="hidden lg:flex w-1/2 bg-[#f4f7f9] items-center justify-center p-8">
+        <div class="text-center flex flex-col items-center justify-center h-full mt-8">
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight leading-tight mt-5">
+                Welcome to <span class="text-[#ed6a3e]">MyBillingApp</span>
+            </h1>
+            <p class="text-base text-gray-600 max-w-sm mx-auto leading-relaxed">
+                Your one-stop solution for easy and efficient billing management. Keep track of your finances effortlessly.
+            </p>
+            <img src="../../static/images/login-image-new.png"
+                 alt="Billing and Analytics Illustration"
+                 class="mt-8 rounded-lg shadow-lg max-h-[65vh] object-contain mx-auto animate-float -p-6">
+        </div>
+    </div>
+
+    <!-- Right Side -->
+    <div class="flex flex-1 items-center justify-center p-8 bg-white overflow-y-auto">
+        <div class="w-full max-w-sm">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Sign In to Your Account</h2>
+                <p class="text-gray-500">Access your billing dashboard</p>
+            </div>
+            <form method="POST" class="space-y-5">
+                {{ form.hidden_tag() }}
+                
+                <!-- Email -->
+                <div>
+                    {{ form.email.label(class_="block text-sm font-medium text-gray-700") }}
+                    {{ form.email(class_="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#ed6a3e] focus:border-[#ed6a3e] transition-all", placeholder="your.email@example.com") }}
+                    {% for error in form.email.errors %}
+                        <span class="text-red-500 text-xs mt-1 block">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <!-- Password -->
+                <div>
+                    {{ form.password.label(class_="block text-sm font-medium text-gray-700") }}
+                    {{ form.password(class_="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#ed6a3e] focus:border-[#ed6a3e] transition-all", placeholder="••••••••") }}
+                    {% for error in form.password.errors %}
+                        <span class="text-red-500 text-xs mt-1 block">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <!-- Submit -->
+                <div>
+                    <button type="submit"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm font-medium text-white bg-[#ed6a3e] hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ed6a3e] transition-colors duration-300">
+                        Sign In
+                    </button>
+                </div>
+            </form>
+
+            <p class="mt-6 text-center text-sm text-gray-600">
+                Don't have an account? 
+                <a href="{{ url_for('auth.register') }}" class="font-medium text-[#ed6a3e] hover:text-orange-700">Register here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

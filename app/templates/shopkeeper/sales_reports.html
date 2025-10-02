@@ -1,0 +1,276 @@
+{% extends 'shopkeeper/s_base.html' %}
+{% block title %}Sales Reports | MyBillingApp{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
+<script src="https://unpkg.com/feather-icons"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    .stat-card {
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 250px;
+        }
+    }
+</style>
+
+<div class="p-4 md:p-8">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                <i data-feather="bar-chart-2" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
+                Sales Reports
+            </h1>
+            <p class="text-gray-600 text-sm md:text-base mt-1">Track your business performance and analytics</p>
+        </div>
+        <div class="flex items-center space-x-2 md:space-x-4">
+            <button onclick="downloadTableAsCSV()" 
+                    class="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                <i data-feather="download" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Export Report</span>
+                <span class="md:hidden">Export</span>
+            </button>
+            <a href="{{ url_for('shopkeeper.dashboard') }}" 
+               class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                <i data-feather="home" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Dashboard</span>
+                <span class="md:hidden">Home</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 border border-gray-200">
+        <div class="flex items-center mb-4">
+            <i data-feather="calendar" class="w-5 h-5 text-[#ed6a3e] mr-2"></i>
+            <h2 class="text-lg md:text-xl font-bold text-gray-800">Filter Reports</h2>
+        </div>
+        
+        <form class="grid grid-cols-1 md:grid-cols-4 gap-4" method="get">
+            <div>
+                <label for="start" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                <input type="date" name="start" id="start" value="{{ start }}" max="{{ end }}"
+                       class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+            </div>
+            
+            <div>
+                <label for="end" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                <input type="date" name="end" id="end" value="{{ end }}" max="{{ end }}"
+                       class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+            </div>
+            
+            <div>
+                <label for="report-type" class="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+                <select id="report-type" 
+                        class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit" 
+                        class="w-full px-4 py-2 md:py-3 bg-[#ed6a3e] hover:bg-orange-700 text-white rounded-lg transition duration-300 text-sm md:text-base font-medium">
+                    Apply Filter
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg md:text-xl font-bold text-gray-800">Daily Sales Trend</h3>
+            <div class="flex space-x-2">
+                <button class="px-3 py-1 text-xs bg-[#ed6a3e] text-white rounded-full">Sales</button>
+                <button class="px-3 py-1 text-xs bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300">Orders</button>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Reports Table -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <!-- Desktop Table View -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Bills</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unpaid</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Partial</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% set date_bills = {} %}
+                    {% for bill in bills %}
+                        {% set d = bill.bill_date.strftime('%Y-%m-%d') %}
+                        {% if d not in date_bills %}
+                            {% set _ = date_bills.update({d: []}) %}
+                        {% endif %}
+                        {% set _ = date_bills[d].append(bill) %}
+                    {% endfor %}
+                    {% for i in range(chart_labels|length) %}
+                        {% set d = chart_labels[i] %}
+                        <tr class="hover:bg-gray-50 transition duration-200">
+                            <td class="px-6 py-4 whitespace-nowrap text-gray-900 font-medium">{{ d }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-gray-700">{{ date_bills[d]|length if d in date_bills else 0 }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-bold text-[#ed6a3e]">₹{{ chart_values[i] }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    {{ date_bills[d]|selectattr('payment_status', 'equalto', 'Paid')|list|length if d in date_bills else 0 }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    {{ date_bills[d]|selectattr('payment_status', 'equalto', 'Unpaid')|list|length if d in date_bills else 0 }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    {{ date_bills[d]|selectattr('payment_status', 'equalto', 'Partial')|list|length if d in date_bills else 0 }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="md:hidden">
+            {% for i in range(chart_labels|length) %}
+                {% set d = chart_labels[i] %}
+                <div class="border-b border-gray-200 p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="font-medium text-gray-900">{{ d }}</h3>
+                            <p class="text-sm text-gray-500">{{ date_bills[d]|length if d in date_bills else 0 }} bills</p>
+                        </div>
+                        <span class="font-bold text-[#ed6a3e] text-lg">₹{{ chart_values[i] }}</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-3 text-sm">
+                        <div class="text-center">
+                            <span class="block text-xs text-gray-500">Paid</span>
+                            <span class="block font-medium text-green-600">
+                                {{ date_bills[d]|selectattr('payment_status', 'equalto', 'Paid')|list|length if d in date_bills else 0 }}
+                            </span>
+                        </div>
+                        <div class="text-center">
+                            <span class="block text-xs text-gray-500">Unpaid</span>
+                            <span class="block font-medium text-red-600">
+                                {{ date_bills[d]|selectattr('payment_status', 'equalto', 'Unpaid')|list|length if d in date_bills else 0 }}
+                            </span>
+                        </div>
+                        <div class="text-center">
+                            <span class="block text-xs text-gray-500">Partial</span>
+                            <span class="block font-medium text-yellow-600">
+                                {{ date_bills[d]|selectattr('payment_status', 'equalto', 'Partial')|list|length if d in date_bills else 0 }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    window.CHART_LABELS = {{ chart_labels|tojson|safe }};
+    window.CHART_VALUES = {{ chart_values|tojson|safe }};
+</script>
+<script>
+    feather.replace();
+    
+    // Sales Chart
+    const salesCtx = document.getElementById('salesChart').getContext('2d');
+    new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: window.CHART_LABELS || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Sales',
+                data: window.CHART_VALUES || [12000, 19000, 15000, 25000, 22000, 30000],
+                borderColor: '#ed6a3e',
+                backgroundColor: 'rgba(237, 106, 62, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // CSV Download function
+    function downloadTableAsCSV() {
+        const csv = [];
+        const headers = ['Date', 'Total Bills', 'Total Amount', 'Paid', 'Unpaid', 'Partial'];
+        csv.push(headers.join(','));
+        
+        // Get data from table or use chart data
+        if (window.CHART_LABELS && window.CHART_VALUES) {
+            for (let i = 0; i < window.CHART_LABELS.length; i++) {
+                const row = [
+                    window.CHART_LABELS[i],
+                    '0', // These would come from your backend data
+                    window.CHART_VALUES[i],
+                    '0',
+                    '0',
+                    '0'
+                ];
+                csv.push(row.join(','));
+            }
+        }
+        
+        const csvContent = csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sales_report.csv';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    }
+</script>
+<script src="{{ url_for('static', filename='js/sales_reports.js') }}"></script>
+{% endblock %}
