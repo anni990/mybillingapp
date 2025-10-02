@@ -136,10 +136,8 @@ class Bill(db.Model):
     gst_type = db.Column(db.Enum('GST', 'Non-GST'), nullable=False)
     total_amount = db.Column(db.Numeric(12,2), nullable=False)
     payment_status = db.Column(db.String(20), default='PAID')  # 'PAID', 'PARTIAL', 'UNPAID'
-    amount_paid = db.Column(db.Numeric(12,2), nullable=True, default=0)
-    amount_unpaid = db.Column(db.Numeric(12,2), nullable=True, default=0)
-    paid_amount = db.Column(db.Numeric(10,2), default=0.00)  # New field for tracking payments
-    due_amount = db.Column(db.Numeric(10,2), default=0.00)   # New field for tracking dues
+    paid_amount = db.Column(db.Numeric(10,2), default=0.00)  # Tracking payments
+    due_amount = db.Column(db.Numeric(10,2), default=0.00)   # Tracking dues
     # Relationships
     bill_items = db.relationship('BillItem', backref='bill', cascade='all, delete-orphan')
 

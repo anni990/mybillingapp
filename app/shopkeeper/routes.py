@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file, send_from_directory, g
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file, send_from_directory, g, current_app
 from flask_login import login_required, current_user
 from app.models import Product, Shopkeeper, Bill, BillItem, CharteredAccountant, CAConnection, ShopConnection, Document, User, Customer, CustomerLedger
 from app.extensions import db
@@ -198,7 +198,9 @@ def create_bill():
             bill_date=bill_date,
             gst_type=gst_type,
             total_amount=total_amount,
-            payment_status='Paid'
+            payment_status='Paid',
+            paid_amount=total_amount,  # Set payment amounts for paid bills
+            due_amount=0
         )
         db.session.add(bill)
         db.session.flush()  # get bill_id
@@ -613,15 +615,31 @@ def update_bill(bill_id):
 @login_required
 @shopkeeper_required
 def delete_bill(bill_id):
-    shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    bill = Bill.query.get_or_404(bill_id)
-    if bill.shopkeeper.user_id != current_user.user_id:
-        flash('Access denied.', 'danger')
-        return redirect(url_for('shopkeeper.manage_bills'))
-    db.session.delete(bill)
-    db.session.commit()
-    flash('Bill deleted.', 'success')
-    return redirect(url_for('shopkeeper.manage_bills'))
+    try:
+        shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        bill = Bill.query.get_or_404(bill_id)
+        
+        # Check if the bill belongs to the current shopkeeper
+        if bill.shopkeeper.user_id != current_user.user_id:
+            return jsonify({'success': False, 'message': 'Access denied.'}), 403
+        
+        # Handle related CustomerLedger entries - set reference_bill_id to NULL
+        # This preserves the financial history while removing the bill reference
+        from app.models import CustomerLedger
+        related_ledger_entries = CustomerLedger.query.filter_by(reference_bill_id=bill_id).all()
+        for entry in related_ledger_entries:
+            entry.reference_bill_id = None
+            entry.particulars = f"{entry.particulars} (Bill #{bill.bill_number} - Deleted)"
+        
+        # Delete the bill (BillItems will be deleted automatically due to cascade)
+        db.session.delete(bill)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Bill deleted successfully.'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error deleting bill: {str(e)}'}), 500
 
 
 
@@ -815,6 +833,7 @@ def generate_bill_pdf():
     customer_contact = request.form.get('customer_contact')
     customer_address = request.form.get('customer_address')
     customer_gstin = request.form.get('customer_gstin')
+    save_as_customer = request.form.get('save_as_customer') == '1'  # Get save customer toggle
     
     # Payment information
     payment_status_form = request.form.get('payment_status', 'Paid')
@@ -841,31 +860,79 @@ def generate_bill_pdf():
     bill_number = f"BILL{int(datetime.datetime.now().timestamp())}"
     
     # Determine payment status and amounts
-    if customer_type == 'existing' and existing_customer_id:
-        # For existing customers, use the selected payment status
+    # For existing customers use the form selection. For new customers that are being saved
+    # (save_as_customer == True) also respect the form selection (Paid/Partial/Unpaid).
+    if (customer_type == 'existing' and existing_customer_id) or (customer_type == 'new' and save_as_customer):
         payment_status = payment_status_form
         if payment_status == 'Paid':
-            amount_paid = 0  # Will be calculated after total_amount
-            amount_unpaid = 0
+            paid_amount = 0  # Will be calculated after total_amount
+            due_amount = 0
         elif payment_status == 'Unpaid':
-            amount_paid = 0
-            amount_unpaid = 0  # Will be calculated after total_amount
+            paid_amount = 0
+            due_amount = 0  # Will be calculated after total_amount
         else:  # Partial
             try:
-                amount_paid = float(paid_amount_form)
+                paid_amount = float(paid_amount_form)
             except (ValueError, TypeError):
-                amount_paid = 0
-            amount_unpaid = 0  # Will be calculated after total_amount
+                paid_amount = 0
+            due_amount = 0  # Will be calculated after total_amount
     else:
-        # For new/guest customers, always paid
+        # For guest customers (not saved), default to Paid
         payment_status = 'Paid'
-        amount_paid = 0  # Will be calculated after total_amount
-        amount_unpaid = 0
+        paid_amount = 0  # Will be calculated after total_amount
+        due_amount = 0
     
+    # Ensure created_customer_id exists on all paths
+    created_customer_id = None  # Track if we created/found a customer
+
+    # Handle customer creation BEFORE bill creation when toggle is enabled
+    if customer_type == 'new' and save_as_customer and customer_name and customer_name.strip():
+        try:
+            # Check for duplicate customer by phone number for this shopkeeper
+            existing_customer = None
+            if customer_contact and customer_contact.strip():
+                existing_customer = Customer.query.filter_by(
+                    shopkeeper_id=shopkeeper.user_id,
+                    phone=customer_contact.strip()
+                ).first()
+            
+            if existing_customer:
+                # Use existing customer
+                created_customer_id = existing_customer.customer_id
+                current_app.logger.debug(f"Reusing existing customer: {existing_customer.name} (id={created_customer_id})")
+            else:
+                # Create new customer
+                try:
+                    new_customer = Customer(
+                        shopkeeper_id=shopkeeper.user_id,  # Use shopkeeper.user_id per project convention
+                        name=customer_name.strip(),
+                        phone=customer_contact.strip() if customer_contact else '',
+                        email='',  # Email not captured in current form
+                        address=customer_address.strip() if customer_address else '',
+                        is_active=True,
+                        total_balance=0.00
+                    )
+                    db.session.add(new_customer)
+                    db.session.flush()  # Get customer_id
+                    created_customer_id = new_customer.customer_id
+                    # Persist customer immediately so it appears in customer management
+                    db.session.commit()
+                    current_app.logger.debug(f"Created new customer: {new_customer.name} with ID {created_customer_id}")
+                except Exception:
+                    current_app.logger.exception("Error creating new customer")
+                    # Rollback to clear session state and avoid interfering with bill creation
+                    db.session.rollback()
+                    created_customer_id = None
+                
+        except Exception:
+            # If customer lookup fails, log it and continue with bill creation
+            current_app.logger.exception("Error checking existing customer")
+            created_customer_id = None
+
     # Create bill object
     bill = Bill(
         shopkeeper_id=shopkeeper.shopkeeper_id,
-        customer_id=int(existing_customer_id) if existing_customer_id and customer_type == 'existing' else None,
+        customer_id=created_customer_id if created_customer_id else (int(existing_customer_id) if existing_customer_id and customer_type == 'existing' else None),
         bill_number=bill_number,
         customer_name=customer_name,
         customer_contact=customer_contact,
@@ -875,8 +942,8 @@ def generate_bill_pdf():
         gst_type=bill_gst_type,
         total_amount=0,
         payment_status=payment_status,
-        amount_paid=amount_paid,
-        amount_unpaid=amount_unpaid
+        paid_amount=paid_amount,
+        due_amount=due_amount
     )
     db.session.add(bill)
     db.session.flush()
@@ -885,6 +952,42 @@ def generate_bill_pdf():
     bill_items_data = []
     gst_summary_by_rate = {}
     overall_grand_total = 0.0
+    
+    # Handle customer creation BEFORE bill creation when toggle is enabled
+    if customer_type == 'new' and save_as_customer and customer_name and customer_name.strip():
+        try:
+            # Check for duplicate customer by phone number for this shopkeeper
+            existing_customer = None
+            if customer_contact and customer_contact.strip():
+                existing_customer = Customer.query.filter_by(
+                    shopkeeper_id=shopkeeper.user_id,
+                    phone=customer_contact.strip()
+                ).first()
+            
+            if existing_customer:
+                # Use existing customer
+                created_customer_id = existing_customer.customer_id
+                print(f"Reusing existing customer: {existing_customer.name}")
+            else:
+                # Create new customer
+                new_customer = Customer(
+                    shopkeeper_id=shopkeeper.user_id,  # Use shopkeeper.user_id per project convention
+                    name=customer_name.strip(),
+                    phone=customer_contact.strip() if customer_contact else '',
+                    email='',  # Email not captured in current form
+                    address=customer_address.strip() if customer_address else '',
+                    is_active=True,
+                    total_balance=0.00
+                )
+                db.session.add(new_customer)
+                db.session.flush()  # Get customer_id
+                created_customer_id = new_customer.customer_id
+                print(f"Created new customer: {new_customer.name} with ID {created_customer_id}")
+                
+        except Exception as e:
+            # If customer creation fails, continue with bill creation (don't let it fail)
+            print(f"Error creating customer: {e}")
+            created_customer_id = None
     
     for idx, (pid, product_name, qty, price, discount, custom_gst) in enumerate(zip(items, product_names, quantities, prices, discounts, gst_rates_custom)):
         qty = float(qty)
@@ -1033,24 +1136,24 @@ def generate_bill_pdf():
     
     bill.total_amount = overall_grand_total
     try:
-    # Update amount_paid and amount_unpaid based on final total if needed
+    # Update paid_amount and due_amount based on final total if needed
         if payment_status == 'Paid':
-            amount_paid = overall_grand_total
-            amount_unpaid = 0
+            paid_amount = overall_grand_total
+            due_amount = 0
         elif payment_status == 'Unpaid':
-            amount_paid = 0
-            amount_unpaid = overall_grand_total
+            paid_amount = 0
+            due_amount = overall_grand_total
         else:
                 # For partial payments, use the calculated amounts
-                amount_paid = float(request.form.get('calculated_paid_amount', 0))
-                amount_unpaid = float(request.form.get('calculated_unpaid_amount', 0))
+                paid_amount = float(request.form.get('calculated_paid_amount', 0))
+                due_amount = float(request.form.get('calculated_unpaid_amount', 0))
     except Exception:
         # Fallback values
-        amount_paid = 0
-        amount_unpaid = 0
+        paid_amount = 0
+        due_amount = 0
     
-    bill.amount_paid = amount_paid
-    bill.amount_unpaid = amount_unpaid
+    bill.paid_amount = paid_amount
+    bill.due_amount = due_amount
     db.session.commit()
     
     # Calculate grand total summary
@@ -1075,8 +1178,8 @@ def generate_bill_pdf():
         'gst_mode': gst_mode,
         'bill_gst_type': bill_gst_type,
         'bill_gst_rate': bill_gst_rate,
-        'amount_paid': amount_paid,
-        'amount_unpaid': amount_unpaid,
+        'amount_paid': paid_amount,
+        'amount_unpaid': due_amount,
         'payment_status': payment_status
     }
     
@@ -1091,23 +1194,25 @@ def generate_bill_pdf():
     #     f.write(rendered)
     # bill.pdf_file_path = f'static/bills/{filename}'
     
-    # Create ledger entry for existing customers with unpaid/partial amounts
-    if customer_type == 'existing' and existing_customer_id and (payment_status == 'Unpaid' or payment_status == 'Partial'):
+    # Create ledger entry for customers with unpaid/partial amounts (existing OR newly created)
+    # Add logging to help debug missing ledger entries
+    if bill.customer_id and (payment_status == 'Unpaid' or payment_status == 'Partial'):
         try:
-            customer = Customer.query.get(int(existing_customer_id))
+            current_app.logger.debug(f"Preparing ledger entries: bill_id={bill.bill_id}, customer_id={bill.customer_id}, payment_status={payment_status}, paid_amount={paid_amount}, overall_total={overall_grand_total}")
+            customer = Customer.query.get(bill.customer_id)
             if customer:
                 # Calculate debit and credit amounts
                 debit_amount = Decimal(str(overall_grand_total))  # Total bill amount (purchase)
-                credit_amount = Decimal(str(amount_paid))  # Amount paid
-                
+                credit_amount = Decimal(str(paid_amount))  # Amount paid
+
                 # Calculate new balance
                 current_balance = customer.total_balance or Decimal('0')
                 new_balance = current_balance + debit_amount - credit_amount
-                
+
                 # Create purchase ledger entry
                 purchase_entry = CustomerLedger(
                     customer_id=customer.customer_id,
-                    shopkeeper_id=shopkeeper.shopkeeper_id,
+                    shopkeeper_id=shopkeeper.user_id,
                     invoice_no=bill_number,
                     particulars=f"Bill Purchase - {bill_number}",
                     debit_amount=debit_amount,
@@ -1118,12 +1223,12 @@ def generate_bill_pdf():
                     notes=f"Products purchased via bill {bill_number}"
                 )
                 db.session.add(purchase_entry)
-                
+
                 # If there's a payment, create payment entry
                 if credit_amount > 0:
                     payment_entry = CustomerLedger(
                         customer_id=customer.customer_id,
-                        shopkeeper_id=shopkeeper.shopkeeper_id,
+                        shopkeeper_id=shopkeeper.user_id,
                         invoice_no=f"PAY-{bill_number}",
                         particulars=f"Payment for Bill {bill_number}",
                         debit_amount=0,
@@ -1134,15 +1239,37 @@ def generate_bill_pdf():
                         notes=f"Partial payment for bill {bill_number}"
                     )
                     db.session.add(payment_entry)
-                
+
                 # Update customer balance
                 customer.total_balance = new_balance
                 customer.updated_date = datetime.datetime.now()
-                
-        except Exception as e:
-            print(f"Error creating ledger entry: {e}")
+                current_app.logger.debug(f"Ledger entries created for customer_id={customer.customer_id}, new_balance={new_balance}")
+            else:
+                current_app.logger.warning(f"Bill has customer_id={bill.customer_id} but no customer found in DB.")
+
+        except Exception:
+            current_app.logger.exception("Error creating ledger entry")
             # Don't fail the bill creation if ledger entry fails
             pass
+    
+    # Add appropriate flash messages based on customer creation outcome
+    if customer_type == 'new' and save_as_customer and customer_name and customer_name.strip():
+        if created_customer_id:
+            existing_customer = Customer.query.filter_by(
+                shopkeeper_id=shopkeeper.user_id,
+                phone=customer_contact.strip() if customer_contact else ''
+            ).first() if customer_contact else None
+            
+            if existing_customer and existing_customer.customer_id == created_customer_id and customer_contact:
+                flash(f'Bill created successfully! Existing customer "{existing_customer.name}" was used.', 'success')
+            else:
+                flash('Bill created successfully! Customer saved to your customer list.', 'success')
+        else:
+            flash('Bill created successfully! (Customer could not be saved due to an error.)', 'warning')
+    elif customer_type == 'new' and not save_as_customer:
+        flash('Bill created successfully!', 'success')
+    elif customer_type == 'existing':
+        flash('Bill created successfully!', 'success')
     
     db.session.commit()
     return render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
@@ -1343,7 +1470,7 @@ def customer_management():
         return redirect(url_for('shopkeeper.dashboard'))
     
     # Get all customers for this shopkeeper
-    customers = Customer.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id, is_active=True).all()
+    customers = Customer.query.filter_by(shopkeeper_id=shopkeeper.user_id, is_active=True).all()
     
     # Calculate customer statistics
     active_customers_count = len([c for c in customers if c.total_balance > 0])
@@ -1379,7 +1506,7 @@ def add_customer():
     try:
         # Check if customer with same phone already exists for this shopkeeper
         existing_customer = Customer.query.filter_by(
-            shopkeeper_id=shopkeeper.shopkeeper_id, 
+            shopkeeper_id=shopkeeper.user_id, 
             phone=request.form.get('phone')
         ).first()
         
@@ -1387,7 +1514,7 @@ def add_customer():
             return jsonify({'success': False, 'message': 'Customer with this phone number already exists'})
         
         customer = Customer(
-            shopkeeper_id=shopkeeper.shopkeeper_id,
+            shopkeeper_id=shopkeeper.user_id,
             name=request.form.get('name'),
             phone=request.form.get('phone'),
             email=request.form.get('email') or None,
@@ -1408,7 +1535,7 @@ def add_customer():
 @shopkeeper_required
 def get_customer(customer_id):
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.shopkeeper_id).first()
+    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
     
     if not customer:
         return jsonify({'success': False, 'message': 'Customer not found'})
@@ -1429,7 +1556,7 @@ def get_customer(customer_id):
 @shopkeeper_required
 def update_customer(customer_id):
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.shopkeeper_id).first()
+    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
     
     if not customer:
         return jsonify({'success': False, 'message': 'Customer not found'})
@@ -1439,7 +1566,7 @@ def update_customer(customer_id):
         new_phone = request.form.get('phone')
         if new_phone != customer.phone:
             existing_customer = Customer.query.filter_by(
-                shopkeeper_id=shopkeeper.shopkeeper_id, 
+                shopkeeper_id=shopkeeper.user_id, 
                 phone=new_phone
             ).filter(Customer.customer_id != customer_id).first()
             
@@ -1465,7 +1592,7 @@ def update_customer(customer_id):
 @shopkeeper_required
 def delete_customer(customer_id):
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.shopkeeper_id).first()
+    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
     
     if not customer:
         return jsonify({'success': False, 'message': 'Customer not found'})
@@ -1492,7 +1619,7 @@ def delete_customer(customer_id):
 @shopkeeper_required
 def get_customer_details(customer_id):
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.shopkeeper_id).first()
+    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
     
     if not customer:
         return jsonify({'success': False, 'message': 'Customer not found'})
@@ -1527,7 +1654,7 @@ def get_customer_details(customer_id):
 @shopkeeper_required
 def customer_ledger(customer_id):
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.shopkeeper_id).first()
+    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
     
     if not customer:
         flash('Customer not found.', 'error')
@@ -1545,7 +1672,7 @@ def customer_ledger(customer_id):
 @shopkeeper_required
 def add_ledger_entry(customer_id):
     shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.shopkeeper_id).first()
+    customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
     
     if not customer:
         return jsonify({'success': False, 'message': 'Customer not found'})
@@ -1565,7 +1692,7 @@ def add_ledger_entry(customer_id):
         # Create ledger entry
         ledger_entry = CustomerLedger(
             customer_id=customer_id,
-            shopkeeper_id=shopkeeper.shopkeeper_id,
+            shopkeeper_id=shopkeeper.user_id,
             invoice_no=invoice_no,
             particulars=particulars,
             debit_amount=debit_amount,
@@ -1597,7 +1724,7 @@ def get_customers_list():
     if not shopkeeper:
         return jsonify({'success': False, 'message': 'Shopkeeper profile not found'})
     
-    customers = Customer.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id, is_active=True).all()
+    customers = Customer.query.filter_by(shopkeeper_id=shopkeeper.user_id, is_active=True).all()
     
     customers_list = []
     for customer in customers:
@@ -1622,7 +1749,7 @@ def export_customers():
         flash('Shopkeeper profile not found.', 'error')
         return redirect(url_for('shopkeeper.customer_management'))
     
-    customers = Customer.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id, is_active=True).all()
+    customers = Customer.query.filter_by(shopkeeper_id=shopkeeper.user_id, is_active=True).all()
     
     # Create CSV content
     import csv
@@ -1663,7 +1790,7 @@ def customer_ledger_overview():
         return redirect(url_for('shopkeeper.dashboard'))
     
     # Get all customers with their balance summary
-    customers = Customer.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id, is_active=True).all()
+    customers = Customer.query.filter_by(shopkeeper_id=shopkeeper.user_id, is_active=True).all()
     
     # Calculate summary statistics
     total_customers = len(customers)

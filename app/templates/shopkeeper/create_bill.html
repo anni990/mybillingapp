@@ -125,6 +125,33 @@
                 </div>
             </div>
 
+            <!-- Save as Customer Toggle (only for new/guest customers) -->
+            <div id="save-customer-toggle" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <label for="save_as_customer" class="flex items-center cursor-pointer">
+                            <input type="checkbox" 
+                                   id="save_as_customer" 
+                                   name="save_as_customer" 
+                                   value="1" 
+                                   class="w-4 h-4 text-[#ed6a3e] bg-gray-100 border-gray-300 rounded focus:ring-[#ed6a3e] focus:ring-2">
+                            <span class="ml-2 text-sm font-medium text-gray-700">Save customer details to my customer list</span>
+                        </label>
+                    </div>
+                    <div class="ml-3">
+                        <button type="button" 
+                                class="text-blue-600 hover:text-blue-800 text-xs"
+                                onclick="showSaveCustomerHelp()"
+                                title="Click for more information">
+                            <i data-feather="help-circle" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="save-customer-help" class="hidden mt-2 text-xs text-gray-600">
+                    <p>When enabled, this customer's details will be saved to your customer database for future billing. If disabled, the bill will be created but no customer record will be saved. To save the credit/unpaid data please select the buttons.</p>
+                </div>
+            </div>
+
             <!-- Existing Customer Selection -->
             <div id="existing-customer-section" class="hidden mb-4">
                 <label for="existing_customer" class="block text-sm font-medium text-gray-700 mb-2">
@@ -300,24 +327,7 @@
             <div class="flex flex-col xl:flex-row gap-6">
                 <!-- Payment Details -->
                 <div class="flex-1 space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="bill_status" class="block text-sm font-medium text-gray-700 mb-2">Bill Status</label>
-                            <select name="bill_status" id="bill_status"
-                                    class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
-                                <option value="paid">Paid</option>
-                                <option value="unpaid">Unpaid</option>
-                                <option value="partial">Partial</option>
-                            </select>
-                        </div>
-                        
-                        <div id="amount-paid-section" style="display:none;">
-                            <label for="amount_paid" class="block text-sm font-medium text-gray-700 mb-2">Amount Paid</label>
-                            <input type="number" min="0" step="0.01" name="amount_paid" id="amount_paid"
-                                   class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
-                        </div>
-                    </div>
-                </div>
+                    <!-- Payment details section removed - now using radio buttons only -->
                 
                 <!-- Total Summary -->
                 <div class="xl:w-80">
@@ -378,14 +388,15 @@
     document.addEventListener('DOMContentLoaded', function () {
         const gstModeSection = document.getElementById('gst-mode-section');
         const billGstType = document.getElementById('bill_gst_type');
-        const billStatus = document.getElementById('bill_status');
-        const amountPaidSection = document.getElementById('amount-paid-section');
-        const amountPaidInput = document.getElementById('amount_paid');
+        // Removed billStatus and amountPaidSection - using radio buttons only
         const billTotal = document.getElementById('bill-total');
         const paidAmountDisplay = document.getElementById('paid-amount-display');
         const unpaidAmountDisplay = document.getElementById('unpaid-amount-display');
         const calculatedPaidAmount = document.getElementById('calculated_paid_amount');
         const calculatedUnpaidAmount = document.getElementById('calculated_unpaid_amount');
+        const paymentStatusRadios = document.querySelectorAll('input[name="payment_status"]');
+        const partialPaymentSection = document.getElementById('partial-payment-section');
+        const paidAmountRadioInput = document.getElementById('paid_amount');
 
         function updateGSTSectionVisibility() {
             if (billGstType.value === 'GST') {
@@ -400,22 +411,27 @@
         function updatePaymentFields() {
             const total = parseFloat(billTotal.textContent) || 0;
             let paid = 0, unpaid = 0;
-            if (billStatus.value === 'paid') {
+
+            // Only handling radio buttons now (existing customers)
+            const selectedPaymentStatus = document.querySelector('input[name="payment_status"]:checked').value;
+
+            if (selectedPaymentStatus === 'Paid') {
                 paid = total;
                 unpaid = 0;
-                amountPaidSection.style.display = 'none';
-                amountPaidInput.value = total.toFixed(2);
-            } else if (billStatus.value === 'unpaid') {
+                paidAmountRadioInput.value = total.toFixed(2);
+            } else if (selectedPaymentStatus === 'Unpaid') {
                 paid = 0;
                 unpaid = total;
-                amountPaidSection.style.display = 'none';
-                amountPaidInput.value = '0.00';
-            } else if (billStatus.value === 'partial') {
-                amountPaidSection.style.display = '';
-                paid = parseFloat(amountPaidInput.value);
+                paidAmountRadioInput.value = '0.00';
+            } else if (selectedPaymentStatus === 'Partial') {
+                paid = parseFloat(paidAmountRadioInput.value) || 0;
                 unpaid = total - paid;
                 if (unpaid < 0) unpaid = 0;
-                if (paid > total) { paid = total; unpaid = 0; amountPaidInput.value = total.toFixed(2); }
+                if (paid > total) {
+                    paid = total;
+                    unpaid = 0;
+                    paidAmountRadioInput.value = total.toFixed(2);
+                }
             }
 
             paidAmountDisplay.textContent = paid.toFixed(2);
@@ -425,17 +441,32 @@
         }
 
         billGstType.addEventListener('change', updateGSTSectionVisibility);
-        billStatus.addEventListener('change', updatePaymentFields);
-        amountPaidInput.addEventListener('input', updatePaymentFields);
+        // Removed billStatus and amountPaidInput listeners - using radio buttons only
+
+        // Add listeners for payment status radio buttons
+        paymentStatusRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Show/hide partial payment section for radio buttons
+                if (this.value === 'Partial') {
+                    partialPaymentSection.classList.remove('hidden');
+                    paidAmountRadioInput.required = true;
+                } else {
+                    partialPaymentSection.classList.add('hidden');
+                    paidAmountRadioInput.required = false;
+                }
+                updatePaymentFields();
+            });
+        });
+        
+        // Add listener for radio button partial amount input
+        paidAmountRadioInput.addEventListener('input', updatePaymentFields);
 
         updateGSTSectionVisibility();
         updatePaymentFields();
 
-        // Auto update paid/unpaid when total changes and bill status is paid
+        // Auto update paid/unpaid when total changes
         const billTotalObserver = new MutationObserver(function() {
-            if (billStatus.value === 'paid') {
-                updatePaymentFields();
-            }
+            updatePaymentFields();
         });
         billTotalObserver.observe(billTotal, { childList: true });
     });
@@ -502,17 +533,100 @@
         const customerType = document.querySelector('input[name="customer_type"]:checked').value;
         const existingSection = document.getElementById('existing-customer-section');
         const paymentStatusSection = document.getElementById('payment-status-section');
+        const saveCustomerToggle = document.getElementById('save-customer-toggle');
+        const saveAsCustomer = document.getElementById('save_as_customer');
         
         if (customerType === 'existing') {
             existingSection.classList.remove('hidden');
             paymentStatusSection.classList.remove('hidden');
+            saveCustomerToggle.classList.add('hidden');
             document.getElementById('existing_customer').required = true;
+            // Uncheck and disable save as customer for existing customers
+            saveAsCustomer.checked = false;
         } else {
             existingSection.classList.add('hidden');
-            paymentStatusSection.classList.add('hidden');
+            saveCustomerToggle.classList.remove('hidden');
             document.getElementById('existing_customer').required = false;
             clearCustomerFields();
+            // Show/hide payment status based on save-customer toggle for new customers
+            togglePaymentStatusForNewCustomer();
         }
+    }
+    
+    function togglePaymentStatusForNewCustomer() {
+        const customerType = document.querySelector('input[name="customer_type"]:checked').value;
+        const saveAsCustomer = document.getElementById('save_as_customer');
+        const paymentStatusSection = document.getElementById('payment-status-section');
+        const partialPaymentSection = document.getElementById('partial-payment-section');
+        const paidAmountRadioInput = document.getElementById('paid_amount');
+        const paidAmountDisplay = document.getElementById('paid-amount-display');
+        const unpaidAmountDisplay = document.getElementById('unpaid-amount-display');
+        const calculatedPaidAmount = document.getElementById('calculated_paid_amount');
+        const calculatedUnpaidAmount = document.getElementById('calculated_unpaid_amount');
+        const billTotal = parseFloat(document.getElementById('bill-total').textContent) || 0;
+
+        if (customerType === 'new' && saveAsCustomer.checked) {
+            paymentStatusSection.classList.remove('hidden');
+
+            // Determine selected payment status and apply same logic as radio change
+            const selected = document.querySelector('input[name="payment_status"]:checked');
+            const selectedValue = selected ? selected.value : 'Paid';
+
+            if (selectedValue === 'Paid') {
+                partialPaymentSection.classList.add('hidden');
+                paidAmountRadioInput.required = false;
+                const paid = billTotal;
+                const unpaid = 0;
+                paidAmountRadioInput.value = paid.toFixed(2);
+                paidAmountDisplay.textContent = paid.toFixed(2);
+                unpaidAmountDisplay.textContent = unpaid.toFixed(2);
+                calculatedPaidAmount.value = paid.toFixed(2);
+                calculatedUnpaidAmount.value = unpaid.toFixed(2);
+            } else if (selectedValue === 'Unpaid') {
+                partialPaymentSection.classList.add('hidden');
+                paidAmountRadioInput.required = false;
+                const paid = 0;
+                const unpaid = billTotal;
+                paidAmountRadioInput.value = '0.00';
+                paidAmountDisplay.textContent = paid.toFixed(2);
+                unpaidAmountDisplay.textContent = unpaid.toFixed(2);
+                calculatedPaidAmount.value = paid.toFixed(2);
+                calculatedUnpaidAmount.value = unpaid.toFixed(2);
+            } else { // Partial
+                partialPaymentSection.classList.remove('hidden');
+                paidAmountRadioInput.required = true;
+                const paid = parseFloat(paidAmountRadioInput.value) || 0;
+                let unpaid = billTotal - paid;
+                if (unpaid < 0) unpaid = 0;
+                if (paid > billTotal) {
+                    paidAmountRadioInput.value = billTotal.toFixed(2);
+                    paid = billTotal;
+                    unpaid = 0;
+                }
+                paidAmountDisplay.textContent = paid.toFixed(2);
+                unpaidAmountDisplay.textContent = unpaid.toFixed(2);
+                calculatedPaidAmount.value = paid.toFixed(2);
+                calculatedUnpaidAmount.value = unpaid.toFixed(2);
+            }
+        } else if (customerType === 'new') {
+            // Hide payment options for new customer when toggle off
+            paymentStatusSection.classList.add('hidden');
+            partialPaymentSection.classList.add('hidden');
+            paidAmountRadioInput.required = false;
+            // Reset amounts to Paid default
+            const paid = billTotal;
+            const unpaid = 0;
+            paidAmountRadioInput.value = paid.toFixed(2);
+            paidAmountDisplay.textContent = paid.toFixed(2);
+            unpaidAmountDisplay.textContent = unpaid.toFixed(2);
+            calculatedPaidAmount.value = paid.toFixed(2);
+            calculatedUnpaidAmount.value = unpaid.toFixed(2);
+        }
+    }
+
+    function showSaveCustomerHelp() {
+        const helpDiv = document.getElementById('save-customer-help');
+        helpDiv.classList.toggle('hidden');
     }
 
     function fillCustomerDetails() {
@@ -537,21 +651,12 @@
         document.getElementById('customer_gstin').value = '';
     }
 
-    // Show/hide partial payment field
-    document.addEventListener('change', function(e) {
-        if (e.target.name === 'payment_status') {
-            const partialSection = document.getElementById('partial-payment-section');
-            if (e.target.value === 'Partial') {
-                partialSection.classList.remove('hidden');
-                document.getElementById('paid_amount').required = true;
-            } else {
-                partialSection.classList.add('hidden');
-                document.getElementById('paid_amount').required = false;
-            }
-        }
-    });
-
     // Load customers when page loads
     loadCustomers();
+    
+    // Add event listener for save-as-customer checkbox
+    document.getElementById('save_as_customer').addEventListener('change', function() {
+        togglePaymentStatusForNewCustomer();
+    });
 </script>
 {% endblock %}
