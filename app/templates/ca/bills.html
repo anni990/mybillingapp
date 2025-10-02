@@ -116,10 +116,10 @@
               </span>
             </td>
             <td class="py-4 px-6">
-              <div class="text-sm font-medium text-green-600">₹{{ "%.2f"|format(bill.amount_paid) }}</div>
+              <div class="text-sm font-medium text-green-600">₹{{ "%.2f"|format(bill.paid_amount) }}</div>
             </td>
             <td class="py-4 px-6">
-              <div class="text-sm font-medium text-red-600">₹{{ "%.2f"|format(bill.amount_unpaid) }}</div>
+              <div class="text-sm font-medium text-red-600">₹{{ "%.2f"|format(bill.due_amount) }}</div>
             </td>
             <td class="py-4 px-6">
               <a href="{{ url_for('ca.view_bill', bill_id=bill.bill_id) }}" 
@@ -193,14 +193,14 @@
             </div>
             <div>
               <span class="font-medium">Paid:</span>
-              <span class="text-green-600 font-medium">₹{{ "%.2f"|format(bill.amount_paid) }}</span>
+              <span class="text-green-600 font-medium">₹{{ "%.2f"|format(bill.paid_amount) }}</span>
             </div>
           </div>
           
-          {% if bill.amount_unpaid > 0 %}
+          {% if bill.due_amount > 0 %}
           <div class="mb-3">
             <span class="text-sm font-medium text-gray-600">Unpaid Amount:</span>
-            <span class="text-red-600 font-semibold">₹{{ "%.2f"|format(bill.amount_unpaid) }}</span>
+            <span class="text-red-600 font-semibold">₹{{ "%.2f"|format(bill.due_amount) }}</span>
           </div>
           {% endif %}
           

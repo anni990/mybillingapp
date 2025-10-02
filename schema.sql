@@ -113,11 +113,13 @@ CREATE TABLE bills (
     bill_date DATE NOT NULL,
     gst_type ENUM('GST', 'Non-GST') NOT NULL,
     total_amount DECIMAL(12,2) NOT NULL,
-    payment_status ENUM('Paid', 'Unpaid', 'Partial') NOT NULL,
+    payment_status ENUM('Paid', 'Unpaid', 'Partial') NOT NULL DEFAULT 'Paid',
     pdf_file_path VARCHAR(255),
-    amount_paid NUMERIC(12,2) DEFAULT 0 NULL,
-    amount_unpaid NUMERIC(12,2) DEFAULT 0 NULL,
-    FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id) ON DELETE CASCADE
+    customer_id INT NULL,
+    paid_amount DECIMAL(10,2) DEFAULT 0.00,
+    due_amount DECIMAL(10,2) DEFAULT 0.00,
+    FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 
 CREATE TABLE bill_items (
