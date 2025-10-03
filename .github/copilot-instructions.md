@@ -51,7 +51,7 @@ class Bill(db.Model):
 ```
 
 ### Development Workflow Commands
-```bash
+```powershell
 # Start development server (creates tables automatically)
 python run.py
 
@@ -67,6 +67,20 @@ with app.app_context():
     bills = Bill.query.limit(5).all()
     for bill in bills:
         print(f'Bill {bill.bill_id}: paid={bill.paid_amount}, due={bill.due_amount}')
+"
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Check customer ledger system
+python -c "
+from app import create_app, db
+from app.models import Customer, CustomerLedger
+app = create_app()
+with app.app_context():
+    customers = Customer.query.limit(3).all()
+    for c in customers:
+        print(f'Customer {c.name}: Balance={c.total_balance}')
 "
 ```
 
@@ -153,17 +167,19 @@ Customer -> CustomerLedger (credit/debit tracking)
 - **MySQL migration**: Connection string uses `pymysql` driver, but ODBC dependencies remain in Dockerfile
 
 ### Schema Evolution
-- Multiple schema files exist: `schema.sql` (MySQL), `*_schema_sqlserver.sql` (SQL Server variants)
-- Customer ledger system added via `CUSTOMER_LEDGER_IMPLEMENTATION.md`
+- Current schema: `Complete Schema.sql` (MySQL/MariaDB with full table definitions)
+- Customer ledger system added via `Docx/CUSTOMER_LEDGER_IMPLEMENTATION.md`
 - GST filing status tracking for compliance management
+- Dual payment field support: `paid_amount`/`due_amount` (current) alongside legacy compatibility
 
-### Current Status (Updated 2025-09-29)
+### Current Status (Updated 2025-10-02)
 - **✅ Foreign Key Issues Resolved**: All database queries now use correct foreign key references
 - **✅ Payment Fields Migration Complete**: Bills table now uses single consistent field set (`paid_amount`/`due_amount`)
 - **✅ Schema Compliance**: Database schema matches production schema with all required columns and constraints
-- **✅ Migration Applied**: `drop_legacy_payment_fields.sql` created for removing legacy payment fields from existing databases
+- **✅ Customer Ledger System**: Full khata (credit/debit) system implemented with running balance tracking
+- **✅ Multi-Database Support**: Active MySQL with PyMySQL driver, SQL Server compatibility maintained
 
-## � Critical Fixes Applied
+## 🔧 Critical Fixes Applied
 
 ### Foreign Key Corrections (2025-09-29)
 **Problem**: Code was using incorrect foreign key references causing constraint violations.
@@ -210,7 +226,7 @@ UPDATE bills SET
 
 **Result**: Bills now have both field sets for backward compatibility.
 
-## �📁 File Organization
+## 📁 File Organization
 
 ### Blueprint Structure
 ```
@@ -241,7 +257,7 @@ app/
 ## 🔧 Development Workflow
 
 ### Running the Application
-```bash
+```powershell
 # Development
 python run.py  # Creates tables via db.create_all(), runs on debug mode
 
@@ -409,7 +425,7 @@ bills_today = Bill.query.filter_by(shopkeeper_id=shopkeeper_id, bill_date=today)
 ## 🚀 AI Development Guidelines
 
 ### Quick Start Commands
-```bash
+```powershell
 # Start development server (auto-creates tables)
 python run.py
 
@@ -422,7 +438,7 @@ from app import create_app, db
 app = create_app()
 with app.app_context():
     try:
-        db.engine.execute('SELECT 1')
+        result = db.session.execute(db.text('SELECT 1'))
         print('✅ Database connected')
     except Exception as e:
         print(f'❌ DB Error: {e}')
@@ -437,6 +453,9 @@ with app.app_context():
     db.create_all()
     print('✅ Models validated')
 "
+
+# Environment setup
+cp .env.example .env  # Copy and configure environment variables
 ```
 
 ### Critical Patterns for AI Agents
@@ -523,4 +542,4 @@ except Exception as e:
 
 ---
 
-**Key Files to Reference**: `app/models.py` (data relationships), `app/config.py` (environment setup), `app/__init__.py` (blueprint structure), `run.py` (application entry point), `CUSTOMER_LEDGER_IMPLEMENTATION.md` (ledger system), `create_bill_architecture.md` (bill creation logic)
+**Key Files to Reference**: `app/models.py` (data relationships), `app/config.py` (environment setup), `app/__init__.py` (blueprint structure), `run.py` (application entry point), `Docx/CUSTOMER_LEDGER_IMPLEMENTATION.md` (ledger system), `Complete Schema.sql` (database structure)
