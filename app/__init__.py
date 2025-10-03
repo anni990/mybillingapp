@@ -16,8 +16,8 @@ def create_app():
     
     # Import and register blueprints
     from .auth.routes import auth_bp
-    from .shopkeeper.routes import shopkeeper_bp
-    from .ca.routes import ca_bp
+    from .shopkeeper import shopkeeper_bp 
+    from .ca import ca_bp
     from .api.routes import api_bp
 
     app.register_blueprint(auth_bp)
