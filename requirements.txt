@@ -16,3 +16,4 @@ pandas
 gunicorn
 python-dateutil
 pymysql
+weasyprint
