@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from datetime import datetime
 
 from app.extensions import db
 # ... define models using this db
@@ -125,17 +126,18 @@ class Bill(db.Model):
     __tablename__ = 'bills'
     bill_id = db.Column(db.Integer, primary_key=True)
     shopkeeper_id = db.Column(db.Integer, db.ForeignKey('shopkeepers.shopkeeper_id', ondelete='CASCADE'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.customer_id'), nullable=True)  # New field for registered customers
     bill_number = db.Column(db.String(50), nullable=False)
     customer_name = db.Column(db.String(100))
-    customer_address=db.Column(db.String(100))
-    customer_gstin=db.Column(db.String(50))
+    customer_address=db.Column(db.String(100), nullable=True)
+    customer_gstin=db.Column(db.String(50), nullable=True)
     customer_contact = db.Column(db.String(20))
     bill_date = db.Column(db.Date, nullable=False)
     gst_type = db.Column(db.Enum('GST', 'Non-GST'), nullable=False)
     total_amount = db.Column(db.Numeric(12,2), nullable=False)
-    payment_status = db.Column(db.Enum('Paid', 'Unpaid', 'Partial'), nullable=False)
-    amount_paid = db.Column(db.Numeric(12,2), nullable=True, default=0)
-    amount_unpaid = db.Column(db.Numeric(12,2), nullable=True, default=0)
+    payment_status = db.Column(db.String(20), default='PAID')  # 'PAID', 'PARTIAL', 'UNPAID'
+    paid_amount = db.Column(db.Numeric(10,2), default=0.00)  # Tracking payments
+    due_amount = db.Column(db.Numeric(10,2), default=0.00)   # Tracking dues
     # Relationships
     bill_items = db.relationship('BillItem', backref='bill', cascade='all, delete-orphan')
 
@@ -144,7 +146,10 @@ class BillItem(db.Model):
     __tablename__ = 'bill_items'
     bill_item_id = db.Column(db.Integer, primary_key=True)
     bill_id = db.Column(db.Integer, db.ForeignKey('bills.bill_id', ondelete='CASCADE'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey('products.product_id', ondelete='CASCADE'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.product_id', ondelete='CASCADE'), nullable=True)  # Made nullable for custom products
+    custom_product_name = db.Column(db.String(100), nullable=True)  # For custom products not in products table
+    custom_gst_rate = db.Column(db.Numeric(5,2), nullable=True)  # GST rate for custom products
+    custom_hsn_code = db.Column(db.String(20), nullable=True)  # HSN code for custom products
     quantity = db.Column(db.Integer, nullable=False)
     price_per_unit = db.Column(db.Numeric(10,2), nullable=False)
     total_price = db.Column(db.Numeric(12,2), nullable=False)
@@ -189,3 +194,49 @@ class GSTFilingStatus(db.Model):
     filed_at = db.Column(db.DateTime)
     shopkeeper = db.relationship('Shopkeeper', backref='gst_filing_statuses')
     employee = db.relationship('CAEmployee', backref='gst_filing_statuses')
+
+class Customer(db.Model):
+    """Customer model for shopkeeper's customer management."""
+    __tablename__ = 'customers'
+    
+    customer_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    shopkeeper_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(15), nullable=False)
+    email = db.Column(db.String(100), nullable=True)
+    address = db.Column(db.Text, nullable=True)
+    created_date = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_date = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    total_balance = db.Column(db.Numeric(10, 2), default=0.00)
+    
+    # Relationships
+    shopkeeper = db.relationship('User', backref='customers')
+    ledger_entries = db.relationship('CustomerLedger', backref='customer', lazy='dynamic')
+    bills = db.relationship('Bill', backref='customer')
+    
+    # Unique constraint
+    __table_args__ = (
+        db.UniqueConstraint('shopkeeper_id', 'phone', name='unique_shopkeeper_phone'),
+    )
+
+class CustomerLedger(db.Model):
+    __tablename__ = 'customer_ledger'
+    
+    ledger_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.customer_id'), nullable=False)
+    shopkeeper_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
+    invoice_no = db.Column(db.String(50), nullable=True)
+    particulars = db.Column(db.String(255), nullable=False)
+    debit_amount = db.Column(db.Numeric(10, 2), default=0.00)
+    credit_amount = db.Column(db.Numeric(10, 2), default=0.00)
+    balance_amount = db.Column(db.Numeric(10, 2), nullable=False)
+    transaction_type = db.Column(db.String(20), nullable=False)  # 'PURCHASE', 'PAYMENT', 'ADJUSTMENT'
+    reference_bill_id = db.Column(db.Integer, db.ForeignKey('bills.bill_id'), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    created_date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    shopkeeper = db.relationship('User')
+    reference_bill = db.relationship('Bill')

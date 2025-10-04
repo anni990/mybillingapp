@@ -4,121 +4,409 @@
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
 <div class="flex min-h-screen bg-gray-100">
-    <aside class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
-        <div>
-            <nav class="mt-5 flex-1">
-                <ul class="space-y-2">
-                    <li><a href="{{ url_for('shopkeeper.dashboard') }}"
-                            class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/30 transition duration-300"><i
-                                data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
-                    <li><a href="{{ url_for('shopkeeper.create_bill') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
-                    <li><a href="{{ url_for('shopkeeper.manage_bills') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
-                    <li><a href="{{ url_for('shopkeeper.products_stock') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="box" class="mr-3"></i>Products & Stock</a></li>
-                    <li><a href="{{ url_for('shopkeeper.sales_reports') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
-                    <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
-                            class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i
-                                data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
-                </ul>
-            </nav>
-        </div>
-        <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
-    </aside>
 
-    <main class="flex-1 ml-64 p-8 bg-gray-100 min-h-screen">
-        <div class="max-w-7xl mx-auto">
-            <h2 class="text-3xl font-bold text-[#ed6a3e] mb-6">CA Marketplace</h2>
-
-            <div class="bg-white p-6 rounded-xl shadow-lg mb-6">
-                <div class="relative">
-                    <i data-feather="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                    <input type="text" id="ca-search" placeholder="Search CAs by name or area..." class="pl-10 pr-4 py-3 border rounded-full w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-300">
+    <main class="flex-1 p-8 bg-gray-100 min-h-screen">
+        {% if has_approved_connection %}
+        <!-- Connected CA Popup -->
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full mx-4 relative transform transition-all">
+                <button onclick="window.location.href='{{ url_for('shopkeeper.dashboard') }}'"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition duration-200">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+                <div class="text-center">
+                    <div class="mb-8">
+                        <div class="w-32 h-32 bg-green-100 rounded-full mx-auto flex items-center justify-center mb-4">
+                            <i data-feather="check-circle" class="w-16 h-16 text-green-500"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">Connected CA</h2>
+                    {% for ca in cas %}
+                    {% set conn = connections.get(ca.ca_id) %}
+                    {% if conn and conn.status == 'approved' %}
+                    <p class="text-2xl font-semibold text-[#ed6a3e] mb-8">{{ ca.firm_name }}</p>
+                    <a href="{{ url_for('shopkeeper.connected_ca_profile', ca_id=ca.ca_id) }}"
+                        class="inline-flex items-center justify-center px-8 py-4 bg-[#ed6a3e] text-white rounded-xl hover:bg-orange-700 transition duration-300 font-semibold text-lg shadow-lg hover:shadow-xl">
+                        <span>View CA Profile</span>
+                        <i data-feather="arrow-right" class="ml-2 w-6 h-6"></i>
+                    </a>
+                    {% endif %}
+                    {% endfor %}
                 </div>
             </div>
+        </div>
+        {% endif %}
 
-            <div id="ca-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for ca in cas %}
-                {% set conn = connections.get(ca.ca_id) %}
-                <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col justify-between hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 ca-card"
-                     data-name="{{ ca.firm_name|lower }}" data-area="{{ ca.area|lower }}">
+        <div class="max-w-7xl mx-auto {% if has_approved_connection %}hidden{% endif %}">
+            <div class="p-4 md:p-8">
+                <!-- Header Section -->
+                <div
+                    class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
                     <div>
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-xl font-bold text-gray-800">{{ ca.firm_name }}</h3>
-                            {% if not conn %}
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-600">Not Connected</span>
-                            {% elif conn.status == 'pending' %}
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Pending</span>
-                            {% elif conn.status == 'approved' %}
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Connected</span>
-                            {% elif conn.status == 'rejected' %}
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Rejected</span>
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                            <i data-feather="users" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
+                            CA Marketplace
+                        </h1>
+                        <p class="text-gray-600 text-sm md:text-base mt-1">Find and connect with experienced Chartered
+                            Accountants</p>
+                    </div>
+                    <div class="flex items-center space-x-2 md:space-x-4">
+                        {% if connected_ca %}
+                        <a href="{{ url_for('shopkeeper.connected_ca_profile', ca_id=connected_ca.ca_id) }}"
+                            class="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                            <i data-feather="check-circle" class="w-4 h-4"></i>
+                            <span class="hidden md:inline">Connected CA</span>
+                            <span class="md:hidden">CA</span>
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('shopkeeper.dashboard') }}"
+                            class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                            <i data-feather="home" class="w-4 h-4"></i>
+                            <span class="hidden md:inline">Dashboard</span>
+                            <span class="md:hidden">Home</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Search and Filter Section -->
+                <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 border border-gray-200">
+                    <div class="flex items-center mb-4">
+                        <i data-feather="search" class="w-5 h-5 text-[#ed6a3e] mr-2"></i>
+                        <h2 class="text-lg md:text-xl font-bold text-gray-800">Find CAs</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="relative md:col-span-2">
+                            <label for="ca-search" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <div class="relative">
+                                <input type="text" id="ca-search"
+                                    placeholder="Search by firm name, location, or specialization..."
+                                    class="w-full pl-10 pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                                <i data-feather="search"
+                                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="area-filter"
+                                class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                            <select id="area-filter"
+                                class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                                <option value="">All Locations</option>
+                                {% for area in unique_areas %}
+                                <option value="{{ area }}">{{ area }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex flex-col md:flex-row justify-between items-start md:items-center mt-4 space-y-2 md:space-y-0">
+                        <div class="flex items-center space-x-4">
+                            <button type="button" id="clear-filters"
+                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition duration-300 text-sm font-medium">
+                                Clear Filters
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            Showing <span id="showing-count">{{ cas|length }}</span> of {{ cas|length }} CAs
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connection Status Banner -->
+                {% if connected_ca %}
+                <div class="bg-green-50 border border-green-200 rounded-xl p-4 md:p-6 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                                <i data-feather="check" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-green-900">You're connected to {{ connected_ca.firm_name }}
+                                </h3>
+                                <p class="text-sm text-green-700">{{ connected_employees|length }} employee(s) assigned
+                                    to your account</p>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('shopkeeper.connected_ca_profile', ca_id=connected_ca.ca_id) }}"
+                            class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300 text-sm font-medium">
+                            <i data-feather="external-link" class="w-4 h-4 mr-2"></i>
+                            View Details
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- CAs Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" id="cas-grid">
+                    {% if cas %}
+                    {% for ca in cas %}
+                    <div class="ca-card bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition duration-300 transform hover:-translate-y-1"
+                        data-firm-name="{{ ca.firm_name|lower }}" data-area="{{ ca.area|lower }}"
+                        data-specialization="{{ ca.specialization|lower if ca.specialization else '' }}">
+
+                        <!-- CA Header -->
+                        <div class="p-4 md:p-6">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center">
+                                    {% if ca.profile_picture %}
+                                    <img src="{{ url_for('static', filename='ca_upload/' + ca.profile_picture) }}"
+                                        alt="{{ ca.firm_name }}"
+                                        class="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover border-2 border-[#ed6a3e] mr-3">
+                                    {% else %}
+                                    <div
+                                        class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-r from-[#ed6a3e] to-orange-600 flex items-center justify-center text-white font-bold text-lg md:text-xl mr-3">
+                                        {{ ca.firm_name[0]|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h3 class="font-bold text-gray-900 text-lg md:text-xl">{{ ca.firm_name }}</h3>
+                                        <p class="text-sm text-gray-600">{{ ca.contact_person_name or 'Contact Person'
+                                            }}</p>
+                                    </div>
+                                </div>
+
+                                {% if connected_ca and connected_ca.ca_id == ca.ca_id %}
+                                <span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                    Connected
+                                </span>
+                                {% elif pending_requests and ca.ca_id in pending_requests %}
+                                <span
+                                    class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                    Pending
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- CA Details -->
+                            <div class="space-y-3 mb-6">
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i data-feather="map-pin" class="w-4 h-4 mr-2 text-[#ed6a3e] flex-shrink-0"></i>
+                                    <span class="truncate">{{ ca.area }}</span>
+                                </div>
+
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i data-feather="phone" class="w-4 h-4 mr-2 text-[#ed6a3e] flex-shrink-0"></i>
+                                    <span>{{ ca.contact_number }}</span>
+                                </div>
+
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i data-feather="mail" class="w-4 h-4 mr-2 text-[#ed6a3e] flex-shrink-0"></i>
+                                    <span class="truncate">{{ ca.email }}</span>
+                                </div>
+
+                                {% if ca.experience_years %}
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i data-feather="award" class="w-4 h-4 mr-2 text-[#ed6a3e] flex-shrink-0"></i>
+                                    <span>{{ ca.experience_years }} years experience</span>
+                                </div>
+                                {% endif %}
+
+                                {% if ca.specialization %}
+                                <div class="flex items-start text-sm text-gray-600">
+                                    <i data-feather="star" class="w-4 h-4 mr-2 text-[#ed6a3e] flex-shrink-0 mt-0.5"></i>
+                                    <span class="line-clamp-2">{{ ca.specialization }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Pricing Info -->
+                            {% if ca.pricing_structure %}
+                            <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                                <div class="flex items-center mb-2">
+                                    <i data-feather="dollar-sign" class="w-4 h-4 mr-1 text-[#ed6a3e]"></i>
+                                    <span class="text-sm font-medium text-gray-700">Pricing</span>
+                                </div>
+                                <p class="text-xs text-gray-600 line-clamp-2">{{ ca.pricing_structure }}</p>
+                            </div>
+                            {% endif %}
+
+                            <!-- Services -->
+                            {% if ca.services_offered %}
+                            <div class="mb-4">
+                                <div class="flex items-center mb-2">
+                                    <i data-feather="briefcase" class="w-4 h-4 mr-1 text-[#ed6a3e]"></i>
+                                    <span class="text-sm font-medium text-gray-700">Services</span>
+                                </div>
+                                <div class="flex flex-wrap gap-1">
+                                    {% for service in ca.services_offered.split(',')[:3] %}
+                                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                        {{ service.strip() }}
+                                    </span>
+                                    {% endfor %}
+                                    {% if ca.services_offered.split(',')|length > 3 %}
+                                    <span class="text-xs text-gray-500">+{{ ca.services_offered.split(',')|length - 3 }}
+                                        more</span>
+                                    {% endif %}
+                                </div>
+                            </div>
                             {% endif %}
                         </div>
-                        <ul class="space-y-3 text-gray-600 mb-6">
-                            {% if ca.area %}
-                            <li class="flex items-center"><i data-feather="map-pin" class="mr-2 text-[#ed6a3e] w-5 h-5"></i><span>{{ ca.area }}</span></li>
-                            {% endif %}
-                            {% if ca.contact_number %}
-                            <li class="flex items-center"><i data-feather="phone" class="mr-2 text-[#ed6a3e] w-5 h-5"></i><span>{{ ca.contact_number }}</span></li>
-                            {% endif %}
-                            {% if ca.email %}
-                            <li class="flex items-center"><i data-feather="mail" class="mr-2 text-[#ed6a3e] w-5 h-5"></i><span>{{ ca.email }}</span></li>
-                            {% endif %}
-                        </ul>
-                    </div>
 
-                    <div class="mt-auto">
-                        {% if not conn or conn.status == 'rejected' %}
-                        <form method="POST" action="{{ url_for('shopkeeper.connect_ca', ca_id=ca.ca_id) }}">
-                            <button type="submit" class="w-full bg-[#ed6a3e] text-white py-3 rounded-full shadow-md hover:bg-orange-700 transition duration-300 font-semibold flex items-center justify-center">
-                                <i data-feather="send" class="mr-2 w-5 h-5"></i> Connect
+                        <!-- Action Buttons -->
+                        <div class="px-4 md:px-6 pb-4 md:pb-6">
+                            {% if connected_ca and connected_ca.ca_id == ca.ca_id %}
+                            <a href="{{ url_for('shopkeeper.connected_ca_profile', ca_id=ca.ca_id) }}"
+                                class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition duration-300 text-center block text-sm">
+                                View Connection
+                            </a>
+                            {% elif pending_requests and ca.ca_id in pending_requests %}
+                            <button
+                                class="w-full bg-gray-400 text-white font-medium py-2 px-4 rounded-lg cursor-not-allowed text-sm"
+                                disabled>
+                                Request Pending
                             </button>
-                        </form>
-                        {% elif conn.status == 'pending' %}
-                        <button class="w-full bg-yellow-400 text-white py-3 rounded-full shadow-md cursor-not-allowed font-semibold flex items-center justify-center" disabled>
-                            <i data-feather="clock" class="mr-2 w-5 h-5"></i> Pending
-                        </button>
-                        {% elif conn.status == 'approved' %}
-                        <button class="w-full bg-green-500 text-white py-3 rounded-full shadow-md cursor-not-allowed font-semibold flex items-center justify-center" disabled>
-                            <i data-feather="check-circle" class="mr-2 w-5 h-5"></i> Connected
-                        </button>
-                        {% endif %}
+                            {% else %}
+                            <div class="flex space-x-2">
+                                <button onclick="viewCAProfile('{{ ca.ca_id }}')"
+                                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded-lg transition duration-300 text-sm flex items-center justify-center">
+                                    <i data-feather="eye" class="w-4 h-4 mr-1"></i>
+                                    View
+                                </button>
+                                <button onclick="sendConnectionRequest('{{ ca.ca_id }}')"
+                                    class="flex-1 bg-[#ed6a3e] hover:bg-orange-700 text-white font-medium py-2 px-3 rounded-lg transition duration-300 text-sm flex items-center justify-center">
+                                    <i data-feather="user-plus" class="w-4 h-4 mr-1"></i>
+                                    Connect
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="col-span-full text-center py-12">
+                        <i data-feather="users" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No CAs found</h3>
+                        <p class="text-gray-500">No Chartered Accountants are currently available in the marketplace.
+                        </p>
+                    </div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <div class="col-span-1 md:col-span-2 lg:col-span-3 text-center text-gray-500 py-12">
-                    <p class="text-xl">No Chartered Accountants are available right now. Please check back later.</p>
+
+                <!-- Load More Button (if needed) -->
+                {% if cas|length > 9 %}
+                <div class="text-center mt-8">
+                    <button id="load-more"
+                        class="px-6 py-3 bg-[#ed6a3e] hover:bg-orange-700 text-white rounded-lg transition duration-300 font-medium">
+                        Load More CAs
+                    </button>
                 </div>
-                {% endfor %}
+                {% endif %}
             </div>
+
         </div>
     </main>
 </div>
 
 <script>
     feather.replace();
+    // Search and filter functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('ca-search');
+        const areaFilter = document.getElementById('area-filter');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        const showingCount = document.getElementById('showing-count');
 
-    document.getElementById('ca-search').addEventListener('keyup', function() {
-        const searchTerm = this.value.toLowerCase();
-        const cards = document.querySelectorAll('.ca-card');
+        function filterCAs() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedArea = areaFilter.value.toLowerCase();
 
-        cards.forEach(card => {
-            const name = card.getAttribute('data-name');
-            const area = card.getAttribute('data-area');
+            const caCards = document.querySelectorAll('.ca-card');
+            let visibleCount = 0;
 
-            if (name.includes(searchTerm) || area.includes(searchTerm)) {
-                card.style.display = '';
-            } else {
-                card.style.display = 'none';
+            caCards.forEach(card => {
+                const firmName = card.dataset.firmName || '';
+                const area = card.dataset.area || '';
+                const specialization = card.dataset.specialization || '';
+
+                let isVisible = true;
+
+                // Search filter
+                if (searchTerm && !firmName.includes(searchTerm) && !area.includes(searchTerm) && !specialization.includes(searchTerm)) {
+                    isVisible = false;
+                }
+
+                // Area filter
+                if (selectedArea && !area.includes(selectedArea)) {
+                    isVisible = false;
+                }
+
+                if (isVisible) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (showingCount) {
+                showingCount.textContent = visibleCount;
             }
+        }
+
+        // Attach event listeners
+        [searchInput, areaFilter].forEach(input => {
+            input.addEventListener('input', filterCAs);
+            input.addEventListener('change', filterCAs);
         });
+
+        // Clear filters
+        clearFiltersBtn.addEventListener('click', function () {
+            searchInput.value = '';
+            areaFilter.value = '';
+            filterCAs();
+        });
+
+        // Modal event listeners
+        document.getElementById('close-profile-modal').addEventListener('click', closeProfileModal);
+    });
+
+    function viewCAProfile(caId) {
+        // Implementation for viewing CA profile
+        console.log('View CA profile:', caId);
+        // You can implement AJAX call to fetch and display CA profile details
+    }
+
+    function sendConnectionRequest(caId) {
+        if (confirm('Send connection request to this CA?')) {
+            fetch('/shopkeeper/send_connection_request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ca_id: caId
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Connection request sent successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error sending request: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error sending connection request');
+                });
+        }
+    }
+    // Handle ESC key to close popup and go back
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            const backButton = document.querySelector('.fixed.inset-0 button');
+            if (backButton) {
+                window.location.href = '{{ url_for('shopkeeper.dashboard') }}';
+            }
+        }
+    });
+
+    // Re-run feather icons after dynamic content changes
+    window.addEventListener('DOMContentLoaded', (event) => {
+        feather.replace();
     });
 </script>
 {% endblock %}

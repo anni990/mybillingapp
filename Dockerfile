@@ -16,11 +16,9 @@ RUN apt-get update \
     && curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
         | gpg --dearmor \
         | tee /usr/share/keyrings/microsoft-prod.gpg > /dev/null \
-    # Add Microsoft SQL Server repo
-    && curl -sSL https://packages.microsoft.com/config/debian/11/prod.list \
+    # Add Microsoft SQL Server repo (with signed-by and arch in one line)
+    && echo "deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/11/prod bullseye main" \
         | tee /etc/apt/sources.list.d/mssql-release.list \
-    # Make repo use the signed key
-    && sed -i 's#^deb #deb [signed-by=/usr/share/keyrings/microsoft-prod.gpg] #' /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 \
     && apt-get clean \

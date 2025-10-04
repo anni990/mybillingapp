@@ -11,8 +11,9 @@ email_validator==1.3.1
 python-dotenv==1.0.1
 flask_bcrypt==1.0.1
 xlsxwriter
-pyodbc==4.0.39
+pyodbc>=5.0.0
 pandas
 gunicorn
 python-dateutil
-# For frontend (Tailwind CSS is managed via CDN or npm, not pip)
+pymysql
+weasyprint

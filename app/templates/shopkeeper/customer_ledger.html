@@ -1,0 +1,405 @@
+{% extends 'shopkeeper/s_base.html' %}
+{% block title %}Customer Ledger - {{ customer.name }} | MyBillingApp{% endblock %}
+{% block content %}
+<script src="https://unpkg.com/feather-icons"></script>
+
+<div class="p-4 md:p-8">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
+        <div>
+            <div class="flex items-center mb-2">
+                <a href="{{ url_for('shopkeeper.customer_management') }}" 
+                   class="text-blue-600 hover:text-blue-800 mr-3 transition duration-200">
+                    <i data-feather="arrow-left" class="w-5 h-5"></i>
+                </a>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                    <i data-feather="book-open" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#667eea]"></i>
+                    Customer Ledger
+                </h1>
+            </div>
+            <p class="text-gray-600 text-sm md:text-base">Track purchases and payments for {{ customer.name }}</p>
+        </div>
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+            <button onclick="openAddEntryModal()" 
+                    class="flex items-center justify-center space-x-2 bg-[#667eea] hover:bg-[#5a67d8] text-white px-4 py-2 rounded-lg transition duration-300 text-sm font-medium">
+                <i data-feather="plus" class="w-4 h-4"></i>
+                <span>Add Entry</span>
+            </button>
+            <button onclick="printLedger()" 
+                    class="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-300 text-sm font-medium">
+                <i data-feather="printer" class="w-4 h-4"></i>
+                <span>Print</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Customer Info Card -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-200">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Customer Name</p>
+                <p class="text-lg font-bold text-gray-900">{{ customer.name }}</p>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-600">Phone</p>
+                <p class="text-lg font-semibold text-gray-900">{{ customer.phone }}</p>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-600">Current Balance</p>
+                <p class="text-lg font-bold {% if customer.total_balance > 0 %}text-red-600{% elif customer.total_balance < 0 %}text-green-600{% else %}text-gray-900{% endif %}">
+                    ₹{{ "{:,.2f}".format(customer.total_balance|abs) }}
+                    {% if customer.total_balance > 0 %}Dr{% elif customer.total_balance < 0 %}Cr{% endif %}
+                </p>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Transactions</p>
+                <p class="text-lg font-bold text-gray-900">{{ ledger_entries|length }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ledger Table -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                <i data-feather="list" class="w-5 h-5 mr-2 text-[#667eea]"></i>
+                Ledger Statement
+            </h2>
+            <p class="text-sm text-gray-600 mt-1">Complete transaction history</p>
+        </div>
+
+        <!-- Desktop Table View -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice No.</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Particulars</th>
+                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit (₹)</th>
+                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit (₹)</th>
+                        <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance (₹)</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% if ledger_entries %}
+                    {% for entry in ledger_entries %}
+                    <tr class="hover:bg-gray-50 transition duration-200">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ entry.transaction_date.strftime('%d %b %Y') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ entry.invoice_no or '-' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            <div>{{ entry.particulars }}</div>
+                            {% if entry.notes %}
+                            <div class="text-xs text-gray-500 mt-1">{{ entry.notes }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                            {% if entry.debit_amount > 0 %}
+                            <span class="font-medium text-red-600">{{ "{:,.2f}".format(entry.debit_amount) }}</span>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                            {% if entry.credit_amount > 0 %}
+                            <span class="font-medium text-green-600">{{ "{:,.2f}".format(entry.credit_amount) }}</span>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
+                            <span class="{% if entry.balance_amount > 0 %}text-red-600{% elif entry.balance_amount < 0 %}text-green-600{% else %}text-gray-900{% endif %}">
+                                {{ "{:,.2f}".format(entry.balance_amount|abs) }}
+                                {% if entry.balance_amount > 0 %}Dr{% elif entry.balance_amount < 0 %}Cr{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full
+                                {% if entry.transaction_type == 'PURCHASE' %}bg-red-100 text-red-800{% elif entry.transaction_type == 'PAYMENT' %}bg-green-100 text-green-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                                {{ entry.transaction_type }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <i data-feather="book-open" class="w-16 h-16 text-gray-300 mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">No transactions found</h3>
+                                <p class="text-gray-500 mb-4">Start by adding the first transaction for this customer.</p>
+                                <button onclick="openAddEntryModal()" 
+                                        class="px-4 py-2 bg-[#667eea] hover:bg-[#5a67d8] text-white rounded-lg transition duration-300">
+                                    Add Transaction
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="md:hidden">
+            {% if ledger_entries %}
+            {% for entry in ledger_entries %}
+            <div class="border-b border-gray-200 p-4">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <p class="font-medium text-gray-900">{{ entry.particulars }}</p>
+                        <p class="text-sm text-gray-600">{{ entry.transaction_date.strftime('%d %b %Y') }}</p>
+                        {% if entry.invoice_no %}
+                        <p class="text-xs text-gray-500">Invoice: {{ entry.invoice_no }}</p>
+                        {% endif %}
+                    </div>
+                    <span class="px-2 py-1 text-xs font-medium rounded-full
+                        {% if entry.transaction_type == 'PURCHASE' %}bg-red-100 text-red-800{% elif entry.transaction_type == 'PAYMENT' %}bg-green-100 text-green-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                        {{ entry.transaction_type }}
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-3 text-sm">
+                    <div>
+                        <span class="text-gray-500">Debit:</span>
+                        <div class="font-medium {% if entry.debit_amount > 0 %}text-red-600{% else %}text-gray-400{% endif %}">
+                            {% if entry.debit_amount > 0 %}₹{{ "{:,.2f}".format(entry.debit_amount) }}{% else %}-{% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Credit:</span>
+                        <div class="font-medium {% if entry.credit_amount > 0 %}text-green-600{% else %}text-gray-400{% endif %}">
+                            {% if entry.credit_amount > 0 %}₹{{ "{:,.2f}".format(entry.credit_amount) }}{% else %}-{% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Balance:</span>
+                        <div class="font-medium {% if entry.balance_amount > 0 %}text-red-600{% elif entry.balance_amount < 0 %}text-green-600{% else %}text-gray-900{% endif %}">
+                            ₹{{ "{:,.2f}".format(entry.balance_amount|abs) }}
+                            {% if entry.balance_amount > 0 %}Dr{% elif entry.balance_amount < 0 %}Cr{% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if entry.notes %}
+                <div class="mt-2 text-xs text-gray-500">
+                    <strong>Note:</strong> {{ entry.notes }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="p-8 text-center">
+                <i data-feather="book-open" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No transactions found</h3>
+                <p class="text-gray-500 mb-4">Start by adding the first transaction for this customer.</p>
+                <button onclick="openAddEntryModal()" 
+                        class="px-4 py-2 bg-[#667eea] hover:bg-[#5a67d8] text-white rounded-lg transition duration-300">
+                    Add Transaction
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Ledger Entry Modal -->
+<div id="ledger-entry-modal" class="fixed inset-0 bg-opacity-20 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full max-h-screen overflow-y-auto">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">Add Ledger Entry</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600 transition duration-200">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <form id="ledger-entry-form" class="space-y-4">
+                <div>
+                    <label for="transaction-type" class="block text-sm font-medium text-gray-700 mb-2">Transaction Type *</label>
+                    <select id="transaction-type" name="transaction_type" required onchange="toggleAmountFields()"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition duration-200">
+                        <option value="">Select Type</option>
+                        <option value="PURCHASE">Purchase (Debit)</option>
+                        <option value="PAYMENT">Payment (Credit)</option>
+                        <option value="ADJUSTMENT">Adjustment</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="particulars" class="block text-sm font-medium text-gray-700 mb-2">Particulars *</label>
+                    <input type="text" id="particulars" name="particulars" required
+                           placeholder="e.g., Grocery Purchase, Cash Payment"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition duration-200">
+                </div>
+                
+                <div>
+                    <label for="invoice-no" class="block text-sm font-medium text-gray-700 mb-2">Invoice/Reference No.</label>
+                    <input type="text" id="invoice-no" name="invoice_no"
+                           placeholder="e.g., INV001, PAY001"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition duration-200">
+                </div>
+                
+                <div id="debit-field" class="hidden">
+                    <label for="debit-amount" class="block text-sm font-medium text-gray-700 mb-2">Debit Amount (₹)</label>
+                    <input type="number" id="debit-amount" name="debit_amount" step="0.01" min="0"
+                           placeholder="0.00"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition duration-200">
+                </div>
+                
+                <div id="credit-field" class="hidden">
+                    <label for="credit-amount" class="block text-sm font-medium text-gray-700 mb-2">Credit Amount (₹)</label>
+                    <input type="number" id="credit-amount" name="credit_amount" step="0.01" min="0"
+                           placeholder="0.00"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition duration-200">
+                </div>
+                
+                <div id="adjustment-fields" class="hidden space-y-4">
+                    <div>
+                        <label for="adjustment-debit" class="block text-sm font-medium text-gray-700 mb-2">Debit Amount (₹)</label>
+                        <input type="number" id="adjustment-debit" step="0.01" min="0"
+                               placeholder="0.00"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition duration-200">
+                    </div>
+                    <div>
+                        <label for="adjustment-credit" class="block text-sm font-medium text-gray-700 mb-2">Credit Amount (₹)</label>
+                        <input type="number" id="adjustment-credit" step="0.01" min="0"
+                               placeholder="0.00"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition duration-200">
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                    <textarea id="notes" name="notes" rows="3"
+                              placeholder="Additional notes (optional)"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#667eea] focus:border-transparent transition duration-200 resize-none"></textarea>
+                </div>
+                
+                <div class="flex space-x-3 pt-6">
+                    <button type="submit" 
+                            class="flex-1 bg-[#667eea] hover:bg-[#5a67d8] text-white font-medium py-3 rounded-lg transition duration-300">
+                        Add Entry
+                    </button>
+                    <button type="button" id="cancel-modal" 
+                            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-lg transition duration-300">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    feather.replace();
+    
+    function toggleAmountFields() {
+        const transactionType = document.getElementById('transaction-type').value;
+        const debitField = document.getElementById('debit-field');
+        const creditField = document.getElementById('credit-field');
+        const adjustmentFields = document.getElementById('adjustment-fields');
+        
+        // Hide all fields first
+        debitField.classList.add('hidden');
+        creditField.classList.add('hidden');
+        adjustmentFields.classList.add('hidden');
+        
+        // Show relevant field based on transaction type
+        if (transactionType === 'PURCHASE') {
+            debitField.classList.remove('hidden');
+            document.getElementById('debit-amount').required = true;
+            document.getElementById('credit-amount').required = false;
+        } else if (transactionType === 'PAYMENT') {
+            creditField.classList.remove('hidden');
+            document.getElementById('credit-amount').required = true;
+            document.getElementById('debit-amount').required = false;
+        } else if (transactionType === 'ADJUSTMENT') {
+            adjustmentFields.classList.remove('hidden');
+            document.getElementById('debit-amount').required = false;
+            document.getElementById('credit-amount').required = false;
+        }
+    }
+    
+    function openAddEntryModal() {
+        document.getElementById('ledger-entry-form').reset();
+        toggleAmountFields();
+        document.getElementById('ledger-entry-modal').classList.remove('hidden');
+    }
+    
+    function closeModal() {
+        document.getElementById('ledger-entry-modal').classList.add('hidden');
+    }
+    
+    function printLedger() {
+        window.print();
+    }
+    
+    // Event listeners
+    document.getElementById('close-modal').addEventListener('click', closeModal);
+    document.getElementById('cancel-modal').addEventListener('click', closeModal);
+    
+    document.getElementById('ledger-entry-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        const transactionType = document.getElementById('transaction-type').value;
+        
+        formData.append('transaction_type', transactionType);
+        formData.append('particulars', document.getElementById('particulars').value);
+        formData.append('invoice_no', document.getElementById('invoice-no').value);
+        formData.append('notes', document.getElementById('notes').value);
+        
+        if (transactionType === 'PURCHASE') {
+            formData.append('debit_amount', document.getElementById('debit-amount').value || '0');
+            formData.append('credit_amount', '0');
+        } else if (transactionType === 'PAYMENT') {
+            formData.append('debit_amount', '0');
+            formData.append('credit_amount', document.getElementById('credit-amount').value || '0');
+        } else if (transactionType === 'ADJUSTMENT') {
+            formData.append('debit_amount', document.getElementById('adjustment-debit').value || '0');
+            formData.append('credit_amount', document.getElementById('adjustment-credit').value || '0');
+        }
+        
+        fetch(`/shopkeeper/add_ledger_entry/{{ customer.customer_id }}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Ledger entry added successfully');
+                closeModal();
+                location.reload();
+            } else {
+                alert('Error adding ledger entry: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error adding ledger entry');
+        });
+    });
+</script>
+
+<style>
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        body {
+            font-size: 12px;
+        }
+        
+        .bg-white {
+            box-shadow: none !important;
+        }
+    }
+</style>
+{% endblock %}

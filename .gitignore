@@ -63,3 +63,4 @@ app/.env
 app/.env
 
 flask_session/
+app/config.py

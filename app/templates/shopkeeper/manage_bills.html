@@ -3,166 +3,385 @@
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
-<div class="flex min-h-screen bg-gray-100">
-    <aside
-        class="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-[#ed6a3e] to-[#ed6a3e] shadow-lg flex flex-col justify-between z-20 mt-15">
+
+<style>
+    .modal-backdrop {
+        backdrop-filter: blur(5px);
+    }
+
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-responsive table {
+            min-width: 600px;
+        }
+    }
+</style>
+
+<div class="p-4 md:p-8">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
         <div>
-            <nav class="mt-5 flex-1">
-                <ul class="space-y-2">
-                    <li><a href="{{ url_for('shopkeeper.dashboard') }}"
-                            class="flex items-center px-6 py-3 text-white font-semibold rounded-l-full hover:bg-white/20 transition duration-300"><i
-                                data-feather="home" class="mr-3"></i>Dashboard Home</a></li>
-                    <li><a href="{{ url_for('shopkeeper.create_bill') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="file-plus" class="mr-3"></i>Create Bill</a></li>
-                    <li><a href="{{ url_for('shopkeeper.manage_bills') }}"
-                            class="flex items-center px-6 py-3 text-white bg-white/20 hover:bg-white/30 rounded-l-full transition duration-300"><i
-                                data-feather="file-text" class="mr-3"></i>Manage Bills</a></li>
-                    <li><a href="{{ url_for('shopkeeper.products_stock') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="box" class="mr-3"></i>Products & Stock</a></li>
-                    <li><a href="{{ url_for('shopkeeper.sales_reports') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="bar-chart-2" class="mr-3"></i>Sales Reports</a></li>
-                    <li><a href="{{ url_for('shopkeeper.ca_marketplace') }}"
-                            class="flex items-center px-6 py-3 text-white hover:bg-white/20 rounded-l-full transition duration-300"><i
-                                data-feather="users" class="mr-3"></i>CA Marketplace</a></li>
-                </ul>
-            </nav>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                <i data-feather="file-text" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
+                Manage Bills
+            </h1>
+            <p class="text-gray-600 text-sm md:text-base mt-1">View, search, and manage all your bills</p>
         </div>
-        <div class="p-4 text-xs text-white text-center opacity-70">&copy; {{ 2024 }} MyBillingApp</div>
-    </aside>
-    <main class="flex-1 ml-64 p-8 bg-gray-100 min-h-screen">
-        <div class="max-w-7xl mx-auto">
-            <h2 class="text-3xl font-bold text-[#ed6a3e] mb-6">Manage Bills</h2>
-            <div class="bg-white p-6 rounded-xl shadow-lg mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                    <div class="relative col-span-1 md:col-span-2 lg:col-span-1">
-                        <label for="bill-search" class="block text-sm font-medium text-gray-700 sr-only">Search</label>
-                        <i data-feather="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" id="bill-search" placeholder="Search bills..." class="pl-10 pr-4 py-2 border rounded-full w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
-                    </div>
+        <div class="flex items-center space-x-2 md:space-x-4">
+            <a href="{{ url_for('shopkeeper.create_bill') }}"
+                class="flex items-center space-x-2 bg-[#ed6a3e] hover:bg-orange-700 text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                <i data-feather="plus" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Create Bill</span>
+                <span class="md:hidden">New</span>
+            </a>
+            <a href="{{ url_for('shopkeeper.dashboard') }}"
+                class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                <i data-feather="home" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Dashboard</span>
+                <span class="md:hidden">Home</span>
+            </a>
+        </div>
+    </div>
 
-                    <div class="flex flex-col sm:flex-row col-span-1 lg:col-span-2 gap-4">
-                        <div>
-                            <label for="start-date" class="block text-sm font-medium text-gray-700">From:</label>
-                            <input type="date" id="start-date" class="mt-1 block w-full border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
-                        </div>
-                        <div>
-                            <label for="end-date" class="block text-sm font-medium text-gray-700">To:</label>
-                            <input type="date" id="end-date" class="mt-1 block w-full border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent">
-                        </div>
-                    </div>
-                    
-                    <div class="relative">
-                        <button type="button" id="status-filter-btn" class="border rounded-full px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent flex items-center justify-between bg-white">
-                            Filter Status <i data-feather="chevron-down" class="ml-2 w-4 h-4"></i>
-                        </button>
-                        <div id="status-dropdown" class="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10 hidden">
-                            <label class="block px-4 py-2 hover:bg-gray-50 cursor-pointer"><input type="checkbox" name="status" value="Paid" class="mr-2"> Paid</label>
-                            <label class="block px-4 py-2 hover:bg-gray-50 cursor-pointer"><input type="checkbox" name="status" value="Unpaid" class="mr-2"> Unpaid</label>
-                            <label class="block px-4 py-2 hover:bg-gray-50 cursor-pointer"><input type="checkbox" name="status" value="Partial" class="mr-2"> Partial</label>
-                        </div>
-                    </div>
+    <!-- Search and Filter Section -->
+    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 border border-gray-200">
+        <div class="flex items-center mb-4">
+            <i data-feather="filter" class="w-5 h-5 text-[#ed6a3e] mr-2"></i>
+            <h2 class="text-lg md:text-xl font-bold text-gray-800">Search & Filter</h2>
+        </div>
 
-                    <div class="col-span-full mt-4 flex justify-end">
-                        <button id="clear-filters" class="flex items-center text-gray-500 hover:text-red-500 transition duration-300">
-                            <i data-feather="x-circle" class="mr-2 w-5 h-5"></i>
-                            Clear Filters
-                        </button>
-                    </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Search Box -->
+            <div class="relative lg:col-span-2">
+                <label for="bill-search" class="block text-sm font-medium text-gray-700 mb-2">Search Bills</label>
+                <div class="relative">
+                    <input type="text" id="bill-search" placeholder="Search by bill number, customer name..."
+                        class="w-full pl-10 pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                    <i data-feather="search"
+                        class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
                 </div>
             </div>
 
-            <div class="overflow-x-auto bg-white rounded-xl shadow-lg">
-                <table class="min-w-full divide-y divide-gray-200" id="bills-table">
-                    <thead class="bg-[#f8bfa0]">
+            <!-- Date Range -->
+            <div>
+                <label for="start-date" class="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                <input type="date" id="start-date"
+                    class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+            </div>
+
+            <div>
+                <label for="end-date" class="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                <input type="date" id="end-date"
+                    class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+            </div>
+        </div>
+
+        <!-- Additional Filters -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div>
+                <label for="payment-status-filter" class="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+                <select id="payment-status-filter"
+                    class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                    <option value="">All Status</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Unpaid">Unpaid</option>
+                    <option value="Partial">Partial</option>
+                </select>
+            </div>
+
+
+            <div class="flex items-end">
+                <button id="clear-filters"
+                    class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 md:py-3 rounded-lg transition duration-300 text-sm md:text-base font-medium">
+                    Clear Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bills Table Section -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200">
+        <!-- Desktop Table View -->
+        <div class="hidden md:block">
+            <div class="table-responsive">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
                         <tr>
-                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Bill #</th>
-                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Customer</th>
-                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Date</th>
-                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Amount</th>
-                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Status</th>
-                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Paid Amount</th>
-                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider">Unpaid Amount</th>
-                            <th class="py-4 px-6 text-left text-xs font-semibold text-[#ed6a3e] uppercase tracking-wider text-right">Actions</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Bill Number</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Customer</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-white divide-y divide-gray-200" id="bills-table-body">
                         {% for bill in bills %}
-                        <tr class="bill-row hover:bg-orange-50 transition duration-200">
-                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-900">{{ bill.bill_number }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-500">{{ bill.customer_name }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base text-gray-500 bill-date" data-date="{{ bill.bill_date.isoformat() }}">{{ bill.bill_date.strftime('%Y-%m-%d') }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base font-bold text-gray-900">₹{{ bill.total_amount }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base">
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold bill-status
-                                    {% if bill.payment_status == 'Paid' %}bg-green-100 text-green-700
-                                    {% elif bill.payment_status == 'Unpaid' %}bg-red-100 text-red-700
-                                    {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                        <tr class="bill-row hover:bg-gray-50 transition duration-200"
+                            data-bill-number="{{ bill.bill_number|lower }}"
+                            data-customer="{{ bill.customer_name|lower }}" data-date="{{ bill.bill_date.isoformat() }}"
+                            data-status="{{ bill.payment_status }}" data-amount="{{ bill.total_amount }}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">#{{ bill.bill_number }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ bill.customer_name }}</div>
+                                {% if bill.customer_contact %}
+                                <div class="text-sm text-gray-500">{{ bill.customer_contact }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ bill.bill_date.strftime('%d %b %Y') }}</div>
+                                <div class="text-sm text-gray-500">{{ bill.bill_date.strftime('%I:%M %p') }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">₹{{ "{:,.2f}".format(bill.total_amount)
+                                    }}</div>
+                                <!-- {% if bill.payment_status != 'Paid' %}
+                                <div class="text-sm text-red-600">₹{{ "{:,.2f}".format(bill.due_amount) }} pending
+                                </div>
+                                {% endif %} -->
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                    {% if bill.payment_status == 'Paid' %}bg-green-100 text-green-800
+                                    {% elif bill.payment_status == 'Unpaid' %}bg-red-100 text-red-800
+                                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
                                     {{ bill.payment_status }}
                                 </span>
                             </td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base font-bold text-gray-900">₹{{ bill.amount_paid }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-base font-bold text-gray-900">₹{{ bill.amount_unpaid }}</td>
-                            <td class="py-4 px-6 whitespace-nowrap text-right text-base font-medium flex gap-2 justify-end items-center">
-                                <a href="{{ url_for('shopkeeper.view_bill', bill_id=bill.bill_id) }}" class="text-[#ed6a3e] hover:text-orange-700" title="View Bill">
-                                    <i data-feather="eye" class="w-5 h-5"></i>
-                                </a>
-                                <form action="{{ url_for('shopkeeper.delete_bill', bill_id=bill.bill_id) }}" method="post" class="inline">
-                                    <button type="submit" class="text-red-500 hover:text-red-700" title="Delete Bill" onclick="return confirm('Are you sure you want to delete this bill?');">
-                                        <i data-feather="trash-2" class="w-5 h-5"></i>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <a href="{{ url_for('shopkeeper.view_bill', bill_id=bill.bill_id) }}"
+                                        class="text-blue-600 hover:text-blue-900 transition duration-200"
+                                        title="View Bill">
+                                        <i data-feather="eye" class="w-4 h-4"></i>
+                                    </a>
+                                    <!-- {% if bill.payment_status in ['Unpaid', 'Partial'] %}
+                                    <button
+                                        class="update-payment-btn text-green-600 hover:text-green-900 transition duration-200"
+                                        title="Update Payment" data-bill-id="{{ bill.bill_id }}"
+                                        data-bill-number="{{ bill.bill_number }}"
+                                        data-customer="{{ bill.customer_name }}"
+                                        data-customer-phone="{{ bill.customer_contact }}"
+                                        data-bill-date="{{ bill.bill_date.strftime('%Y-%m-%d') }}"
+                                        data-amount="{{ bill.total_amount }}" data-status="{{ bill.payment_status }}"
+                                        data-paid="{{ bill.paid_amount }}" data-unpaid="{{ bill.due_amount }}">
+                                        <i data-feather="credit-card" class="w-4 h-4"></i>
                                     </button>
-                                </form>
-                                {% if bill.payment_status in ['Unpaid', 'Partial'] %}
-                                <button class="update-payment-btn bg-green-100 text-green-700 px-2 rounded-full shadow hover:bg-green-200 transition duration-300 animate-bounce-on-hover"
-                                    title="Update Payment"
-                                    data-bill-id="{{ bill.bill_id }}"
-                                    data-bill-number="{{ bill.bill_number }}"
-                                    data-customer="{{ bill.customer_name }}"
-                                    data-customer-phone="{{ bill.customer_contact }}"
-                                    data-bill-date="{{ bill.bill_date.strftime('%Y-%m-%d') }}"
-                                    data-amount="{{ bill.total_amount }}"
-                                    data-status="{{ bill.payment_status }}"
-                                    data-paid="{{ bill.amount_paid }}"
-                                    data-unpaid="{{ bill.amount_unpaid }}">
-                                    <i class="fas fa-rupee-sign"></i>
-                                </button>
-                                {% endif %}
+                                    {% endif %} -->
+                                    <button class="text-red-600 hover:text-red-900 transition duration-200"
+                                        title="Delete Bill" onclick="deleteBill('{{ bill.bill_id }}')">
+                                        <i data-feather="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
                             </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="8" class="text-gray-400 py-8 text-center text-lg">No bills found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
-    </main>
+
+        <!-- Mobile Card View -->
+        <div class="md:hidden" id="bills-mobile-container">
+            {% for bill in bills %}
+            <div class="bill-card border-b border-gray-200 p-4 hover:bg-gray-50 transition duration-200"
+                data-bill-number="{{ bill.bill_number|lower }}" data-customer="{{ bill.customer_name|lower }}"
+                data-date="{{ bill.bill_date.isoformat() }}" data-status="{{ bill.payment_status }}"
+                data-amount="{{ bill.total_amount }}">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <div class="text-sm font-medium text-gray-900">#{{ bill.bill_number }}</div>
+                        <div class="text-sm text-gray-600">{{ bill.customer_name }}</div>
+                        {% if bill.customer_contact %}
+                        <div class="text-xs text-gray-500">{{ bill.customer_contact }}</div>
+                        {% endif %}
+                    </div>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full
+                        {% if bill.payment_status == 'Paid' %}bg-green-100 text-green-800
+                        {% elif bill.payment_status == 'Unpaid' %}bg-red-100 text-red-800
+                        {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                        {{ bill.payment_status }}
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-sm mb-3">
+                    <div>
+                        <span class="text-gray-500">Date:</span>
+                        <div class="font-medium">{{ bill.bill_date.strftime('%d %b %Y') }}</div>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Total Amount:</span>
+                        <div class="font-medium text-[#ed6a3e]">₹{{ "{:,.2f}".format(bill.total_amount) }}</div>
+                    </div>
+                    {% if bill.payment_status != 'Paid' %}
+                    <div class="col-span-2">
+                        <span class="text-gray-500">Pending:</span>
+                        <div class="font-medium text-red-600">₹{{ "{:,.2f}".format(bill.due_amount) }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="flex space-x-2">
+                    <a href="{{ url_for('shopkeeper.view_bill', bill_id=bill.bill_id) }}"
+                        class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-center py-2 rounded-lg transition duration-300 text-sm font-medium">
+                        View
+                    </a>
+                    {% if bill.payment_status in ['Unpaid', 'Partial'] %}
+                    <button
+                        class="update-payment-btn flex-1 bg-green-100 hover:bg-green-200 text-green-700 py-2 rounded-lg transition duration-300 text-sm font-medium"
+                        data-bill-id="{{ bill.bill_id }}" data-bill-number="{{ bill.bill_number }}"
+                        data-customer="{{ bill.customer_name }}" data-customer-phone="{{ bill.customer_contact }}"
+                        data-bill-date="{{ bill.bill_date.strftime('%Y-%m-%d') }}" data-amount="{{ bill.total_amount }}"
+                        data-status="{{ bill.payment_status }}" data-paid="{{ bill.paid_amount }}"
+                        data-unpaid="{{ bill.due_amount }}">
+                        Update Amt.
+                    </button>
+                    {% endif %}
+                    <button
+                        class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg transition duration-300 text-sm font-medium"
+                        onclick="deleteBill('{{ bill.bill_id }}')">
+                        Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Empty State -->
+        {% if not bills %}
+        <div class="text-center py-12">
+            <i data-feather="file-text" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No bills found</h3>
+            <p class="text-gray-500 mb-6">Get started by creating your first bill.</p>
+            <a href="{{ url_for('shopkeeper.create_bill') }}"
+                class="inline-flex items-center px-4 py-2 bg-[#ed6a3e] text-white rounded-lg hover:bg-orange-700 transition duration-300">
+                <i data-feather="plus" class="w-4 h-4 mr-2"></i>
+                Create Bill
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- Flash Popup HTML -->
+<div id="flash-popup" class="bg-opacity-50 backdrop-blur-sm z-50 hidden">
+    <div class="flash-title">Payment Updated!</div>
+    <div class="flash-row"><span class="flash-label">Customer:</span> <span class="flash-value"
+            id="flash-customer"></span></div>
+    <div class="flash-row"><span class="flash-label">Bill Number:</span> <span class="flash-value"
+            id="flash-bill-number"></span></div>
+    <div class="flash-row"><span class="flash-label">Phone:</span> <span class="flash-value"
+            id="flash-customer-phone"></span></div>
+    <div class="flash-row"><span class="flash-label">Bill Date:</span> <span class="flash-value"
+            id="flash-bill-date"></span></div>
+    <div class="flash-row"><span class="flash-label">Total Amount:</span> <span class="flash-value"
+            id="flash-bill-amount"></span></div>
+    <div class="flash-row"><span class="flash-label">Amount Paid:</span> <span class="flash-value"
+            id="flash-bill-paid"></span></div>
+    <div class="flash-row"><span class="flash-label">Balance Due:</span> <span class="flash-value"
+            id="flash-bill-unpaid"></span></div>
+    <div class="flash-row"><span class="flash-label">Bill Status:</span> <span class="flash-value"
+            id="flash-bill-status"></span></div>
+    <button class="flash-ok-btn" id="flash-ok-btn">OK</button>
 </div>
 <style>
-.animate-bounce-on-hover:hover {
-    animation: bounce 0.5s;
-}
-@keyframes bounce {
-    0%   { transform: translateY(0); }
-    30%  { transform: translateY(-8px); }
-    50%  { transform: translateY(0); }
-    70%  { transform: translateY(-4px); }
-    100% { transform: translateY(0); }
-}
-</style>
+    .animate-bounce-on-hover:hover {
+        animation: bounce 0.5s;
+    }
 
+
+    /* Flash Popup Styles */
+    #flash-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+        z-index: 100;
+        min-width: 320px;
+        max-width: 90vw;
+        padding: 2rem 2.5rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s, transform 0.3s;
+        font-family: 'Inter', sans-serif;
+    }
+
+    #flash-popup.popup-visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(-50%, -50%) scale(1.04);
+    }
+
+    #flash-popup .flash-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #ed6a3e;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    #flash-popup .flash-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+    }
+
+    #flash-popup .flash-label {
+        font-weight: 500;
+        color: #555;
+    }
+
+    #flash-popup .flash-value {
+        font-weight: 600;
+        color: #222;
+    }
+
+    #flash-popup .flash-ok-btn {
+        display: block;
+        margin: 1.5rem auto 0 auto;
+        background: #ed6a3e;
+        color: #fff;
+        font-weight: 600;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.7rem 2.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(237, 106, 62, 0.08);
+        transition: background 0.2s;
+    }
+
+    #flash-popup .flash-ok-btn:hover {
+        background: #f0825d;
+    }
+</style>
 <!-- 🔹 Updated Modern Modal -->
-<div id="update-payment-modal" class="fixed inset-0 flex items-center justify-center bg-white bg-opacity-50 backdrop-blur-sm z-50 hidden">
+<div id="update-payment-modal"
+    class="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-sm z-50 hidden">
     <div class="bg-slate-50 rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4">
-        
+
         <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-4">
             <h3 class="text-2xl font-bold text-slate-800">Update Payment</h3>
             <button id="modal-close-btn" class="text-slate-400 hover:text-slate-600 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
@@ -204,20 +423,30 @@
                     </div>
                 </div>
             </div>
-            
+            <div class="my-4">
+                <button type="button" id="complete-payment-btn"
+                    class="w-full bg-green-500 text-white px-4 py-2.5 rounded-md font-semibold hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400">
+                    Complete Payment
+                </button>
+            </div>
             <div>
-                <label for="modal-new-payment" class="block text-sm font-medium text-slate-700 mb-2">Enter New Payment Amount</label>
+                <label for="modal-new-payment" class="block text-sm font-medium text-slate-700 mb-2">Or Enter New
+                    Payment Amount</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">₹</span>
-                    <input type="number" id="modal-new-payment" class="border border-slate-300 rounded-md px-3 py-2 pl-7 w-full focus:ring-2 focus:ring-[#f0825d] focus:border-[#ed6a3e] transition" min="0" step="0.01" placeholder="0.00" required>
+                    <input type="number" id="modal-new-payment"
+                        class="border border-slate-300 rounded-md px-3 py-2 pl-7 w-full focus:ring-2 focus:ring-[#f0825d] focus:border-[#ed6a3e] transition"
+                        min="0" step="0.01" placeholder="0.00" required>
                 </div>
             </div>
 
             <div class="flex gap-4 mt-8">
-                <button type="submit" class="w-full bg-[#ed6a3e] text-white px-4 py-2.5 rounded-md font-semibold hover:bg-opacity-90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ed6a3e]">
+                <button type="submit"
+                    class="w-full bg-[#ed6a3e] text-white px-4 py-2.5 rounded-md font-semibold hover:bg-opacity-90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ed6a3e]">
                     Save Payment
                 </button>
-                <button type="button" id="modal-cancel" class="w-full bg-slate-200 text-slate-700 px-4 py-2.5 rounded-md font-semibold hover:bg-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400">
+                <button type="button" id="modal-cancel"
+                    class="w-full bg-slate-200 text-slate-700 px-4 py-2.5 rounded-md font-semibold hover:bg-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400">
                     Cancel
                 </button>
             </div>
@@ -225,90 +454,101 @@
     </div>
 </div>
 
-<script>
-    feather.replace();
+<!-- Delete Confirmation Modal -->
+<div id="delete-confirmation-modal"
+    class="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-sm z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-md m-4 transform transition-all">
+        <div class="text-center">
+            <!-- Warning Icon -->
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+            </div>
+            
+            <!-- Modal Content -->
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Delete Bill</h3>
+            <p class="text-sm text-gray-500 mb-6">
+                Are you sure you want to delete this bill? This action cannot be undone and will permanently remove all bill data.
+            </p>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button id="delete-cancel-btn"
+                    class="w-full sm:w-1/2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition duration-300 font-medium">
+                    Cancel
+                </button>
+                <button id="delete-confirm-btn"
+                    class="w-full sm:w-1/2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-300 font-medium">
+                    Delete Bill
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-    document.addEventListener('DOMContentLoaded', () => {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        feather.replace();
+
+        // Search and Filter functionality
         const searchInput = document.getElementById('bill-search');
         const startDateInput = document.getElementById('start-date');
         const endDateInput = document.getElementById('end-date');
-        const statusCheckboxes = document.querySelectorAll('#status-dropdown input[type="checkbox"]');
+        const statusFilter = document.getElementById('payment-status-filter');
         const clearFiltersBtn = document.getElementById('clear-filters');
-        const table = document.getElementById('bills-table');
-        const rows = table.querySelectorAll('tbody tr.bill-row');
-        const statusFilterBtn = document.getElementById('status-filter-btn');
-        const statusDropdown = document.getElementById('status-dropdown');
 
-        // Toggle status dropdown
-        statusFilterBtn.addEventListener('click', () => {
-            statusDropdown.classList.toggle('hidden');
-        });
-
-        // Hide dropdown when clicking outside
-        document.addEventListener('click', (event) => {
-            if (!statusFilterBtn.contains(event.target) && !statusDropdown.contains(event.target)) {
-                statusDropdown.classList.add('hidden');
-            }
-        });
-
-        const filterBills = () => {
+        function filterBills() {
             const searchTerm = searchInput.value.toLowerCase();
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
-            const selectedStatuses = Array.from(statusCheckboxes)
-                .filter(checkbox => checkbox.checked)
-                .map(checkbox => checkbox.value);
+            const statusValue = statusFilter.value;
+
+            const rows = document.querySelectorAll('.bill-row, .bill-card');
 
             rows.forEach(row => {
-                const customerName = row.cells[1].textContent.toLowerCase();
-                const billNumber = row.cells[0].textContent.toLowerCase();
-                const billDate = row.querySelector('.bill-date').getAttribute('data-date');
-                const billStatus = row.querySelector('.bill-status').textContent.trim();
-                
-                const matchesSearch = searchTerm === '' || customerName.includes(searchTerm) || billNumber.includes(searchTerm);
-                
-                let matchesDate = true;
-                if (startDate) {
-                    matchesDate = matchesDate && billDate >= startDate;
-                }
-                if (endDate) {
-                    matchesDate = matchesDate && billDate <= endDate;
-                }
-                
-                const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(billStatus);
+                const billNumber = row.dataset.billNumber || '';
+                const customer = row.dataset.customer || '';
+                const date = row.dataset.date || '';
+                const status = row.dataset.status || '';
 
-                if (matchesSearch && matchesDate && matchesStatus) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
+                let showRow = true;
+
+                // Search filter
+                if (searchTerm && !billNumber.includes(searchTerm) && !customer.includes(searchTerm)) {
+                    showRow = false;
                 }
+
+                // Date range filter
+                if (startDate && date < startDate) showRow = false;
+                if (endDate && date > endDate) showRow = false;
+
+                // Status filter
+                if (statusValue && status !== statusValue) showRow = false;
+
+                row.style.display = showRow ? '' : 'none';
             });
-        };
+        }
 
-        // Event listeners for filtering
-        searchInput.addEventListener('keyup', filterBills);
+        searchInput.addEventListener('input', filterBills);
         startDateInput.addEventListener('change', filterBills);
         endDateInput.addEventListener('change', filterBills);
-        statusCheckboxes.forEach(checkbox => checkbox.addEventListener('change', filterBills));
+        statusFilter.addEventListener('change', filterBills);
 
-        // Clear filters button
-        clearFiltersBtn.addEventListener('click', () => {
+        clearFiltersBtn.addEventListener('click', function () {
             searchInput.value = '';
             startDateInput.value = '';
             endDateInput.value = '';
-            statusCheckboxes.forEach(checkbox => checkbox.checked = false);
+            statusFilter.value = '';
             filterBills();
         });
-
-        // Initial filter on page load
-        filterBills();
 
         // Payment Modal Logic
         const modal = document.getElementById('update-payment-modal');
         const closeModal = () => modal.classList.add('hidden');
 
         document.querySelectorAll('.update-payment-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 modal.classList.remove('hidden');
                 document.getElementById('modal-customer').textContent = btn.dataset.customer;
                 document.getElementById('modal-bill-number').textContent = btn.dataset.billNumber;
@@ -328,30 +568,200 @@
         document.getElementById('modal-cancel').onclick = closeModal;
         document.getElementById('modal-close-btn').onclick = closeModal;
 
-        document.getElementById('update-payment-form').onsubmit = function(e) {
+        document.getElementById('update-payment-form').onsubmit = function (e) {
             e.preventDefault();
             const billId = this.dataset.billId;
             const newPayment = parseFloat(document.getElementById('modal-new-payment').value) || 0;
             const paid = parseFloat(this.dataset.paid) || 0;
             const amount = parseFloat(this.dataset.amount) || 0;
             let newStatus = 'Partial';
-            if ((paid + newPayment) >= amount) {
+            let finalPaid = paid + newPayment;
+            let finalUnpaid = amount - finalPaid;
+            if (finalPaid >= amount) {
                 newStatus = 'Paid';
-            } else if (paid === 0 && newPayment > 0) {
-                newStatus = 'Partial';
+                finalPaid = amount;
+                finalUnpaid = 0;
             }
             fetch(`/shopkeeper/update_payment/${billId}`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({new_payment: newPayment, new_status: newStatus})
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ new_payment: newPayment, new_status: newStatus })
             }).then(res => res.json()).then(data => {
                 if (data.success) {
-                    location.reload();
+                    showFlashPopup({
+                        customer: document.getElementById('modal-customer').textContent,
+                        billNumber: document.getElementById('modal-bill-number').textContent,
+                        customerPhone: document.getElementById('modal-customer-phone').textContent,
+                        billDate: document.getElementById('modal-bill-date').textContent,
+                        amount: document.getElementById('modal-bill-amount').textContent,
+                        paid: `₹${finalPaid.toFixed(2)}`,
+                        unpaid: `₹${finalUnpaid.toFixed(2)}`,
+                        status: newStatus
+                    });
+                    closeModal();
                 } else {
                     alert('Error updating payment');
                 }
             });
         };
+
+        // Complete Payment Button Logic
+        document.getElementById('complete-payment-btn').onclick = function () {
+            const billId = document.getElementById('update-payment-form').dataset.billId;
+            const amount = parseFloat(document.getElementById('update-payment-form').dataset.amount) || 0;
+            fetch(`/shopkeeper/update_payment/${billId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ new_payment: amount, new_status: 'Paid' })
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    showFlashPopup({
+                        customer: document.getElementById('modal-customer').textContent,
+                        billNumber: document.getElementById('modal-bill-number').textContent,
+                        customerPhone: document.getElementById('modal-customer-phone').textContent,
+                        billDate: document.getElementById('modal-bill-date').textContent,
+                        amount: document.getElementById('modal-bill-amount').textContent,
+                        paid: `₹${amount.toFixed(2)}`,
+                        unpaid: `₹0.00`,
+                        status: 'Paid'
+                    });
+                    closeModal();
+                } else {
+                    alert('Error updating payment');
+                }
+            });
+        };
+
+        // --- Flash Popup Logic ---
+        function showFlashPopup(billData) {
+            const popup = document.getElementById('flash-popup');
+            document.getElementById('flash-customer').textContent = billData.customer;
+            document.getElementById('flash-bill-number').textContent = billData.billNumber;
+            document.getElementById('flash-customer-phone').textContent = billData.customerPhone;
+            document.getElementById('flash-bill-date').textContent = billData.billDate;
+            document.getElementById('flash-bill-amount').textContent = billData.amount;
+            document.getElementById('flash-bill-paid').textContent = billData.paid;
+            document.getElementById('flash-bill-unpaid').textContent = billData.unpaid;
+            document.getElementById('flash-bill-status').textContent = billData.status;
+            popup.classList.remove('hidden');
+            popup.classList.add('popup-visible');
+            // Auto-hide after 30 seconds
+            if (popup._timeout) clearTimeout(popup._timeout);
+            popup._timeout = setTimeout(() => {
+                hideFlashPopup();
+            }, 5000);
+        }
+        function hideFlashPopup() {
+            const popup = document.getElementById('flash-popup');
+            popup.classList.remove('popup-visible');
+            popup.classList.add('hidden');
+            if (popup._timeout) clearTimeout(popup._timeout);
+        }
+        document.getElementById('flash-ok-btn').addEventListener('click', hideFlashPopup);
+
+        // Delete Modal Logic
+        const deleteModal = document.getElementById('delete-confirmation-modal');
+        const deleteCancelBtn = document.getElementById('delete-cancel-btn');
+        const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+        let billToDelete = null;
+
+        // Make deleteBill function global so onclick can access it
+        window.deleteBill = function(billId) {
+            billToDelete = billId;
+            deleteModal.classList.remove('hidden');
+        };
+
+        function closeDeleteModal() {
+            deleteModal.classList.add('hidden');
+            billToDelete = null;
+        }
+
+        deleteCancelBtn.addEventListener('click', closeDeleteModal);
+
+        deleteConfirmBtn.addEventListener('click', function() {
+            if (billToDelete) {
+                fetch(`/shopkeeper/bill/delete/${billToDelete}`, {
+                    method: 'POST',
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showSuccessMessage(data.message || 'Bill deleted successfully!');
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            showErrorMessage(data.message || 'Error deleting bill. Please try again.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showErrorMessage('Error deleting bill. Please try again.');
+                    });
+                closeDeleteModal();
+            }
+        });
+
+        // Close modal when clicking outside
+        deleteModal.addEventListener('click', function(e) {
+            if (e.target === deleteModal) {
+                closeDeleteModal();
+            }
+        });
+
+        // Custom notification functions
+        function showSuccessMessage(message) {
+            showNotification(message, 'success');
+        }
+
+        function showErrorMessage(message) {
+            showNotification(message, 'error');
+        }
+
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            
+            if (type === 'success') {
+                notification.className += ' bg-green-500 text-white';
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        ${message}
+                    </div>
+                `;
+            } else {
+                notification.className += ' bg-red-500 text-white';
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        ${message}
+                    </div>
+                `;
+            }
+
+            document.body.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
     });
 </script>
 {% endblock %}
