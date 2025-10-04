@@ -101,6 +101,103 @@ productSearch.addEventListener('input', function() {
         showProductSuggestions(query);
     }, 300);  // 300ms debounce
 });
+
+// CSRF Token Management
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+// API Error Handling Pattern
+fetch(url, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrfToken()
+    },
+    body: JSON.stringify(data)
+})
+.then(response => response.json())
+.then(data => {
+    if (data.success) {
+        showSuccess(data.message);
+        // Handle success
+    } else {
+        showError(data.message);
+    }
+})
+.catch(error => {
+    showError('An error occurred. Please try again.');
+});
+```
+
+### Tailwind CSS Conventions
+```html
+<!-- Responsive Grid Patterns -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="bg-white rounded-lg shadow-md p-6">Content</div>
+</div>
+
+<!-- Button Patterns -->
+<button class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+    Primary Action
+</button>
+
+<button class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors">
+    Secondary Action
+</button>
+
+<!-- Form Input Patterns -->
+<input type="text" 
+       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+       placeholder="Enter value...">
+
+<!-- Modal Backdrop Styling -->
+<div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+        <!-- Modal content -->
+    </div>
+</div>
+```
+
+### Template Conventions
+```django
+{# Role-specific base templates #}
+{% extends 'shopkeeper/s_base.html' %}
+
+{# Form handling with CSRF #}
+<form method="POST">
+    {{ form.hidden_tag() }}
+    {{ form.product_name.label }}: {{ form.product_name }}
+    <button type="submit">Add Product</button>
+</form>
+
+{# Responsive design with Tailwind #}
+<div class="flex flex-col md:flex-row md:justify-between md:items-center">
+    <h1 class="text-2xl md:text-3xl font-bold">Dashboard</h1>
+</div>
+
+{# Conditional content rendering #}
+{% if bills %}
+    {% for bill in bills %}
+        <div class="bill-item">{{ bill.bill_number }}</div>
+    {% endfor %}
+{% else %}
+    <div class="text-gray-500 text-center py-8">No bills found</div>
+{% endif %}
+```
+
+### Icon Integration (Feather Icons)
+```html
+<!-- Standard icon usage -->
+<i data-feather="edit-2" class="w-4 h-4"></i>
+<i data-feather="trash-2" class="w-4 h-4 text-red-500"></i>
+<i data-feather="plus" class="w-5 h-5"></i>
+
+<!-- Initialize Feather icons -->
+<script>
+    // Include in all templates with icons
+    feather.replace();
+</script>
 ```
 
 ### Template Conventions
@@ -159,7 +256,12 @@ Customer -> CustomerLedger (credit/debit tracking)
 ```
 
 ### Database Patterns
-- **Foreign Key Distinctions**: `customers.shopkeeper_id` → `users.user_id`, `bills.shopkeeper_id` → `shopkeepers.shopkeeper_id`
+- **Foreign Key Distinctions**: 
+  - `customers.shopkeeper_id` → `users.user_id` (customer belongs to user account)
+  - `bills.shopkeeper_id` → `shopkeepers.shopkeeper_id` (bill belongs to shop profile)
+  - `products.shopkeeper_id` → `shopkeepers.shopkeeper_id` (product belongs to shop profile)
+  - `ca_connections.shopkeeper_id` → `shopkeepers.shopkeeper_id` (connection between shop profiles)
+  - `customer_ledger.shopkeeper_id` → `users.user_id` (ledger belongs to user account)
 - **Payment Field Standardization**: Bills use single consistent field set (`paid_amount`/`due_amount`)
 - **Soft cascade deletes**: Use `ondelete='CASCADE'` on foreign keys
 - **Enum fields**: `role`, `gst_type`, `payment_status`, `transaction_type`
@@ -171,6 +273,28 @@ Customer -> CustomerLedger (credit/debit tracking)
 - Customer ledger system added via `Docx/CUSTOMER_LEDGER_IMPLEMENTATION.md`
 - GST filing status tracking for compliance management
 - Dual payment field support: `paid_amount`/`due_amount` (current) alongside legacy compatibility
+
+### Critical Foreign Key Reference Patterns
+```python
+# ⚠️ CRITICAL: Different tables use different foreign key references to Shopkeeper
+
+# For Bills, Products, CA Connections, Shop Connections:
+# Use shopkeeper.shopkeeper_id (references shopkeepers table primary key)
+bills = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
+products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
+ca_connections = CAConnection.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
+
+# For Customers, Customer Ledger:
+# Use shopkeeper.user_id (references users table primary key)
+customers = Customer.query.filter_by(shopkeeper_id=shopkeeper.user_id)
+ledger = CustomerLedger.query.filter_by(shopkeeper_id=shopkeeper.user_id)
+
+# Model definitions that cause this pattern:
+# customers.shopkeeper_id -> ForeignKey('users.user_id')
+# customer_ledger.shopkeeper_id -> ForeignKey('users.user_id')
+# bills.shopkeeper_id -> ForeignKey('shopkeepers.shopkeeper_id')
+# products.shopkeeper_id -> ForeignKey('shopkeepers.shopkeeper_id')
+```
 
 ### Current Status (Updated 2025-10-02)
 - **✅ Foreign Key Issues Resolved**: All database queries now use correct foreign key references
@@ -238,21 +362,63 @@ app/
 ├── forms.py               # WTForms for CA functionality
 ├── utils.py               # Shared utilities
 ├── auth/routes.py         # Authentication (registration/login)
-├── shopkeeper/routes.py   # Shopkeeper functionality (1677 lines)
-├── ca/routes.py          # CA functionality (1059 lines)
+├── shopkeeper/
+│   ├── routes.py          # Shopkeeper functionality (1677 lines) - legacy
+│   ├── views/             # Modular view organization
+│   │   ├── bills.py       # Bill management endpoints
+│   │   ├── customers.py   # Customer CRUD operations
+│   │   ├── dashboard.py   # Dashboard and analytics
+│   │   ├── products.py    # Product and inventory
+│   │   └── reports.py     # Sales and GST reports
+│   └── services/          # Business logic layer
+│       ├── bill_service.py     # Bill processing logic
+│       ├── customer_service.py # Customer management logic
+│       └── report_service.py   # Report generation logic
+├── ca/
+│   ├── routes.py          # CA functionality (1059 lines) - legacy
+│   └── views/             # Modular CA view organization
+│       ├── bills.py       # Client bill management
+│       ├── clients.py     # Client relationship management
+│       ├── connections.py # CA-Shopkeeper connections
+│       ├── dashboard.py   # CA dashboard analytics
+│       ├── employees.py   # Employee management
+│       └── reports.py     # CA reporting and GST filing
 └── api/routes.py         # API endpoints
 ```
 
 ### Static Assets
 - **CSS**: `app/static/css/tailwind.css` (Tailwind CSS framework)
-- **JavaScript**: `app/static/js/` (dashboard.js, create_bill.js, sales_reports.js)
+- **JavaScript**: `app/static/js/` (dashboard.js, create_bill.js, sales_reports.js, notifications.js)
 - **File Uploads**: `app/static/uploads/` (shopkeeper docs), `app/static/ca_upload/` (CA docs)
 - **Images**: `app/static/images/` (login, dashboard, CA assets)
 
+### Template Organization
+```
+app/templates/
+├── auth/                  # Authentication templates
+│   ├── login.html        # User login interface
+│   └── register.html     # User registration
+├── ca/                   # CA role templates
+│   ├── ca_base.html      # CA base template with navigation
+│   ├── dashboard.html    # CA dashboard with client overview
+│   ├── client_*.html     # Client management interfaces
+│   └── employee_*.html   # Employee management
+├── shopkeeper/           # Shopkeeper role templates
+│   ├── s_base.html       # Shopkeeper base template
+│   ├── dashboard.html    # Shopkeeper dashboard
+│   ├── manage_bills.html # Bill CRUD with custom modals
+│   ├── customer_*.html   # Customer management with ledger
+│   └── products_*.html   # Product and inventory management
+└── home/                 # Public templates
+    ├── index.html        # Landing page
+    └── about.html        # About page
+```
+
 ### Template Patterns
-- **Base templates**: `*_base.html` files in each role directory
-- **Form templates**: Consistent form structure across roles
-- **Dashboard templates**: Role-specific dashboards with similar layouts
+- **Base templates**: `*_base.html` files in each role directory with role-specific navigation
+- **Form templates**: Consistent form structure across roles with CSRF protection
+- **Dashboard templates**: Role-specific dashboards with similar responsive layouts
+- **Modal Integration**: Custom confirmation and input modals replacing browser dialogs
 
 ## 🔧 Development Workflow
 
@@ -360,6 +526,133 @@ bill = Bill(
 - **CA uploads**: `ca_upload/{filename}` (direct storage)
 - **Allowed formats**: PDF, JPG, PNG for documents
 
+## 🎨 UI/UX Patterns & Custom Modal System
+
+### Custom Modal Architecture (Latest Implementation)
+```html
+<!-- Confirmation Modal Template -->
+<div id="delete-confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
+        <h3 class="text-lg font-semibold mb-4">Confirm Deletion</h3>
+        <p class="text-gray-600 mb-6">Are you sure you want to delete this bill? This action cannot be undone.</p>
+        <div class="flex justify-end space-x-3">
+            <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">Cancel</button>
+            <button onclick="confirmDelete()" class="px-4 py-2 bg-red-500 text-white rounded">Delete</button>
+        </div>
+    </div>
+</div>
+```
+
+### Toast Notification System
+```javascript
+// Custom notification functions (replaces browser alerts)
+function showSuccess(message) {
+    showNotification(message, 'success');
+}
+
+function showError(message) {
+    showNotification(message, 'error');
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+    
+    if (type === 'success') {
+        notification.className += ' bg-green-500 text-white';
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                <span>${message}</span>
+            </div>`;
+    } else {
+        notification.className += ' bg-red-500 text-white';
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
+                <span>${message}</span>
+            </div>`;
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
+}
+```
+
+### Modal Interaction Patterns
+```javascript
+// Standard modal opening/closing
+function openDeleteModal(billId, billNumber) {
+    currentBillId = billId;
+    document.getElementById('bill-number-span').textContent = billNumber;
+    document.getElementById('delete-confirmation-modal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('delete-confirmation-modal').classList.add('hidden');
+    currentBillId = null;
+}
+
+// AJAX deletion with custom feedback
+function confirmDelete() {
+    if (!currentBillId) return;
+    
+    fetch(`/shopkeeper/delete_bill/${currentBillId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        closeDeleteModal();
+        if (data.success) {
+            showSuccess(data.message);
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        closeDeleteModal();
+        showError('Error deleting bill. Please try again.');
+    });
+}
+```
+
+### Browser Notification Migration Strategy
+**CRITICAL**: Replace ALL browser-based notifications with custom modals:
+- `confirm()` → Custom confirmation modals with backdrop-blur
+- `alert()` → Toast notification system with auto-dismiss
+- `prompt()` → Custom input modals with form validation
+
+**Files requiring migration**:
+- `products_stock.html` (4 instances)
+- `customer_management.html` (existing modals need standardization)
+- `create_bill.html` (browser alerts)
+- `customer_ledger.html` (browser alerts)
+- `ca_marketplace.html` (browser alerts)
+- `employee_profile.html` (browser alerts)
+
 ## 🔍 Code Quality Patterns
 
 ### Database Query Optimization
@@ -376,11 +669,13 @@ bills_today = Bill.query.filter_by(shopkeeper_id=shopkeeper_id, bill_date=today)
 - **Flash messaging**: Consistent use of Flask flash messages for user feedback
 - **Database rollback**: Transaction rollback on errors with user notification
 - **File validation**: File type and size validation before uploads
+- **AJAX Error Handling**: JSON responses with success/error status and user-friendly messages
 
 ### Form Handling
 - **WTForms integration**: All forms use WTForms with CSRF protection
 - **Validation patterns**: Email validation, length constraints, custom validators
 - **Dynamic choices**: SelectField choices populated from database queries
+- **CSRF Token Management**: Include CSRF tokens in AJAX requests
 
 ## 🚀 Deployment Configuration
 

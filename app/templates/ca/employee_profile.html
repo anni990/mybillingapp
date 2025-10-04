@@ -25,7 +25,7 @@
                 </svg>
                 Edit Profile
             </a>
-            <button onclick="if(confirm('Are you sure you want to remove this employee?')) window.location.href='{{ url_for('ca.remove_employee', employee_id=employee.employee_id) }}'"
+            <button onclick="openRemoveEmployeeModal({{ employee.employee_id }})"
                     class="inline-flex items-center justify-center px-3 md:px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
                 <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -265,5 +265,101 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+    let currentEmployeeId = null;
+
+    function openRemoveEmployeeModal(employeeId) {
+        currentEmployeeId = employeeId;
+        const modal = document.getElementById('remove-employee-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        } else {
+            console.error('Remove employee modal not found!');
+            showError('Modal not found. Please refresh the page and try again.');
+        }
+    }
+
+    function closeRemoveEmployeeModal() {
+        const modal = document.getElementById('remove-employee-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        currentEmployeeId = null;
+    }
+
+    function confirmRemoveEmployee() {
+        if (!currentEmployeeId) {
+            showError('No employee selected for removal.');
+            return;
+        }
+        
+        window.location.href = `/ca/remove_employee/${currentEmployeeId}`;
+    }
+
+    // Custom notification functions
+    function showSuccess(message) {
+        showNotification(message, 'success');
+    }
+
+    function showError(message) {
+        showNotification(message, 'error');
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+        
+        if (type === 'success') {
+            notification.className += ' bg-green-500 text-white';
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>${message}</span>
+                </div>`;
+        } else {
+            notification.className += ' bg-red-500 text-white';
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>${message}</span>
+                </div>`;
+        }
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 4000);
+    }
+</script>
+
+<!-- Remove Employee Confirmation Modal -->
+<div id="remove-employee-modal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
+        <h3 class="text-lg font-semibold mb-4">Remove Employee</h3>
+        <p class="text-gray-600 mb-6">Are you sure you want to remove this employee? This action cannot be undone.</p>
+        <div class="flex justify-end space-x-3">
+            <button onclick="closeRemoveEmployeeModal()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors">Cancel</button>
+            <button onclick="confirmRemoveEmployee()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">Remove</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
                     

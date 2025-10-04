@@ -133,32 +133,68 @@ document.addEventListener('DOMContentLoaded', function () {
             
             total += rowTotal;
             
-            // Update row total display
+            // Update row total display for desktop
             const rowTotalDisplay = row.querySelector('.row-total');
             if (rowTotalDisplay) {
                 rowTotalDisplay.textContent = '₹' + rowTotal.toFixed(2);
+            }
+            
+            // Update corresponding mobile card total
+            const rowId = row.dataset.rowId;
+            const mobileCard = document.querySelector(`.mobile-product-card[data-row-id="${rowId}"]`);
+            if (mobileCard) {
+                const mobileRowTotal = mobileCard.querySelector('.row-total-mobile');
+                if (mobileRowTotal) {
+                    mobileRowTotal.textContent = '₹' + rowTotal.toFixed(2);
+                }
             }
         });
         billTotal.textContent = total.toFixed(2);
     }
 
-    function removeRow(e) {
-        const row = e.target.closest('.product-row');
-        
-        // Check if this is the initial blank row being removed
-        if (row.classList.contains('initial-blank-row')) {
-            hasInitialBlankRow = false;
+    function removeRow(desktopRow, mobileCard) {
+        // Handle both parameter styles for backward compatibility
+        if (typeof desktopRow === 'object' && desktopRow.target) {
+            // Old style: event object passed
+            const row = desktopRow.target.closest('.product-row');
+            const rowId = row.dataset.rowId;
+            const correspondingMobileCard = document.querySelector(`.mobile-product-card[data-row-id="${rowId}"]`);
+            
+            // Check if this is the initial blank row being removed
+            if (row.classList.contains('initial-blank-row')) {
+                hasInitialBlankRow = false;
+            }
+            
+            row.remove();
+            if (correspondingMobileCard) {
+                correspondingMobileCard.remove();
+            }
+        } else {
+            // New style: direct elements passed
+            if (desktopRow) {
+                // Check if this is the initial blank row being removed
+                if (desktopRow.classList.contains('initial-blank-row')) {
+                    hasInitialBlankRow = false;
+                }
+                desktopRow.remove();
+            }
+            if (mobileCard) {
+                mobileCard.remove();
+            }
         }
         
-        row.remove();
         updateTotal();
         
         // Check if no product rows left
         const remainingRows = productRows.querySelectorAll('.product-row');
         if (remainingRows.length === 0) {
-            // Show no products message
+            // Show no products messages
             if (noProductsMessage) {
                 noProductsMessage.style.display = 'block';
+            }
+            const mobileNoProducts = document.getElementById('mobile-no-products');
+            if (mobileNoProducts) {
+                mobileNoProducts.style.display = 'block';
             }
             
             // Change add button styling
@@ -170,9 +206,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function addProductRow(productData = null, productName = '', isInitialBlank = false, fromSearch = false) {
-        // Hide no products message when adding first product
+        // Hide no products messages when adding first product
         if (noProductsMessage) {
             noProductsMessage.style.display = 'none';
+        }
+        
+        const mobileNoProducts = document.getElementById('mobile-no-products');
+        if (mobileNoProducts) {
+            mobileNoProducts.style.display = 'none';
         }
         
         // If this is the first product being added and we have an initial blank row, remove it
@@ -188,6 +229,7 @@ document.addEventListener('DOMContentLoaded', function () {
         rowCounter++;
         const row = document.createElement('div');
         row.className = 'product-row px-4 py-3';
+        row.dataset.rowId = rowCounter;
         
         // Add initial blank row class if this is the initial blank row
         if (isInitialBlank) {
@@ -246,7 +288,71 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
 
-        // Add event listeners
+        // Create corresponding mobile card
+        const mobileProducts = document.getElementById('mobile-products');
+        const mobileCard = document.createElement('div');
+        mobileCard.className = 'mobile-product-card bg-white rounded-lg shadow-md p-4 mb-4';
+        mobileCard.dataset.rowId = rowCounter;
+        
+        mobileCard.innerHTML = `
+            <div class="space-y-3">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <input name="product_name" type="text" value="${name}" 
+                               class="product-name-mobile w-full font-medium text-gray-800 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
+                               placeholder="Product name" required>
+                        <input name="product_id" type="hidden" value="${productId}" class="product-id-mobile">
+                    </div>
+                    <button type="button" class="remove-product-mobile bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200 transition-colors ml-3">
+                        <i data-feather="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Available Stock</label>
+                        <span class="available-stock-mobile text-sm ${stock ? (stock > 10 ? 'text-green-600' : stock > 0 ? 'text-yellow-600' : 'text-red-600') : 'text-gray-400'} font-medium">
+                            ${stock ? stock : '--'}
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Quantity</label>
+                        <input name="quantity" type="number" min="1" value="1" 
+                               class="qty-mobile w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
+                               ${stock ? 'max="' + stock + '"' : ''} required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Price per Unit</label>
+                        <input name="price_per_unit" type="number" min="0" step="0.01" value="${price}" 
+                               class="price-mobile w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
+                               placeholder="0.00" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Discount (%)</label>
+                        <input name="discount" type="number" min="0" max="100" step="0.01" value="0" 
+                               class="discount-mobile w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
+                               placeholder="0">
+                    </div>
+                </div>
+                
+                <div class="gst-section-mobile">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">GST Rate (%)</label>
+                    <input name="gst_rate" type="number" min="0" max="100" step="0.01" value="${gstRate}" 
+                           class="gst-rate-input-mobile w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
+                           placeholder="0" required>
+                </div>
+                
+                <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                    <span class="text-sm font-medium text-gray-600">Total:</span>
+                    <span class="row-total-mobile text-lg font-bold text-[#ed6a3e]">₹0.00</span>
+                </div>
+            </div>
+        `;
+
+        // Add event listeners for desktop row
         const qtyInput = row.querySelector('.qty');
         qtyInput.addEventListener('input', function() {
             // Validate against stock if available
@@ -255,29 +361,146 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.value = availableStock;
                 showFlashMessage(`Maximum available quantity is ${availableStock}`, 'warning');
             }
+            // Sync with mobile card
+            const mobileQty = mobileCard.querySelector('.qty-mobile');
+            if (mobileQty) {
+                mobileQty.value = this.value;
+            }
             updateTotal();
         });
         
-        row.querySelector('.price').addEventListener('input', updateTotal);
-        row.querySelector('.discount').addEventListener('input', updateTotal);
-        row.querySelector('.gst-rate-input').addEventListener('input', updateTotal);
-        row.querySelector('.remove-product').addEventListener('click', removeRow);
+        row.querySelector('.price').addEventListener('input', function() {
+            // Sync with mobile card
+            const mobilePrice = mobileCard.querySelector('.price-mobile');
+            if (mobilePrice) {
+                mobilePrice.value = this.value;
+            }
+            updateTotal();
+        });
         
-        // Product name autocomplete
+        row.querySelector('.discount').addEventListener('input', function() {
+            // Sync with mobile card
+            const mobileDiscount = mobileCard.querySelector('.discount-mobile');
+            if (mobileDiscount) {
+                mobileDiscount.value = this.value;
+            }
+            updateTotal();
+        });
+        
+        row.querySelector('.gst-rate-input').addEventListener('input', function() {
+            // Sync with mobile card
+            const mobileGst = mobileCard.querySelector('.gst-rate-input-mobile');
+            if (mobileGst) {
+                mobileGst.value = this.value;
+            }
+            updateTotal();
+        });
+        
+        row.querySelector('.remove-product').addEventListener('click', function() {
+            removeRow(row, mobileCard);
+        });
+        
+        // Product name autocomplete for desktop
         const productNameInput = row.querySelector('.product-name');
         productNameInput.addEventListener('input', function() {
+            // Sync with mobile card
+            const mobileProductName = mobileCard.querySelector('.product-name-mobile');
+            if (mobileProductName) {
+                mobileProductName.value = this.value;
+            }
+            
             // If user changes the name, clear the product ID (treat as custom product)
             if (productData && this.value !== productData.name) {
                 row.querySelector('.product-id').value = '';
+                mobileCard.querySelector('.product-id-mobile').value = '';
                 // Clear stock display for custom products
                 row.querySelector('.available-stock').textContent = '--';
                 row.querySelector('.available-stock').className = 'available-stock text-sm text-gray-400 font-medium';
+                mobileCard.querySelector('.available-stock-mobile').textContent = '--';
+                mobileCard.querySelector('.available-stock-mobile').className = 'available-stock-mobile text-sm text-gray-400 font-medium';
                 // Remove max constraint from quantity
                 row.querySelector('.qty').removeAttribute('max');
+                mobileCard.querySelector('.qty-mobile').removeAttribute('max');
             }
         });
 
+        // Add event listeners for mobile card
+        const mobileQtyInput = mobileCard.querySelector('.qty-mobile');
+        mobileQtyInput.addEventListener('input', function() {
+            // Validate against stock if available
+            const availableStock = stock;
+            if (availableStock && parseInt(this.value) > availableStock) {
+                this.value = availableStock;
+                showFlashMessage(`Maximum available quantity is ${availableStock}`, 'warning');
+            }
+            // Sync with desktop row
+            const desktopQty = row.querySelector('.qty');
+            if (desktopQty) {
+                desktopQty.value = this.value;
+            }
+            updateTotal();
+        });
+        
+        mobileCard.querySelector('.price-mobile').addEventListener('input', function() {
+            // Sync with desktop row
+            const desktopPrice = row.querySelector('.price');
+            if (desktopPrice) {
+                desktopPrice.value = this.value;
+            }
+            updateTotal();
+        });
+        
+        mobileCard.querySelector('.discount-mobile').addEventListener('input', function() {
+            // Sync with desktop row
+            const desktopDiscount = row.querySelector('.discount');
+            if (desktopDiscount) {
+                desktopDiscount.value = this.value;
+            }
+            updateTotal();
+        });
+        
+        mobileCard.querySelector('.gst-rate-input-mobile').addEventListener('input', function() {
+            // Sync with desktop row
+            const desktopGst = row.querySelector('.gst-rate-input');
+            if (desktopGst) {
+                desktopGst.value = this.value;
+            }
+            updateTotal();
+        });
+        
+        mobileCard.querySelector('.remove-product-mobile').addEventListener('click', function() {
+            removeRow(row, mobileCard);
+        });
+        
+        // Product name autocomplete for mobile
+        const mobileProductNameInput = mobileCard.querySelector('.product-name-mobile');
+        mobileProductNameInput.addEventListener('input', function() {
+            // Sync with desktop row
+            const desktopProductName = row.querySelector('.product-name');
+            if (desktopProductName) {
+                desktopProductName.value = this.value;
+            }
+            
+            // If user changes the name, clear the product ID (treat as custom product)
+            if (productData && this.value !== productData.name) {
+                row.querySelector('.product-id').value = '';
+                mobileCard.querySelector('.product-id-mobile').value = '';
+                // Clear stock display for custom products
+                row.querySelector('.available-stock').textContent = '--';
+                row.querySelector('.available-stock').className = 'available-stock text-sm text-gray-400 font-medium';
+                mobileCard.querySelector('.available-stock-mobile').textContent = '--';
+                mobileCard.querySelector('.available-stock-mobile').className = 'available-stock-mobile text-sm text-gray-400 font-medium';
+                // Remove max constraint from quantity
+                row.querySelector('.qty').removeAttribute('max');
+                mobileCard.querySelector('.qty-mobile').removeAttribute('max');
+            }
+        });
+
+        // Append to containers
         productRows.appendChild(row);
+        if (mobileProducts) {
+            mobileProducts.appendChild(mobileCard);
+        }
         
         // Initialize feather icons for the new row
         feather.replace();
@@ -300,12 +523,15 @@ document.addEventListener('DOMContentLoaded', function () {
     billGstType.addEventListener('change', function() {
         updateTotal(); // Recalculate when GST type changes
         
-        // Toggle GST column visibility
+        // Toggle GST column visibility for desktop and mobile
         const gstCols = document.querySelectorAll('.gst-col');
+        const gstSectionsMobile = document.querySelectorAll('.gst-section-mobile');
         if (this.value === 'GST') {
             gstCols.forEach(col => col.style.display = '');
+            gstSectionsMobile.forEach(section => section.style.display = '');
         } else {
             gstCols.forEach(col => col.style.display = 'none');
+            gstSectionsMobile.forEach(section => section.style.display = 'none');
         }
     });
 

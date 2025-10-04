@@ -1,5 +1,14 @@
 {% extends 'shopkeeper/s_base.html' %}
-{% block title %}Create Bill | MyBillingApp{% endblock %}
+{% block title %}Create Bi        background-color: #f8fafc;
+    }
+    
+    .customer-suggestion, .new-customer-suggestion {
+        transition: background-color 0.2s ease;
+    }
+    
+    .customer-suggestion:last-child, .new-customer-suggestion:last-child {
+        border-bottom: none;
+    } | MyBillingApp{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
@@ -29,14 +38,28 @@
         .product-input {
             margin-bottom: 0.75rem;
         }
+        
+        /* Mobile product cards styling */
+        .mobile-product-card {
+            overflow: visible;
+        }
+        
+        .mobile-product-card input {
+            font-size: 14px;
+        }
+        
+        .mobile-product-card label {
+            font-size: 12px;
+            font-weight: 600;
+        }
     }
     
     /* Custom styles for the create bill page */
-    .product-search-container {
+    .product-search-container, .customer-search-container {
         position: relative;
     }
     
-    #product-suggestions {
+    #product-suggestions, #customer_suggestions {
         position: absolute;
         top: 100%;
         left: 0;
@@ -47,7 +70,9 @@
     }
     
     .product-suggestion:hover,
-    .new-product-suggestion:hover {
+    .new-product-suggestion:hover,
+    .customer-suggestion:hover,
+    .new-customer-suggestion:hover {
         background-color: #f9fafb;
     }
     
@@ -154,14 +179,17 @@
 
             <!-- Existing Customer Selection -->
             <div id="existing-customer-section" class="hidden mb-4">
-                <label for="existing_customer" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="customer_search" class="block text-sm font-medium text-gray-700 mb-2">
                     Select Customer <span class="text-red-500">*</span>
                 </label>
-                <select id="existing_customer" name="existing_customer_id" 
-                        class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base"
-                        onchange="fillCustomerDetails()">
-                    <option value="">Select a customer...</option>
-                </select>
+                <div class="customer-search-container relative">
+                    <input type="text" id="customer_search" 
+                           placeholder="Search customers by name or phone number..."
+                           class="w-full pl-10 pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                    <i data-feather="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                    <div id="customer_suggestions" class="bg-white border border-gray-300 rounded-lg mt-1 shadow-lg hidden z-50"></div>
+                    <input type="hidden" id="existing_customer" name="existing_customer_id" value="">
+                </div>
             </div>
             
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -483,13 +511,13 @@
         const hasBlankRowOnly = productRowsCount === 1 && document.querySelector('.initial-blank-row');
 
         if (productRowsCount === 0 || hasBlankRowOnly || nonBlankRows.length === 0) {
-            alert('Please add at least one product to the bill.');
+            showError('Please add at least one product to the bill.');
             e.preventDefault();
             return false;
         }
 
         if (Math.abs((paidAmount + unpaidAmount) - billTotal) > 0.01) {
-            alert('Error: Paid + Unpaid amounts do not match the total bill amount.');
+            showError('Error: Paid + Unpaid amounts do not match the total bill amount.');
             e.preventDefault();
             return false;
         }
@@ -517,16 +545,163 @@
     }
 
     function populateCustomerDropdown() {
-        const dropdown = document.getElementById('existing_customer');
-        dropdown.innerHTML = '<option value="">Select a customer...</option>';
-        
-        customersData.forEach(customer => {
-            const option = document.createElement('option');
-            option.value = customer.customer_id;
-            option.textContent = `${customer.name} - ${customer.phone}`;
-            option.dataset.customer = JSON.stringify(customer);
-            dropdown.appendChild(option);
+        // This function is now mainly for backwards compatibility
+        // Customer search will handle the suggestions dynamically
+        setupCustomerSearch();
+    }
+
+    function setupCustomerSearch() {
+        const customerSearch = document.getElementById('customer_search');
+        const customerSuggestions = document.getElementById('customer_suggestions');
+        let searchTimeout;
+
+        if (!customerSearch || !customerSuggestions) return;
+
+        // Customer search functionality
+        customerSearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.toLowerCase().trim();
+            
+            if (query.length < 1) {
+                customerSuggestions.classList.add('hidden');
+                // Clear hidden field when search is empty
+                document.getElementById('existing_customer').value = '';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                showCustomerSuggestions(query);
+            }, 300);
         });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!customerSearch.contains(e.target) && !customerSuggestions.contains(e.target)) {
+                customerSuggestions.classList.add('hidden');
+            }
+        });
+    }
+
+    function showCustomerSuggestions(query) {
+        const customerSuggestions = document.getElementById('customer_suggestions');
+        const matchedCustomers = customersData.filter(customer => 
+            customer.name.toLowerCase().includes(query) || 
+            customer.phone.toLowerCase().includes(query)
+        );
+
+        let html = '';
+        
+        // Show matched customers
+        matchedCustomers.forEach(customer => {
+            html += `
+                <div class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 customer-suggestion" 
+                     data-customer='${JSON.stringify(customer)}'>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium text-gray-800">${customer.name}</p>
+                            <p class="text-sm text-gray-500">${customer.phone}${customer.address ? ' | ' + customer.address : ''}</p>
+                        </div>
+                        <div class="text-sm text-[#ed6a3e] font-medium">
+                            <i data-feather="user-check" class="w-4 h-4 inline"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Add option for new customer if no exact match
+        const exactNameMatch = matchedCustomers.find(c => c.name.toLowerCase() === query);
+        const exactPhoneMatch = matchedCustomers.find(c => c.phone === query);
+        if (!exactNameMatch && !exactPhoneMatch && query.length > 0) {
+            // Check if query looks like a phone number (10 digits starting with 6-9)
+            const isPhoneNumber = /^[6-9]\d{9}$/.test(query);
+            const suggestionText = isPhoneNumber ? 
+                `+ Add new customer with phone: "${query}"` : 
+                `+ Add new customer: "${query}"`;
+            
+            html += `
+                <div class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 new-customer-suggestion bg-blue-50" 
+                     data-name="${query}" data-is-phone="${isPhoneNumber}">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium text-blue-800">${suggestionText}</p>
+                            <p class="text-sm text-blue-600">Click to create new customer</p>
+                        </div>
+                        <div class="text-sm text-blue-600 font-medium">
+                            <i data-feather="user-plus" class="w-4 h-4 inline"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (html) {
+            customerSuggestions.innerHTML = html;
+            customerSuggestions.classList.remove('hidden');
+            
+            // Reinitialize feather icons for the suggestions
+            feather.replace();
+            
+            // Add click handlers for existing customers
+            customerSuggestions.querySelectorAll('.customer-suggestion').forEach(item => {
+                item.addEventListener('click', function() {
+                    const customerData = JSON.parse(this.dataset.customer);
+                    selectCustomer(customerData);
+                    document.getElementById('customer_search').value = customerData.name;
+                    customerSuggestions.classList.add('hidden');
+                });
+            });
+
+            // Add click handlers for new customers
+            customerSuggestions.querySelectorAll('.new-customer-suggestion').forEach(item => {
+                item.addEventListener('click', function() {
+                    const customerName = this.dataset.name;
+                    const isPhone = this.dataset.isPhone === 'true';
+                    createNewCustomerFromSearch(customerName, isPhone);
+                    customerSuggestions.classList.add('hidden');
+                });
+            });
+        } else {
+            customerSuggestions.classList.add('hidden');
+        }
+    }
+
+    function selectCustomer(customerData) {
+        // Fill the hidden field
+        document.getElementById('existing_customer').value = customerData.customer_id;
+        
+        // Fill customer details in the form
+        document.getElementById('customer_name').value = customerData.name;
+        document.getElementById('customer_contact').value = customerData.phone;
+        document.getElementById('customer_address').value = customerData.address || '';
+        document.getElementById('customer_gstin').value = customerData.gstin || '';
+    }
+
+    function createNewCustomerFromSearch(searchValue, isPhone) {
+        // Switch to new customer mode
+        const newCustomerRadio = document.querySelector('input[name="customer_type"][value="new"]');
+        if (newCustomerRadio) {
+            newCustomerRadio.checked = true;
+            toggleCustomerFields();
+        }
+        
+        // Clear the customer search and hide the existing customer section
+        document.getElementById('customer_search').value = '';
+        document.getElementById('existing_customer').value = '';
+        
+        // Pre-fill the appropriate field
+        if (isPhone) {
+            document.getElementById('customer_contact').value = searchValue;
+        } else {
+            document.getElementById('customer_name').value = searchValue;
+        }
+        
+        // Focus on the next empty field
+        if (isPhone) {
+            document.getElementById('customer_name').focus();
+        } else {
+            document.getElementById('customer_contact').focus();
+        }
     }
 
     function toggleCustomerFields() {
@@ -630,15 +805,14 @@
     }
 
     function fillCustomerDetails() {
-        const dropdown = document.getElementById('existing_customer');
-        const selectedOption = dropdown.options[dropdown.selectedIndex];
-        
-        if (selectedOption.value) {
-            const customer = JSON.parse(selectedOption.dataset.customer);
-            document.getElementById('customer_name').value = customer.name;
-            document.getElementById('customer_contact').value = customer.phone;
-            document.getElementById('customer_address').value = customer.address || '';
-            // We can add email field if needed
+        // This function is now handled by selectCustomer() when using search
+        // Keep this for backwards compatibility if needed
+        const hiddenField = document.getElementById('existing_customer');
+        if (hiddenField.value) {
+            const customer = customersData.find(c => c.customer_id == hiddenField.value);
+            if (customer) {
+                selectCustomer(customer);
+            }
         } else {
             clearCustomerFields();
         }
@@ -649,14 +823,80 @@
         document.getElementById('customer_contact').value = '';
         document.getElementById('customer_address').value = '';
         document.getElementById('customer_gstin').value = '';
+        
+        // Clear search field and hidden field
+        const customerSearch = document.getElementById('customer_search');
+        const existingCustomer = document.getElementById('existing_customer');
+        const customerSuggestions = document.getElementById('customer_suggestions');
+        
+        if (customerSearch) customerSearch.value = '';
+        if (existingCustomer) existingCustomer.value = '';
+        if (customerSuggestions) customerSuggestions.classList.add('hidden');
     }
 
     // Load customers when page loads
-    loadCustomers();
-    
-    // Add event listener for save-as-customer checkbox
-    document.getElementById('save_as_customer').addEventListener('change', function() {
-        togglePaymentStatusForNewCustomer();
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCustomers();
+        feather.replace();
+        
+        // Add event listener for save-as-customer checkbox
+        const saveAsCustomerCheckbox = document.getElementById('save_as_customer');
+        if (saveAsCustomerCheckbox) {
+            saveAsCustomerCheckbox.addEventListener('change', function() {
+                togglePaymentStatusForNewCustomer();
+            });
+        }
     });
+
+    // Custom notification functions
+    function showSuccess(message) {
+        showNotification(message, 'success');
+    }
+
+    function showError(message) {
+        showNotification(message, 'error');
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+        
+        if (type === 'success') {
+            notification.className += ' bg-green-500 text-white';
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>${message}</span>
+                </div>`;
+        } else {
+            notification.className += ' bg-red-500 text-white';
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>${message}</span>
+                </div>`;
+        }
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 4000);
+    }
 </script>
 {% endblock %}

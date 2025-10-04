@@ -18,7 +18,7 @@ class Config:
     #     "&TrustServerCertificate=no"
     # )
 
-    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{os.environ.get('DB_USER')}:{os.environ.get('DB_PASSWORD')}@{os.environ.get('DB_HOST')}/{os.environ.get('DB_NAME')}"
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{os.environ.get('DB_USER')}:{os.environ.get('DB_PASSWORD')}@{os.environ.get('DB_HOST')}:{os.environ.get('DB_PORT', '3307')}/{os.environ.get('DB_NAME')}"
     
     # SQLAlchemy settings
     SQLALCHEMY_TRACK_MODIFICATIONS = False

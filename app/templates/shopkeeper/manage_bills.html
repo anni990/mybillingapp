@@ -456,7 +456,7 @@
 
 <!-- Delete Confirmation Modal -->
 <div id="delete-confirmation-modal"
-    class="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-sm z-50 hidden">
+    class="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50 hidden">
     <div class="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-md m-4 transform transition-all">
         <div class="text-center">
             <!-- Warning Icon -->
@@ -668,46 +668,71 @@
         // Make deleteBill function global so onclick can access it
         window.deleteBill = function(billId) {
             billToDelete = billId;
-            deleteModal.classList.remove('hidden');
+            if (deleteModal) {
+                deleteModal.classList.remove('hidden');
+            } else {
+                console.error('Delete modal not found!');
+                showErrorMessage('Modal not found. Please refresh the page and try again.');
+            }
         };
 
         function closeDeleteModal() {
-            deleteModal.classList.add('hidden');
+            if (deleteModal) {
+                deleteModal.classList.add('hidden');
+            }
             billToDelete = null;
         }
 
-        deleteCancelBtn.addEventListener('click', closeDeleteModal);
+        if (deleteCancelBtn) {
+            deleteCancelBtn.addEventListener('click', closeDeleteModal);
+        }
 
-        deleteConfirmBtn.addEventListener('click', function() {
-            if (billToDelete) {
+        if (deleteConfirmBtn) {
+            deleteConfirmBtn.addEventListener('click', function() {
+                if (!billToDelete) {
+                    showErrorMessage('No bill selected for deletion.');
+                    return;
+                }
+                
                 fetch(`/shopkeeper/bill/delete/${billToDelete}`, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showSuccessMessage(data.message || 'Bill deleted successfully!');
-                            setTimeout(() => {
-                                location.reload();
-                            }, 1500);
-                        } else {
-                            showErrorMessage(data.message || 'Error deleting bill. Please try again.');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showErrorMessage('Error deleting bill. Please try again.');
-                    });
-                closeDeleteModal();
-            }
-        });
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    closeDeleteModal();
+                    if (data.success) {
+                        showSuccessMessage(data.message || 'Bill deleted successfully!');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        showErrorMessage(data.message || 'Error deleting bill. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    closeDeleteModal();
+                    showErrorMessage('Error deleting bill: ' + error.message);
+                });
+            });
+        }
 
         // Close modal when clicking outside
-        deleteModal.addEventListener('click', function(e) {
-            if (e.target === deleteModal) {
-                closeDeleteModal();
-            }
-        });
+        if (deleteModal) {
+            deleteModal.addEventListener('click', function(e) {
+                if (e.target === deleteModal) {
+                    closeDeleteModal();
+                }
+            });
+        }
 
         // Custom notification functions
         function showSuccessMessage(message) {
