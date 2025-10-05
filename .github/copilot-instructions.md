@@ -2,52 +2,116 @@
 
 ## 🏗️ Architecture Overview
 
-MyBillingApp is a multi-tenant Flask ERP system connecting **Shopkeepers**, **Chartered Accountants (CAs)**, and **CA Employees** in a billing and GST management ecosystem. The application follows Flask blueprint architecture with role-based access control.
+MyBillingApp is a multi-tenant Flask ERP system connecting **Shopkeepers**, **Chartered Accountants (CAs)**, and **CA Employees** in a billing and GST management ecosystem. The application follows **modular blueprint architecture** with role-based access control.
 
 ### Core Business Logic
 - **Shopkeepers**: Create bills, manage products/inventory, customer ledgers (khata system), connect with CAs
-- **CAs**: Manage multiple shopkeeper clients, employee delegation, GST filing status tracking
+- **CAs**: Manage multiple shopkeeper clients, employee delegation, GST filing status tracking  
 - **CA Employees**: Handle assigned shopkeeper accounts, client-specific dashboards
 - **Connection System**: Approval-based relationships between shopkeepers and CAs
 
 ### Key Architecture Decisions
-- **Multi-database support**: Originally SQL Server (commented), now MySQL with potential reversion
+- **Modular Blueprint Structure**: Each role has organized views in separate modules (`app/shopkeeper/views/`, `app/ca/views/`)
+- **Multi-database support**: MySQL with PyMySQL driver, SQL Server compatibility maintained
 - **Document Management**: File uploads to `app/static/uploads/` and `app/static/ca_upload/`
 - **Session Management**: Filesystem-based sessions (`flask_session/` directory)
-- **Template Organization**: Role-specific template directories (`auth/`, `ca/`, `shopkeeper/`, `home/`)
+- **Modern UI**: Custom modals with blur effects, dynamic search, responsive design
 
 ## 🤖 AI Development Patterns
 
 ### Essential Productivity Rules
 - **Foreign Key Priority**: Always use `shopkeeper.shopkeeper_id` for bills/products, `shopkeeper.user_id` for customers/ledger
-- **Payment Fields**: Use `paid_amount`/`due_amount` consistently (legacy `amount_paid`/`amount_unpaid` removed)
-- **Blueprint Routes**: Add to appropriate blueprint (`shopkeeper_bp`, `ca_bp`, `auth_bp`, `api_bp`)
+- **Payment Fields**: Use `paid_amount`/`due_amount` consistently (legacy fields removed)
+- **Modular Routes**: Add to specific view modules (`bills.py`, `dashboard.py`, etc.) and register via `register_routes(bp)`
 - **Role Decorators**: Apply `@login_required` + `@shopkeeper_required`/`@ca_required` for protected routes
 - **Template Naming**: `{blueprint}/{action}.html` (e.g., `shopkeeper/dashboard.html`)
-- **Database Transactions**: Use `db.session.commit()` after modifications, handle rollbacks on errors
+- **Modal System**: Use blur-only backgrounds with `backdrop-blur-sm` (no black overlays)
 
 ### Critical File Patterns
 ```python
-# Route structure (app/shopkeeper/routes.py)
-@shopkeeper_bp.route('/dashboard')
-@login_required
-@shopkeeper_required
-def dashboard():
-    shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-    # Always check if shopkeeper exists
-    if not shopkeeper:
-        return redirect(url_for('auth.login'))
-    
-    # Use shopkeeper.shopkeeper_id for queries
-    bills = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
-    return render_template('shopkeeper/dashboard.html', bills=bills)
+# Modern modular route structure (app/shopkeeper/views/dashboard.py)
+def register_routes(bp):
+    @bp.route('/dashboard')
+    @login_required
+    @shopkeeper_required
+    def dashboard():
+        shopkeeper = get_current_shopkeeper()
+        if not shopkeeper:
+            return redirect(url_for('auth.login'))
+        
+        bills = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
+        return render_template('shopkeeper/dashboard.html', bills=bills)
 
-# Model relationships (app/models.py)
-class Bill(db.Model):
-    paid_amount = db.Column(db.Numeric(10,2), default=0.00)  # ✅ Current standard
-    due_amount = db.Column(db.Numeric(10,2), default=0.00)   # ✅ Current standard
-    # Relationships with cascade deletes
-    bill_items = db.relationship('BillItem', backref='bill', cascade='all, delete-orphan')
+# Blueprint registration (app/shopkeeper/__init__.py)
+from .views import dashboard, bills, products, reports, customers, profile, ca_connections
+dashboard.register_routes(shopkeeper_bp)
+bills.register_routes(shopkeeper_bp)
+```
+
+### Dynamic Search Implementation Pattern
+```javascript
+// Product/Customer search with debouncing (app/static/js/create_bill.js)
+let searchTimeout;
+searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.toLowerCase().trim();
+    
+    if (query.length < 1) {
+        suggestions.classList.add('hidden');
+        return;
+    }
+
+    searchTimeout = setTimeout(() => {
+        showSuggestions(query);
+    }, 300);  // 300ms debounce
+});
+
+// Dual-view sync (desktop + mobile)
+function addProductRow(productData, isFromSearch = false) {
+    // Create desktop row AND mobile card simultaneously
+    // Sync all form inputs between both views
+    // Use data-row-id for linking
+}
+```
+
+### Modern Modal System
+```html
+<!-- Blur-only modals (no black backgrounds) -->
+<div id="modal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+        <!-- Modal content -->
+    </div>
+</div>
+```
+
+```javascript
+// Toast notifications replacing browser alerts
+function showSuccess(message) {
+    // Custom notification with auto-dismiss
+    // Use green styling with checkmark icon
+}
+
+function showError(message) {
+    // Custom error notification  
+    // Use red styling with X icon
+}
+```
+
+### Responsive Design Patterns
+```html
+<!-- Desktop + Mobile dual views -->
+<div class="hidden lg:block">
+    <!-- Desktop table/grid view -->
+</div>
+
+<div class="lg:hidden">
+    <!-- Mobile card view -->
+</div>
+
+<!-- Responsive form inputs -->
+<input class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg 
+              focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent 
+              transition duration-200 text-sm md:text-base">
 ```
 
 ### Development Workflow Commands
@@ -55,79 +119,69 @@ class Bill(db.Model):
 # Start development server (creates tables automatically)
 python run.py
 
-# Test database operations
-python -c "from app import create_app; app = create_app(); print('App initialized')"
+# Test app initialization
+python -c "from app import create_app; app = create_app(); print('✅ App ready')"
 
-# Check bill payment data
+# Check database connectivity  
 python -c "
 from app import create_app, db
-from app.models import Bill
 app = create_app()
 with app.app_context():
-    bills = Bill.query.limit(5).all()
-    for bill in bills:
-        print(f'Bill {bill.bill_id}: paid={bill.paid_amount}, due={bill.due_amount}')
+    try:
+        result = db.session.execute(db.text('SELECT 1'))
+        print('✅ Database connected')
+    except Exception as e:
+        print(f'❌ DB Error: {e}')
+"
+
+# Validate models and foreign keys
+python -c "
+from app import create_app
+from app.models import *
+app = create_app()
+with app.app_context():
+    db.create_all()
+    print('✅ Models validated')
 "
 
 # Install dependencies
 pip install -r requirements.txt
-
-# Check customer ledger system
-python -c "
-from app import create_app, db
-from app.models import Customer, CustomerLedger
-app = create_app()
-with app.app_context():
-    customers = Customer.query.limit(3).all()
-    for c in customers:
-        print(f'Customer {c.name}: Balance={c.total_balance}')
-"
 ```
 
-### JavaScript Integration Patterns
+### AJAX and API Patterns
 ```javascript
-// Product search with debouncing (app/static/js/create_bill.js)
-let searchTimeout;
-productSearch.addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    const query = this.value.toLowerCase().trim();
-    
-    if (query.length < 1) {
-        productSuggestions.classList.add('hidden');
-        return;
-    }
-
-    searchTimeout = setTimeout(() => {
-        showProductSuggestions(query);
-    }, 300);  // 300ms debounce
-});
+// Standard AJAX pattern with CSRF protection
+function submitForm(url, data) {
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showSuccess(data.message);
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        showError('An error occurred. Please try again.');
+    });
+}
 
 // CSRF Token Management
 function getCsrfToken() {
     return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 }
-
-// API Error Handling Pattern
-fetch(url, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCsrfToken()
-    },
-    body: JSON.stringify(data)
-})
-.then(response => response.json())
-.then(data => {
-    if (data.success) {
-        showSuccess(data.message);
-        // Handle success
-    } else {
-        showError(data.message);
-    }
-})
-.catch(error => {
-    showError('An error occurred. Please try again.');
-});
 ```
 
 ### Tailwind CSS Conventions
@@ -296,8 +350,62 @@ ledger = CustomerLedger.query.filter_by(shopkeeper_id=shopkeeper.user_id)
 # products.shopkeeper_id -> ForeignKey('shopkeepers.shopkeeper_id')
 ```
 
-### Current Status (Updated 2025-10-02)
+### Current Status (Updated 2025-10-05)
 - **✅ Foreign Key Issues Resolved**: All database queries now use correct foreign key references
+- **✅ Payment Fields Migration Complete**: Bills table now uses single consistent field set (`paid_amount`/`due_amount`)
+- **✅ Schema Compliance**: Database schema matches production schema with all required columns and constraints
+- **✅ Customer Ledger System**: Full khata (credit/debit) system implemented with running balance tracking
+- **✅ Multi-Database Support**: Active MySQL with PyMySQL driver, SQL Server compatibility maintained
+- **✅ Modular Architecture**: Migrated to organized view modules for better maintainability
+- **✅ Modern UI Components**: Custom blur-only modals, dynamic search with debouncing, dual-view responsiveness
+- **✅ Enhanced User Experience**: Toast notifications, AJAX error handling, mobile-optimized interactions
+
+## 🔧 Critical Fixes Applied
+
+### Foreign Key Corrections (2025-09-29)
+**Problem**: Code was using incorrect foreign key references causing constraint violations.
+
+**Fixed Queries**:
+```python
+# ❌ WRONG - was causing foreign key errors
+ca_conn = CAConnection.query.filter_by(shopkeeper_id=shopkeeper.user_id)
+
+# ✅ CORRECT - matches production schema
+ca_conn = CAConnection.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
+
+# ❌ WRONG
+products = Product.query.filter_by(shopkeeper_id=shopkeeper.user_id)
+
+# ✅ CORRECT  
+products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
+
+# ❌ WRONG
+query = Bill.query.filter_by(shopkeeper_id=shopkeeper.user_id)
+
+# ✅ CORRECT
+query = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
+```
+
+**Key Pattern**: 
+- **CA/Shop Connections**: Use `shopkeeper.shopkeeper_id`
+- **Bills/Products**: Use `shopkeeper.shopkeeper_id` 
+- **Customers/Ledger**: Use `shopkeeper.user_id`
+
+### Payment Field Migration
+**Problem**: Database missing legacy payment fields expected by SQLAlchemy models.
+
+**Migration Applied**:
+```sql
+ALTER TABLE bills 
+ADD COLUMN amount_paid DECIMAL(12,2) DEFAULT 0.00 AFTER payment_status,
+ADD COLUMN amount_unpaid DECIMAL(12,2) DEFAULT 0.00 AFTER amount_paid;
+
+UPDATE bills SET 
+    amount_paid = paid_amount,
+    amount_unpaid = due_amount;
+```
+
+**Result**: Bills now have both field sets for backward compatibility.
 - **✅ Payment Fields Migration Complete**: Bills table now uses single consistent field set (`paid_amount`/`due_amount`)
 - **✅ Schema Compliance**: Database schema matches production schema with all required columns and constraints
 - **✅ Customer Ledger System**: Full khata (credit/debit) system implemented with running balance tracking

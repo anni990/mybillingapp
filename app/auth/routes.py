@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db, bcrypt, login_manager
 from app.models import User,Shopkeeper,CharteredAccountant 
@@ -83,7 +83,17 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and check_password_hash(user.password_hash, form.password.data):
-            login_user(user)
+            # Check if remember me checkbox was checked
+            remember = bool(request.form.get('remember'))
+            login_user(user, remember=remember)
+            
+            # Make session permanent if remember me is checked
+            if remember:
+                session.permanent = True
+                # Optionally refresh session lifetime
+                if hasattr(current_app.config, 'PERMANENT_SESSION_LIFETIME'):
+                    session.permanent_session_lifetime = current_app.config['PERMANENT_SESSION_LIFETIME']
+            
             flash('Logged in successfully.', 'success')
             # Redirect based on role
             if user.role == 'shopkeeper':
@@ -100,5 +110,6 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.clear()  # Clear all session data including remember cookies
     flash('You have been logged out.', 'info')
     return redirect(url_for('auth.login'))

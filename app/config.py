@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -25,10 +26,22 @@ class Config:
     
     # Session configuration
     SESSION_TYPE = 'filesystem'
+    SESSION_FILE_DIR = os.path.join(os.getcwd(), 'flask_session')
+    SESSION_PERMANENT = True
+    
+    # Remember me configuration - sessions last 30 days
+    PERMANENT_SESSION_LIFETIME = timedelta(days=30)
+    REMEMBER_COOKIE_DURATION = timedelta(days=30)
+    
+    # Cookie security settings
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = bool(os.environ.get('FLASK_COOKIE_SECURE', False))
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SECURE = bool(os.environ.get('FLASK_COOKIE_SECURE', False))
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
     
     # Additional configuration for production
     if os.environ.get('FLASK_ENV') == 'production':
         SESSION_COOKIE_SECURE = True
-        SESSION_COOKIE_HTTPONLY = True
         REMEMBER_COOKIE_SECURE = True
-        REMEMBER_COOKIE_HTTPONLY = True
