@@ -24,6 +24,13 @@ class Config:
     # SQLAlchemy settings
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
+    # SQL Server specific settings to avoid OUTPUT clause conflicts with triggers
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'implicit_returning': False,  # Disable OUTPUT clause for SQL Server triggers
+        'pool_pre_ping': True,        # Connection health check
+        'pool_recycle': 300           # Recycle connections every 5 minutes
+    }
+    
     # Session configuration
     SESSION_TYPE = 'filesystem'
     SESSION_FILE_DIR = os.path.join(os.getcwd(), 'flask_session')

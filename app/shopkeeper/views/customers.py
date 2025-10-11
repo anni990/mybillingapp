@@ -247,24 +247,25 @@ def register_routes(bp):
             current_balance = customer.total_balance or Decimal('0')
             new_balance = current_balance + debit_amount - credit_amount
             
-            # Create ledger entry
-            ledger_entry = CustomerLedger(
-                customer_id=customer_id,
-                shopkeeper_id=shopkeeper.user_id,
-                invoice_no=invoice_no,
-                particulars=particulars,
-                debit_amount=debit_amount,
-                credit_amount=credit_amount,
-                balance_amount=new_balance,
-                transaction_type=transaction_type,
-                notes=notes
-            )
-            
-            # Update customer balance
-            customer.total_balance = new_balance
-            customer.updated_date = datetime.datetime.now()
-            
-            db.session.add(ledger_entry)
+            # Create ledger entry with SQL Server compatibility
+            with db.session.no_autoflush:
+                ledger_entry = CustomerLedger(
+                    customer_id=customer_id,
+                    shopkeeper_id=shopkeeper.user_id,
+                    invoice_no=invoice_no,
+                    particulars=particulars,
+                    debit_amount=debit_amount,
+                    credit_amount=credit_amount,
+                    balance_amount=new_balance,
+                    transaction_type=transaction_type,
+                    notes=notes
+                )
+                
+                # Update customer balance
+                customer.total_balance = new_balance
+                customer.updated_date = datetime.datetime.now()
+                
+                db.session.add(ledger_entry)
             db.session.commit()
             
             return jsonify({'success': True, 'message': 'Ledger entry added successfully', 'new_balance': float(new_balance)})

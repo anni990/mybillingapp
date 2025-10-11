@@ -898,7 +898,7 @@ def register_routes(bp):
                     current_balance = customer.total_balance or Decimal('0')
                     new_balance = current_balance + debit_amount - credit_amount
 
-                    # Create purchase ledger entry
+                    # Create purchase ledger entry with SQL Server compatibility
                     purchase_entry = CustomerLedger(
                         customer_id=customer.customer_id,
                         shopkeeper_id=shopkeeper.user_id,
@@ -912,6 +912,12 @@ def register_routes(bp):
                         notes=f"Products purchased via bill {bill_number}"
                     )
                     db.session.add(purchase_entry)
+                    
+                    # Force individual commit for purchase entry
+                    try:
+                        db.session.flush()
+                    except Exception as e:
+                        current_app.logger.error(f"Error flushing purchase entry: {e}")
 
                     # If there's a payment, create payment entry
                     if credit_amount > 0:
@@ -928,6 +934,12 @@ def register_routes(bp):
                             notes=f"Partial payment for bill {bill_number}"
                         )
                         db.session.add(payment_entry)
+                        
+                        # Force individual commit for payment entry
+                        try:
+                            db.session.flush()
+                        except Exception as e:
+                            current_app.logger.error(f"Error flushing payment entry: {e}")
 
                     # Update customer balance
                     customer.total_balance = new_balance

@@ -105,23 +105,24 @@ class CustomerService:
             current_balance = customer.total_balance or Decimal('0.00')
             new_balance = current_balance + debit_amount - credit_amount
             
-            # Create ledger entry
-            ledger_entry = CustomerLedger(
-                customer_id=customer_id,
-                transaction_type=transaction_type,
-                debit_amount=debit_amount,
-                credit_amount=credit_amount,
-                balance_amount=new_balance,
-                description=description,
-                transaction_date=date.today(),
-                bill_id=bill_id
-            )
-            
-            # Update customer balance
-            customer.total_balance = new_balance
-            
-            db.session.add(ledger_entry)
-            db.session.add(customer)
+            # Create ledger entry with SQL Server compatibility
+            with db.session.no_autoflush:
+                ledger_entry = CustomerLedger(
+                    customer_id=customer_id,
+                    transaction_type=transaction_type,
+                    debit_amount=debit_amount,
+                    credit_amount=credit_amount,
+                    balance_amount=new_balance,
+                    description=description,
+                    transaction_date=date.today(),
+                    bill_id=bill_id
+                )
+                
+                # Update customer balance
+                customer.total_balance = new_balance
+                
+                db.session.add(ledger_entry)
+                db.session.add(customer)
             db.session.commit()
             return True
             
