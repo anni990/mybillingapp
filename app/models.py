@@ -83,6 +83,7 @@ class CharteredAccountant(db.Model):
     signature_file = db.Column(db.String(255))
     office_address_proof_file = db.Column(db.String(255))
     self_declaration_file = db.Column(db.String(255))
+    about_me = db.Column(db.String(2000))  # About me field for CA profile
     # Relationships
     employees = db.relationship('CAEmployee', backref='ca', cascade='all, delete-orphan')
     ca_connections = db.relationship('CAConnection', backref='ca', cascade='all, delete-orphan')
