@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
     role = db.Column(db.Enum('shopkeeper', 'CA', 'employee'), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     plain_password = db.Column(db.String(255), nullable=True)  # Only for employees
+    walkthrough_completed = db.Column(db.Boolean, default=False)
     # Relationships
     shopkeeper = db.relationship('Shopkeeper', backref='user', uselist=False)
     ca = db.relationship('CharteredAccountant', backref='user', uselist=False)

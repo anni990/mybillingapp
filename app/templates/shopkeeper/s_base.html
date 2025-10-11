@@ -251,10 +251,44 @@
                 <i data-feather="user" class="w-5 h-5"></i>
             </a>
 
-            <a href="{{ url_for('shopkeeper.profile') }}"
-                class="inline-block px-3 py-2 lg:px-4 lg:py-2 bg-orange-600 bg-opacity-20 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm lg:text-base">
-                <span class="hidden sm:inline">My Profile</span>
-                <span class="sm:hidden">Profile</span></a>
+            <!-- Profile Dropdown -->
+            <div class="relative group" data-walkthrough="profile">
+                <button class="inline-flex items-center px-3 py-2 lg:px-4 lg:py-2 bg-orange-600 bg-opacity-20 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm lg:text-base"
+                    id="profileDropdownBtn">
+                    <i data-feather="user" class="w-4 h-4 mr-2"></i>
+                    <span class="hidden sm:inline">My Profile</span>
+                    <span class="sm:hidden">Profile</span>
+                    <i data-feather="chevron-down" class="w-4 h-4 ml-1"></i>
+                </button>
+                <div class="hidden group-hover:block absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-50 border border-gray-200 animate-fade-in"
+                    id="profileDropdown">
+                    <div class="py-2">
+                        <a href="{{ url_for('shopkeeper.profile') }}" 
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <i data-feather="user" class="w-4 h-4 mr-2 inline"></i>
+                            My Profile
+                        </a>
+                        <button onclick="startWalkthrough()" 
+                            class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <i data-feather="compass" class="w-4 h-4 mr-2 inline"></i>
+                            Take a Tour
+                        </button>
+                        {% if config.ENV == 'development' %}
+                        <button onclick="resetWalkthrough()" 
+                            class="w-full text-left block px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors">
+                            <i data-feather="refresh-cw" class="w-4 h-4 mr-2 inline"></i>
+                            Reset Tour (Dev)
+                        </button>
+                        {% endif %}
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <a href="{{ url_for('auth.logout') }}" 
+                            class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                            <i data-feather="log-out" class="w-4 h-4 mr-2 inline"></i>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
             {% else %}
             <a href="/auth/login" class="text-xs md:text-sm hover:underline">Login</a>
             <a href="/auth/register" class="text-xs md:text-sm hover:underline hidden md:inline">Register</a>
@@ -564,7 +598,31 @@
                 e.stopPropagation();
             });
         }
+
+        // Profile dropdown functionality
+        const profileBtn = document.getElementById('profileDropdownBtn');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        if (profileBtn && profileDropdown) {
+            profileBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!profileDropdown.classList.contains('hidden')) {
+                    profileDropdown.classList.add('hidden');
+                }
+            });
+
+            profileDropdown.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        }
     </script>
+    
+    <!-- Walkthrough System -->
+    <script src="{{ url_for('static', filename='js/walkthrough.js') }}"></script>
 </body>
 
 </html>
