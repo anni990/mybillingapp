@@ -106,6 +106,41 @@ BEGIN
     PRINT 'Fixed gst_filing_status.employee_id cascade conflict';
 END;
 
+-- Fix Trigger OUTPUT Conflict (SQLAlchemy compatibility issue)
+IF EXISTS (SELECT * FROM sys.triggers WHERE name = 'tr_update_customer_balance')
+BEGIN
+    DROP TRIGGER tr_update_customer_balance;
+    PRINT 'Dropped existing trigger that conflicts with SQLAlchemy OUTPUT clause';
+END;
+
+-- Create compatible trigger for customer balance updates
+GO
+CREATE TRIGGER tr_update_customer_balance
+ON customer_ledger
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Use CTE to handle multiple inserts and get latest balance per customer
+    WITH LatestBalance AS (
+        SELECT 
+            customer_id,
+            balance_amount,
+            ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY transaction_date DESC, ledger_id DESC) as rn
+        FROM customer_ledger cl
+        WHERE cl.customer_id IN (SELECT DISTINCT customer_id FROM inserted)
+    )
+    UPDATE customers 
+    SET 
+        total_balance = lb.balance_amount,
+        updated_date = GETDATE()
+    FROM customers c
+    INNER JOIN LatestBalance lb ON c.customer_id = lb.customer_id
+    WHERE lb.rn = 1;
+END;
+GO
+
 -- 4. Verify the updates
 SELECT 
     TABLE_NAME,
@@ -132,3 +167,4 @@ ORDER BY TABLE_NAME, COLUMN_NAME;
 PRINT 'Azure SQL Database schema update completed successfully!';
 PRINT 'Fields added: users.walkthrough_completed, chartered_accountants.about_me';
 PRINT 'Cascade conflicts resolved for SQL Server compatibility';
+PRINT 'Trigger OUTPUT conflict fixed for SQLAlchemy compatibility';

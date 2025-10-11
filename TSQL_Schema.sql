@@ -256,20 +256,32 @@ CREATE INDEX IX_documents_shopkeeper_id ON documents(shopkeeper_id);
 CREATE INDEX IX_documents_ca_id ON documents(ca_id);
 
 -- Create trigger to update customer balance when ledger entry is added
+-- This version is compatible with SQLAlchemy's OUTPUT clause
 GO
 CREATE TRIGGER tr_update_customer_balance
 ON customer_ledger
-AFTER INSERT
+AFTER INSERT, UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
     
+    -- Handle both INSERT and UPDATE operations
+    -- Use a CTE to get the latest balance for each customer
+    WITH LatestBalance AS (
+        SELECT 
+            customer_id,
+            balance_amount,
+            ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY transaction_date DESC, ledger_id DESC) as rn
+        FROM customer_ledger cl
+        WHERE cl.customer_id IN (SELECT DISTINCT customer_id FROM inserted)
+    )
     UPDATE customers 
     SET 
-        total_balance = i.balance_amount,
+        total_balance = lb.balance_amount,
         updated_date = GETDATE()
     FROM customers c
-    INNER JOIN inserted i ON c.customer_id = i.customer_id;
+    INNER JOIN LatestBalance lb ON c.customer_id = lb.customer_id
+    WHERE lb.rn = 1;
 END;
 GO
 
@@ -368,6 +380,7 @@ PRINT '4. Added missing foreign key constraints to ca_connections table';
 PRINT '5. Verified all enum values match application code';
 PRINT '6. Ensured all nullable/non-nullable fields match models exactly';
 PRINT '7. FIXED CASCADE CONFLICTS: Adjusted FK constraints to prevent circular cascades';
+PRINT '8. FIXED TRIGGER OUTPUT CONFLICT: Made triggers compatible with SQLAlchemy OUTPUT clause';
 PRINT '';
 PRINT 'CASCADE STRATEGY APPLIED:';
 PRINT '- Primary cascades: users -> shopkeepers/chartered_accountants -> their direct children';

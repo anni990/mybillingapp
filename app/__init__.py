@@ -19,11 +19,13 @@ def create_app():
     from .shopkeeper import shopkeeper_bp 
     from .ca import ca_bp
     from .api.routes import api_bp
+    from .api.walkthrough_routes import walkthrough_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(shopkeeper_bp)
     app.register_blueprint(ca_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(walkthrough_bp)
 
     # Blank route renders the homepage
     @app.route('/')

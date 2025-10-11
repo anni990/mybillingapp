@@ -1,0 +1,131 @@
+/* Tailwind CSS Base */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Walkthrough Styles */
+.walkthrough-highlight {
+    position: relative !important;
+    z-index: 42 !important;
+    border: 3px solid #F97316 !important;
+    border-radius: 8px !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    animation: walkthrough-pulse 2s infinite;
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.3) !important;
+}
+
+@keyframes walkthrough-pulse {
+    0% {
+        box-shadow: 0 0 20px rgba(249, 115, 22, 0.3), 0 0 0 0 rgba(249, 115, 22, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 20px rgba(249, 115, 22, 0.3), 0 0 0 10px rgba(249, 115, 22, 0);
+    }
+    100% {
+        box-shadow: 0 0 20px rgba(249, 115, 22, 0.3), 0 0 0 0 rgba(249, 115, 22, 0);
+    }
+}
+
+/* Walkthrough Overlay */
+.walkthrough-overlay {
+    backdrop-filter: blur(4px);
+}
+
+/* Highlighted element should be clear and prominent */
+.walkthrough-highlight * {
+    position: relative;
+    z-index: inherit;
+}
+
+/* Walkthrough Tooltip Styles */
+.walkthrough-tooltip {
+    animation: walkthrough-fade-in 0.3s ease-in-out;
+}
+
+@keyframes walkthrough-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile-first responsive improvements */
+@media (max-width: 768px) {
+    .walkthrough-highlight {
+        border-width: 1px !important;
+    }
+    
+    @keyframes walkthrough-pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 5px rgba(59, 130, 246, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        }
+    }
+}
+
+/* Smooth transitions for all interactive elements */
+.transition-all {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Custom button hover effects */
+.btn-primary {
+    @apply bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+.btn-secondary {
+    @apply bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+/* Professional card styles */
+.card {
+    @apply bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow;
+}
+
+.card-header {
+    @apply bg-gray-50 px-6 py-4 border-b border-gray-200;
+}
+
+.card-body {
+    @apply p-6;
+}
+
+/* Form input styles */
+.form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all;
+}
+
+/* Responsive grid utilities */
+.grid-responsive {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+}
+
+/* Professional color palette */
+:root {
+    --color-primary: #3B82F6;
+    --color-primary-dark: #2563EB;
+    --color-secondary: #6B7280;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --color-light: #F9FAFB;
+    --color-dark: #1F2937;
+}
+
+/* Professional shadows */
+.shadow-professional {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-professional-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}

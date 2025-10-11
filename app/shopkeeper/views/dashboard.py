@@ -99,6 +99,11 @@ def register_routes(bp):
         recent_bills = Bill.query.filter_by(shopkeeper_id=shopkeeper_id)\
             .order_by(Bill.bill_date.desc()).limit(5).all()
         
+        # Check if this is first time login (no bills created yet and walkthrough not completed)
+        show_walkthrough = (len(recent_bills) == 0 and 
+                          not current_user.walkthrough_completed and 
+                          current_user.role == 'shopkeeper')
+        
         return render_template('shopkeeper/dashboard.html',
             total_amount=total_amount,
             paid=paid,
@@ -112,5 +117,6 @@ def register_routes(bp):
             connected_ca=connected_ca,
             connected_employees=connected_employees,
             monthly_sales_labels=monthly_sales_labels,
-            monthly_sales_data=monthly_sales_data
+            monthly_sales_data=monthly_sales_data,
+            show_walkthrough=show_walkthrough
         )
