@@ -6,6 +6,10 @@
 -- Generation Time: Oct 02, 2025 at 02:28 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
+--
+-- UPDATED: Oct 11, 2025 - Added missing application fields:
+-- 1. users.walkthrough_completed (tinyint(1) DEFAULT 0)
+-- 2. chartered_accountants.about_me (varchar(2000) DEFAULT NULL)
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -120,7 +124,8 @@ CREATE TABLE `chartered_accountants` (
   `photo_file` varchar(255) DEFAULT NULL,
   `signature_file` varchar(255) DEFAULT NULL,
   `office_address_proof_file` varchar(255) DEFAULT NULL,
-  `self_declaration_file` varchar(255) DEFAULT NULL
+  `self_declaration_file` varchar(255) DEFAULT NULL,
+  `about_me` varchar(2000) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -298,7 +303,8 @@ CREATE TABLE `users` (
   `password_hash` varchar(255) NOT NULL,
   `role` enum('shopkeeper','CA','employee') NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `plain_password` varchar(255) DEFAULT NULL
+  `plain_password` varchar(255) DEFAULT NULL,
+  `walkthrough_completed` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -307,21 +313,22 @@ CREATE TABLE `users` (
 -- Stand-in structure for view `v_customer_summary`
 -- (See below for the actual view)
 --
+
 CREATE TABLE `v_customer_summary` (
-`customer_id` int(11)
-,`shopkeeper_id` int(11)
-,`name` varchar(100)
-,`phone` varchar(15)
-,`email` varchar(100)
-,`address` text
-,`total_balance` decimal(10,2)
-,`created_date` datetime
-,`total_transactions` bigint(21)
-,`total_purchases` decimal(32,2)
-,`total_payments` decimal(32,2)
-,`last_transaction_date` datetime
-,`total_bills` bigint(21)
-);
+`customer_id` int(11),
+`shopkeeper_id` int(11),
+`name` varchar(100),
+`phone` varchar(15),
+`email` varchar(100),
+`address` text,
+`total_balance` decimal(10,2),
+`created_date` datetime,
+`total_transactions` bigint(21),
+`total_purchases` decimal(32,2),
+`total_payments` decimal(32,2),
+`last_transaction_date` datetime,
+`total_bills` bigint(21)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
