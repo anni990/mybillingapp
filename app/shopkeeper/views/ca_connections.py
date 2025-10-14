@@ -74,6 +74,9 @@ def register_routes(bp):
         # Check if it's an AJAX request
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
+        # Check if it's an AJAX request
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
         # Check if already connected
         existing_connection = CAConnection.query.filter_by(
             shopkeeper_id=shopkeeper.shopkeeper_id,

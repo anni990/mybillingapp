@@ -88,6 +88,7 @@ class CharteredAccountant(db.Model):
     signature_file = db.Column(db.String(255))
     office_address_proof_file = db.Column(db.String(255))
     self_declaration_file = db.Column(db.String(255))
+    about_me = db.Column(db.String(2000))  # About me field for CA profile
     # Relationships
     employees = db.relationship('CAEmployee', backref='ca', cascade='all, delete-orphan')
     ca_connections = db.relationship('CAConnection', backref='ca', cascade='all, delete-orphan')
@@ -227,6 +228,11 @@ class Customer(db.Model):
 
 class CustomerLedger(db.Model):
     __tablename__ = 'customer_ledger'
+    
+    # Table configuration for SQL Server compatibility
+    __table_args__ = {
+        'implicit_returning': False  # Disable OUTPUT clause for SQL Server triggers
+    }
     
     ledger_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.customer_id'), nullable=False)
