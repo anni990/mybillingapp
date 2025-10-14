@@ -113,6 +113,48 @@
 
                 <div class="mb-8 p-6 bg-gray-50 rounded-lg">
                     <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i data-feather="hash" class="mr-3 text-[#ed6a3e]"></i> Invoice Numbering Settings
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Invoice Prefix</label>
+                            <input type="text" name="invoice_prefix" value="{{ shopkeeper.invoice_prefix or '' }}"
+                                placeholder="e.g., INV, BILL, ShopName (leave empty for timestamp-based)"
+                                class="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:border-[#ed6a3e] transition duration-200">
+                            <p class="text-sm text-gray-500 mt-1">Leave empty to use timestamp-based numbering (BILL123456789)</p>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Starting Number</label>
+                            <input type="number" name="invoice_starting_number" value="{{ shopkeeper.invoice_starting_number or 1 }}"
+                                min="1" max="99999"
+                                class="w-full border border-gray-300 px-4 py-2 focus:outline-none focus:border-[#ed6a3e] transition duration-200">
+                            <p class="text-sm text-gray-500 mt-1">Reset numbering to start from this number</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <i data-feather="info" class="text-blue-500 mr-2"></i>
+                                    <span class="text-blue-700 font-medium">Preview:</span>
+                                    {% if shopkeeper.invoice_prefix and shopkeeper.invoice_prefix.strip() %}
+                                        <span class="ml-2 font-semibold text-blue-800">{{ preview_next_invoice_number(shopkeeper) }}</span>
+                                    {% else %}
+                                        <span class="ml-2 font-semibold text-blue-800">BILL{{ "123456789" }} (timestamp-based)</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-blue-600 text-sm mt-2">
+                                    {% if shopkeeper.invoice_prefix and shopkeeper.invoice_prefix.strip() %}
+                                        Custom numbering enabled. Numbers will increment sequentially.
+                                    {% else %}
+                                        Using default timestamp-based numbering. Each bill gets a unique timestamp number.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-8 p-6 bg-gray-50 rounded-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
                         <i data-feather="credit-card" class="mr-3 text-[#ed6a3e]"></i> Bank Details
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

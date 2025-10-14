@@ -51,6 +51,10 @@ class Shopkeeper(db.Model):
     city = db.Column(db.String(100))
     state = db.Column(db.String(100))
     pincode = db.Column(db.String(20))
+    # Invoice numbering fields
+    invoice_prefix = db.Column(db.String(20), default='INV')
+    invoice_starting_number = db.Column(db.Integer, default=1)
+    current_invoice_number = db.Column(db.Integer, default=1)
     # Relationships
     products = db.relationship('Product', backref='shopkeeper', cascade='all, delete-orphan')
     bills = db.relationship('Bill', backref='shopkeeper', cascade='all, delete-orphan')

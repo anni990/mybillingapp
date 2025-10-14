@@ -12,6 +12,38 @@ from app.models import Shopkeeper, CharteredAccountant, CAConnection, ShopConnec
 from app.extensions import db
 
 
+def generate_next_invoice_number(shopkeeper):
+    """Generate the next invoice number and increment the counter."""
+    # Format the number with leading zeros (e.g., 01, 02, 03)
+    formatted_number = str(shopkeeper.current_invoice_number).zfill(2)
+    invoice_number = f"{shopkeeper.invoice_prefix}-{formatted_number}"
+    
+    # Increment the counter for next use
+    shopkeeper.current_invoice_number += 1
+    
+    return invoice_number
+
+def reset_invoice_numbering(shopkeeper, prefix=None, starting_number=None):
+    """Reset invoice numbering with new prefix and/or starting number."""
+    if prefix is not None:
+        shopkeeper.invoice_prefix = prefix
+    if starting_number is not None:
+        shopkeeper.invoice_starting_number = starting_number
+        shopkeeper.current_invoice_number = starting_number
+
+def preview_next_invoice_number(shopkeeper):
+    """Preview what the next invoice number will be without incrementing."""
+    formatted_number = str(shopkeeper.current_invoice_number).zfill(2)
+    return f"{shopkeeper.invoice_prefix}-{formatted_number}"
+
+def is_custom_numbering_enabled(shopkeeper):
+    """Check if shopkeeper has enabled custom invoice numbering."""
+    return (shopkeeper.invoice_prefix and 
+            shopkeeper.invoice_prefix.strip() != '' and
+            shopkeeper.invoice_starting_number is not None and
+            shopkeeper.current_invoice_number is not None)
+
+
 def register_routes(bp):
     """Register profile management routes to the blueprint."""
     
@@ -21,7 +53,9 @@ def register_routes(bp):
     @shopkeeper_required
     def profile():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-        return render_template('shopkeeper/profile.html', shopkeeper=shopkeeper)
+        return render_template('shopkeeper/profile.html', 
+                             shopkeeper=shopkeeper,
+                             preview_next_invoice_number=preview_next_invoice_number)
 
     @bp.route('/profile/edit', methods=['GET', 'POST'])
     @login_required
@@ -41,10 +75,32 @@ def register_routes(bp):
             shopkeeper.account_number = request.form.get('account_number')
             shopkeeper.ifsc_code = request.form.get('ifsc_code')
             shopkeeper.template_choice = request.form.get('template_choice')
+            
+            # Handle invoice numbering settings
+            invoice_prefix = request.form.get('invoice_prefix', '').strip()
+            invoice_starting_number = request.form.get('invoice_starting_number')
+            
+            # Update prefix (can be empty for timestamp-based numbering)
+            shopkeeper.invoice_prefix = invoice_prefix
+            
+            if invoice_starting_number:
+                try:
+                    starting_num = int(invoice_starting_number)
+                    if starting_num != shopkeeper.invoice_starting_number:
+                        reset_invoice_numbering(shopkeeper, starting_number=starting_num)
+                        if invoice_prefix:  # Only show preview if custom numbering is enabled
+                            flash(f'Invoice numbering reset. Next invoice will be: {preview_next_invoice_number(shopkeeper)}', 'info')
+                        else:
+                            flash('Invoice numbering reset to timestamp-based method.', 'info')
+                except ValueError:
+                    flash('Invalid starting number provided.', 'error')
+            
             db.session.commit()
             flash('Profile updated successfully.', 'success')
             return redirect(url_for('shopkeeper.profile'))
-        return render_template('shopkeeper/profile_edit.html', shopkeeper=shopkeeper)
+        return render_template('shopkeeper/profile_edit.html', 
+                             shopkeeper=shopkeeper,
+                             preview_next_invoice_number=preview_next_invoice_number)
 
     def update_shopkeeper_verification(shopkeeper):
         required_fields = [
