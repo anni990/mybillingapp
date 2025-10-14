@@ -15,6 +15,7 @@ from ..utils import shopkeeper_required, get_current_shopkeeper
 from app.models import (Bill, BillItem, Product, Customer, CustomerLedger, 
                        Shopkeeper, CharteredAccountant, CAConnection, EmployeeClient)
 from app.extensions import db
+from .profile import generate_next_invoice_number, is_custom_numbering_enabled
 
 
 def register_routes(bp):
@@ -53,9 +54,16 @@ def register_routes(bp):
             quantities = request.form.getlist('quantity')
             prices = request.form.getlist('price_per_unit')
             total_amount = sum(float(q)*float(p) for q, p in zip(quantities, prices))
+            
+            # Generate invoice number - use custom format if enabled, otherwise use timestamp
+            if is_custom_numbering_enabled(shopkeeper):
+                invoice_number = generate_next_invoice_number(shopkeeper)
+            else:
+                invoice_number = f"BILL{int(datetime.datetime.now().timestamp())}"
+            
             bill = Bill(
                 shopkeeper_id=shopkeeper.shopkeeper_id,
-                bill_number=f"BILL{int(datetime.datetime.now().timestamp())}",
+                bill_number=invoice_number,
                 customer_name=customer_name,
                 customer_contact=customer_contact,
                 customer_address=customer_address,
@@ -546,7 +554,11 @@ def register_routes(bp):
             bill_date = datetime.datetime.now()
         
         total_amount = 0
-        bill_number = f"BILL{int(datetime.datetime.now().timestamp())}"
+        # Generate invoice number - use custom format if enabled, otherwise use timestamp
+        if is_custom_numbering_enabled(shopkeeper):
+            bill_number = generate_next_invoice_number(shopkeeper)
+        else:
+            bill_number = f"BILL{int(datetime.datetime.now().timestamp())}"
         
         # Determine payment status and amounts
         # For existing customers use the form selection. For new customers that are being saved

@@ -629,3 +629,28 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+-- Add walkthrough_completed field to users table
+ALTER TABLE users ADD COLUMN walkthrough_completed BOOLEAN DEFAULT FALSE;
+
+-- Optional: Update existing users to show walkthrough (set to FALSE for all existing users)
+UPDATE users SET walkthrough_completed = FALSE WHERE walkthrough_completed IS NULL;
+
+-- Optional: Add index for better performance
+CREATE INDEX idx_users_walkthrough_completed ON users(walkthrough_completed);
+
+-- Update Schema: Add Invoice Numbering Feature
+-- Run these commands manually in your MySQL database
+
+-- Add invoice numbering columns to shopkeepers table
+ALTER TABLE shopkeepers 
+ADD COLUMN invoice_prefix VARCHAR(20) DEFAULT '',
+ADD COLUMN invoice_starting_number INT DEFAULT 1,
+ADD COLUMN current_invoice_number INT DEFAULT 1;
+
+-- Set default values for existing shopkeepers (empty prefix = timestamp-based numbering)
+UPDATE shopkeepers 
+SET invoice_prefix = '', 
+    invoice_starting_number = 1, 
+    current_invoice_number = 1 
+WHERE invoice_prefix IS NULL;
