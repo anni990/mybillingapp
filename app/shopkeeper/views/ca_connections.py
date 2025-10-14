@@ -70,6 +70,9 @@ def register_routes(bp):
         """Request connection to a CA - preserves original logic."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         ca = CharteredAccountant.query.get_or_404(ca_id)
+
+        # Check if it's an AJAX request
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
         # Check if it's an AJAX request
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
@@ -79,37 +82,37 @@ def register_routes(bp):
             shopkeeper_id=shopkeeper.shopkeeper_id,
             ca_id=ca_id
         ).first()
-        
+
         if existing_connection:
             message = 'You are already connected to this CA.'
             if is_ajax:
                 return jsonify({'success': False, 'message': message})
             flash(message, 'info')
             return redirect(url_for('shopkeeper.ca_marketplace'))
-        
+
         # Check if request already sent
         existing_request = ShopConnection.query.filter_by(
             shopkeeper_id=shopkeeper.shopkeeper_id,
             ca_id=ca_id
         ).first()
-        
+
         if existing_request:
             message = 'Connection request already sent to this CA.'
             if is_ajax:
                 return jsonify({'success': False, 'message': message})
             flash(message, 'info')
             return redirect(url_for('shopkeeper.ca_marketplace'))
-        
+
         # Create connection request
         shop_connection = ShopConnection(
             shopkeeper_id=shopkeeper.shopkeeper_id,
             ca_id=ca_id,
             status='pending'
         )
-        
+
         db.session.add(shop_connection)
         db.session.commit()
-        
+
         message = 'Connection request sent successfully!'
         if is_ajax:
             return jsonify({'success': True, 'message': message})
