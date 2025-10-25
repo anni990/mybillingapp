@@ -137,7 +137,7 @@ class Bill(db.Model):
     customer_address=db.Column(db.String(100), nullable=True)
     customer_gstin=db.Column(db.String(50), nullable=True)
     customer_contact = db.Column(db.String(20))
-    bill_date = db.Column(db.Date, nullable=False)
+    bill_date = db.Column(db.DateTime, nullable=False)
     gst_type = db.Column(db.Enum('GST', 'Non-GST'), nullable=False)
     total_amount = db.Column(db.Numeric(12,2), nullable=False)
     payment_status = db.Column(db.String(20), default='PAID')  # 'PAID', 'PARTIAL', 'UNPAID'

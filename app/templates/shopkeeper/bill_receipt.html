@@ -86,14 +86,21 @@
         <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
             <div class="border p-4 rounded">
                 <h2 class="font-semibold mb-2">From:</h2>
-                <p>{{ shopkeeper.shop_name }}</p>
-                <p>{{ shopkeeper.address }}</p>
+                <p>Name: {{ shopkeeper.shop_name }}</p>
+                <p>Contact: {{ shopkeeper.contact_number }}</p>
+                <p>Address: {{ shopkeeper.address }}</p>
                 <p>GSTIN: {{ shopkeeper.gst_number }}</p>
             </div>
             <div class="border p-4 rounded">
                 <h2 class="font-semibold mb-2">To:</h2>
-                <p>{{ bill.customer_name }}</p>
-                <p>{{ bill.customer_contact }}</p>
+                <p>Name: {{ bill.customer_name }}</p>
+                <p>Contact: {{ bill.customer_contact }}</p>
+                {% if bill.customer_address %}
+                <p>Address: {{ bill.customer_address }}</p>
+                {% endif %}
+                {% if bill.customer_gstin %}
+                <p>GSTIN: {{ bill.customer_gstin }}</p>
+                {% endif %}
             </div>
         </div>
 

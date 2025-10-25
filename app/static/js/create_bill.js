@@ -458,9 +458,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const gstRate = productData ? product.gst_rate : '';
         const stock = productData ? product.stock : '';
         const productId = productData ? product.id : '';
+        const hsnCode = productData ? product.hsn_code : '';
 
         row.innerHTML = `
-            <div class="grid grid-cols-12 gap-3 items-center">
+            <div class="grid grid-cols-13 gap-3 items-center">
                 <div class="col-span-2">
                     <input name="product_name" type="text" value="${name}" 
                            class="product-name w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
@@ -481,6 +482,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     <input name="price_per_unit" type="number" min="0" step="0.01" value="${price}" 
                            class="price w-full border border-gray-300 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
                            placeholder="0.00" required>
+                </div>
+                <div class="col-span-1">
+                    <input name="hsn_code" type="text" value="${hsnCode}" 
+                           class="hsn-code w-full border border-gray-300 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
+                           placeholder="HSN">
                 </div>
                 <div class="col-span-1">
                     <input name="discount" type="number" min="0" max="100" step="0.01" value="0" 
@@ -546,18 +552,26 @@ document.addEventListener('DOMContentLoaded', function () {
                                placeholder="0.00" required>
                     </div>
                     <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">HSN Code</label>
+                        <input name="hsn_code" type="text" value="${hsnCode}" 
+                               class="hsn-code-mobile w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
+                               placeholder="HSN">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Discount (%)</label>
                         <input name="discount" type="number" min="0" max="100" step="0.01" value="0" 
                                class="discount-mobile w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
                                placeholder="0">
                     </div>
-                </div>
-                
-                <div class="gst-section-mobile">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">GST Rate (%)</label>
-                    <input name="gst_rate" type="number" min="0" max="100" step="0.01" value="${gstRate}" 
-                           class="gst-rate-input-mobile w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
-                           placeholder="0" required>
+                    <div class="gst-section-mobile">
+                        <label class="block text-xs font-medium text-gray-500 mb-1">GST Rate (%)</label>
+                        <input name="gst_rate" type="number" min="0" max="100" step="0.01" value="${gstRate}" 
+                               class="gst-rate-input-mobile w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
+                               placeholder="0" required>
+                    </div>
                 </div>
                 
                 <div class="flex justify-between items-center pt-2 border-t border-gray-200">
@@ -609,6 +623,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 mobileGst.value = this.value;
             }
             updateTotal();
+        });
+        
+        row.querySelector('.hsn-code').addEventListener('input', function() {
+            // Sync with mobile card
+            const mobileHsn = mobileCard.querySelector('.hsn-code-mobile');
+            if (mobileHsn) {
+                mobileHsn.value = this.value;
+            }
         });
         
         row.querySelector('.remove-product').addEventListener('click', function() {
@@ -681,6 +703,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 desktopGst.value = this.value;
             }
             updateTotal();
+        });
+        
+        mobileCard.querySelector('.hsn-code-mobile').addEventListener('input', function() {
+            // Sync with desktop row
+            const desktopHsn = row.querySelector('.hsn-code');
+            if (desktopHsn) {
+                desktopHsn.value = this.value;
+            }
         });
         
         mobileCard.querySelector('.remove-product-mobile').addEventListener('click', function() {

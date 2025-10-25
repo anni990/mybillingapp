@@ -16,7 +16,7 @@ def generate_next_invoice_number(shopkeeper):
     """Generate the next invoice number and increment the counter."""
     # Format the number with leading zeros (e.g., 01, 02, 03)
     formatted_number = str(shopkeeper.current_invoice_number).zfill(2)
-    invoice_number = f"{shopkeeper.invoice_prefix}-{formatted_number}"
+    invoice_number = f"{shopkeeper.invoice_prefix}{formatted_number}"
     
     # Increment the counter for next use
     shopkeeper.current_invoice_number += 1
@@ -34,7 +34,7 @@ def reset_invoice_numbering(shopkeeper, prefix=None, starting_number=None):
 def preview_next_invoice_number(shopkeeper):
     """Preview what the next invoice number will be without incrementing."""
     formatted_number = str(shopkeeper.current_invoice_number).zfill(2)
-    return f"{shopkeeper.invoice_prefix}-{formatted_number}"
+    return f"{shopkeeper.invoice_prefix}{formatted_number}"
 
 def is_custom_numbering_enabled(shopkeeper):
     """Check if shopkeeper has enabled custom invoice numbering."""
