@@ -77,7 +77,7 @@
             <div class="space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-sm text-gray-500">Assigned Shops</span>
-                    <span class="text-sm font-medium bg-[#ed6a3e] bg-opacity-10 text-[#ed6a3e] px-2 py-1 rounded-full">{{ assigned_shops|length }}</span>
+                    <span class="text-sm font-medium bg-[#ed6a3e] bg-opacity-10 text-white px-2 py-1 rounded-full">{{ assigned_shops|length }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-sm text-gray-500">GST Returns (This Month)</span>
@@ -182,7 +182,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <a href="{{ url_for('ca.bills_panel', shop_id=shop.shopkeeper_id) }}" target="_blank" 
+                            <a href="{{ url_for('ca.bills_panel', shopkeeper_id=shop.shopkeeper_id) }}" target="_blank" 
                                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-[#ed6a3e] hover:bg-[#d45f34] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ed6a3e] transition-colors duration-200">
                                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -240,7 +240,7 @@
                             </div>
                         </div>
                         
-                        <a href="{{ url_for('ca.bills_panel', shop_id=shop.shopkeeper_id) }}" target="_blank" 
+                        <a href="{{ url_for('ca.bills_panel', shopkeeper_id=shop.shopkeeper_id) }}" target="_blank" 
                            class="inline-flex items-center px-3 py-2 bg-[#ed6a3e] text-white rounded-lg hover:bg-[#d45f34] transition-colors duration-200 text-sm font-medium">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
