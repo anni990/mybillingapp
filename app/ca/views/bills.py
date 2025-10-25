@@ -2,7 +2,7 @@
 Bills management routes for CA.
 Extracted from original routes.py - maintaining all original logic.
 """
-from flask import render_template, redirect, url_for, request, flash, send_file
+from flask import render_template, redirect, url_for, request, flash, send_file, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import and_
 import io
@@ -10,6 +10,7 @@ import io
 from app.models import (CharteredAccountant, CAEmployee, EmployeeClient, Bill, BillItem, 
                        Shopkeeper, CAConnection, Product)
 from app.extensions import db
+from app.utils.gst import calc_line, generate_gst_summary, calculate_bill_totals
 
 
 def register_routes(bp):
@@ -105,152 +106,167 @@ def register_routes(bp):
     @bp.route('/bill/<int:bill_id>')
     @login_required
     def view_bill(bill_id):
-        """View bill - preserves original logic."""
-        print(f"Accessing bill {bill_id} by user {current_user.user_id} with role {current_user.role}")
-        
-        # Allow access only for CA and employees
-        if current_user.role not in ['CA', 'employee']:
-            flash('Access denied: Invalid role.', 'danger')
-            return redirect(url_for('auth.login'))
-
         bill = Bill.query.get_or_404(bill_id)
-        print(f"Found bill {bill.bill_id} for shopkeeper {bill.shopkeeper_id}")
-
-        # Initialize access check
-        is_editable = False
-
-        if current_user.role == 'CA':
-            ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
-            if ca:
-                ca_conn = CAConnection.query.filter_by(
-                    shopkeeper_id=bill.shopkeeper_id,
-                    ca_id=ca.ca_id,
-                    status='approved'
-                ).first()
-                is_editable = bool(ca_conn)
-                print(f"CA {ca.ca_id} connection status with shopkeeper {bill.shopkeeper_id}: {is_editable}")
-
-        elif current_user.role == 'employee':
-            employee = CAEmployee.query.filter_by(user_id=current_user.user_id).first()
-            if employee:
-                emp_client = EmployeeClient.query.filter_by(
-                    shopkeeper_id=bill.shopkeeper_id,
-                    employee_id=employee.employee_id
-                ).first()
-                is_editable = bool(emp_client)
-                print(f"Employee-Client access status: {is_editable}")
-
-        if not is_editable:
-            flash('Access denied: You are not authorized to view this bill.', 'danger')
-            return redirect(url_for('ca.bills_panel'))
-
-        # Determine correct back_url based on role
-        if current_user.role == 'CA':
-            back_url = url_for('ca.bills_panel')
-        elif current_user.role == 'employee':
-            back_url = url_for('ca.employee_dashboard')
-        else:
-            back_url = url_for('auth.login')
-
-        print(f"Rendering bill view for role {current_user.role}, back_url = {back_url}")
-
-        # Download PDF flag
-        is_download = request.args.get('download') == 'true'
-
-        # Get bill items and related data
+        
         bill_items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
         shopkeeper = bill.shopkeeper
         products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
         products_dict = {str(p.product_id): p for p in products}
-
-        # GST Summary calculations
+        
+        # Check if user can edit (you can customize this based on roles)
+        is_editable = False
+        if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id == current_user.user_id:
+            is_editable = True
+        elif current_user.role == 'CA':
+            ca_conn = CAConnection.query.filter_by(shopkeeper_id=bill.shopkeeper_id, ca_id=current_user.ca.ca_id, status='approved').first()
+            is_editable = bool(ca_conn)
+        elif current_user.role == 'employee':
+            emp_client = EmployeeClient.query.filter_by(shopkeeper_id=bill.shopkeeper_id, employee_id=current_user.ca_employee.employee_id).first()
+            is_editable = bool(emp_client)
+        
+        # Calculate GST summary using new engine
         bill_items_data = []
-        gst_summary_by_rate = {}
-        total_taxable_amount = 0
-        total_cgst_amount = 0
-        total_sgst_amount = 0
-        total_gst_amount = 0
-        overall_grand_total = 0
+        calculated_items = []
+        
+        # Determine GST mode (default to EXCLUSIVE for backward compatibility)
+        gst_mode = getattr(bill, 'gst_mode', 'EXCLUSIVE') or 'EXCLUSIVE'
 
         for item in bill_items:
-            product = products_dict.get(str(item.product_id))
-            if not product:
-                continue
+            # Handle both existing products and custom products
+            if item.product_id:  # Existing product
+                product = products_dict.get(str(item.product_id))
+                if not product:
+                    continue  # Skip if product not found
+                
+                gst_rate = float(product.gst_rate or 0)
+                hsn_code = getattr(product, 'hsn_code', '') or ''
+                product_name = product.product_name
+                is_custom = False
+            else:  # Custom product
+                gst_rate = float(item.custom_gst_rate or 0)
+                hsn_code = item.custom_hsn_code or ''
+                product_name = item.custom_product_name
+                is_custom = True
+                
+                # Create a mock product object for template compatibility
+                product = type('Product', (), {
+                    'product_name': product_name,
+                    'gst_rate': gst_rate,
+                    'hsn_code': hsn_code,
+                    'product_id': f'custom_{item.bill_item_id}'
+                })()
+            
             base_price = float(item.price_per_unit)
             quantity = int(item.quantity)
-            total_price = base_price * quantity
+            
+            # For viewing existing bills, assume discount = 0 unless stored elsewhere
+            discount_percent = 0  # You can extend this if discount is stored
+            
+            # Use new GST calculation engine
+            try:
+                gst_calc = calc_line(
+                    price=base_price,
+                    qty=quantity,
+                    gst_rate=gst_rate,
+                    discount_percent=discount_percent,
+                    mode=gst_mode
+                )
+                
+                # Prepare item data for template with all GST details
+                item_data = {
+                    'product': product,
+                    'is_custom': is_custom,
+                    'quantity': quantity,
+                    'unit_price': base_price,
+                    'unit_price_base': float(gst_calc['unit_price_base']),
+                    'line_base_total': float(gst_calc['line_base_total']),
+                    'discount_percent': discount_percent,
+                    'discount_amount': float(gst_calc['discount_amount']),
+                    'taxable_amount': float(gst_calc['taxable_amount']),
+                    'gst_rate': float(gst_calc['gst_rate']),
+                    'cgst_rate': float(gst_calc['cgst_rate']),
+                    'sgst_rate': float(gst_calc['sgst_rate']),
+                    'cgst_amount': float(gst_calc['cgst_amount']),
+                    'sgst_amount': float(gst_calc['sgst_amount']),
+                    'total_gst': float(gst_calc['total_gst']),
+                    'final_total': float(gst_calc['final_total']),
+                    'mode': gst_calc['mode'],
+                    'hsn_code': hsn_code
+                }
+                
+                bill_items_data.append(item_data)
+                calculated_items.append(gst_calc)
+                
+            except Exception as e:
+                current_app.logger.error(f"Error calculating GST for bill item {item.bill_item_id}: {str(e)}")
+                # Fallback to simple display
+                item_data = {
+                    'product': product,
+                    'is_custom': is_custom,
+                    'quantity': quantity,
+                    'unit_price': base_price,
+                    'line_base_total': base_price * quantity,
+                    'discount_percent': 0,
+                    'discount_amount': 0,
+                    'taxable_amount': base_price * quantity,
+                    'gst_rate': gst_rate,
+                    'cgst_rate': gst_rate / 2,
+                    'sgst_rate': gst_rate / 2,
+                    'cgst_amount': 0,
+                    'sgst_amount': 0,
+                    'total_gst': 0,
+                    'final_total': float(item.total_price),
+                    'mode': gst_mode,
+                    'hsn_code': hsn_code
+                }
+                bill_items_data.append(item_data)
+        
+        # Generate GST summary and totals using new engine
+        if calculated_items:
+            gst_summary = generate_gst_summary(calculated_items)
+            bill_totals = calculate_bill_totals(calculated_items)
+            
+            # Convert summary for template (maintain backward compatibility)
+            gst_summary_by_rate = {}
+            for rate_str, summary_data in gst_summary.items():
+                rate_float = float(rate_str)
+                gst_summary_by_rate[rate_float] = {
+                    'taxable_amount': float(summary_data['taxable_amount']),
+                    'cgst_amount': float(summary_data['cgst_amount']),
+                    'sgst_amount': float(summary_data['sgst_amount']),
+                    'total_gst_amount': float(summary_data['total_gst'])
+                }
+            
+            # Set totals
+            overall_grand_total = float(bill_totals['grand_total'])
+            total_taxable_amount = float(bill_totals['total_taxable_amount'])
+            total_cgst_amount = float(bill_totals['total_cgst_amount'])
+            total_sgst_amount = float(bill_totals['total_sgst_amount'])
+            total_gst_amount = float(bill_totals['total_gst_amount'])
+        else:
+            # No items or calculation failed
+            gst_summary_by_rate = {}
+            overall_grand_total = float(bill.total_amount or 0)
+            total_taxable_amount = 0
+            total_cgst_amount = 0
+            total_sgst_amount = 0
+            total_gst_amount = 0
 
-            discount = 0
-            discount_amount = (discount / 100) * total_price
-            discounted_price = total_price - discount_amount
+        is_editable = True  # You can set conditions for editability here
 
-            gst_rate = float(product.gst_rate or 0)
-            sgst_rate = cgst_rate = gst_rate / 2
-            sgst_amount = (sgst_rate / 100) * discounted_price
-            cgst_amount = (cgst_rate / 100) * discounted_price
-            final_price = discounted_price + sgst_amount + cgst_amount
-
-            item_data = {
-                'product': product,
-                'hsn_code': product.hsn_code if hasattr(product, 'hsn_code') else '',
-                'quantity': quantity,
-                'base_price': base_price,
-                'discount': discount,
-                'discount_amount': discount_amount,
-                'discounted_price': discounted_price,
-                'sgst_rate': sgst_rate,
-                'sgst_amount': sgst_amount,
-                'cgst_rate': cgst_rate,
-                'cgst_amount': cgst_amount,
-                'final_price': final_price
-            }
-            bill_items_data.append(item_data)
-
-            gst_summary_by_rate.setdefault(gst_rate, {
-                'taxable_amount': 0,
-                'cgst_amount': 0,
-                'sgst_amount': 0,
-                'total_gst_amount': 0
-            })
-
-            gst_summary_by_rate[gst_rate]['taxable_amount'] += discounted_price
-            gst_summary_by_rate[gst_rate]['cgst_amount'] += cgst_amount
-            gst_summary_by_rate[gst_rate]['sgst_amount'] += sgst_amount
-            gst_summary_by_rate[gst_rate]['total_gst_amount'] += (cgst_amount + sgst_amount)
-
-            total_taxable_amount += discounted_price
-            total_cgst_amount += cgst_amount
-            total_sgst_amount += sgst_amount
-            total_gst_amount += (cgst_amount + sgst_amount)
-            overall_grand_total += final_price
-
-        template_data = {
-            'bill': bill,
-            'bill_items_data': bill_items_data,
-            'shopkeeper': shopkeeper,
-            'products': products_dict,
-            'gst_summary_by_rate': gst_summary_by_rate,
-            'total_taxable_amount': total_taxable_amount,
-            'total_cgst_amount': total_cgst_amount,
-            'total_sgst_amount': total_sgst_amount,
-            'total_gst_amount': total_gst_amount,
-            'overall_grand_total': overall_grand_total,
-            'is_editable': is_editable,
-            'back_url': back_url  # ✅ Correct dynamic back URL passed to template
-        }
-
-        if is_download:
-            from weasyprint import HTML
-            template_data['is_editable'] = False
-            html = render_template('shopkeeper/bill_receipt.html', **template_data)
-            pdf = HTML(string=html).write_pdf()
-            return send_file(
-                io.BytesIO(pdf),
-                download_name=f'bill_{bill.bill_number}.pdf',
-                mimetype='application/pdf'
-            )
-
-        return render_template('shopkeeper/bill_receipt.html', **template_data)
+        return render_template('shopkeeper/bill_receipt.html',
+            bill=bill,
+            bill_items_data=bill_items_data,
+            shopkeeper=shopkeeper,
+            products=products_dict,
+            gst_summary_by_rate=gst_summary_by_rate,
+            total_taxable_amount=total_taxable_amount,
+            total_cgst_amount=total_cgst_amount,
+            total_sgst_amount=total_sgst_amount,
+            total_gst_amount=total_gst_amount,
+            overall_grand_total=overall_grand_total,
+            is_editable=is_editable,
+            back_url=url_for('ca.bills_panel'))
 
     @bp.route('/bill/<int:bill_id>/edit', methods=['POST'])
     @login_required
