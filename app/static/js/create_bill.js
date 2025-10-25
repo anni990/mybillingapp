@@ -13,6 +13,65 @@ document.addEventListener('DOMContentLoaded', function () {
     let hasInitialBlankRow = false;
     let firstProductAdded = false;
 
+    // Function to disable duplicate form inputs based on screen size
+    function handleFormInputDuplicates() {
+        const isMobile = window.innerWidth <= 768;
+        
+        // Get all product rows (desktop) and mobile cards
+        const desktopRows = document.querySelectorAll('.product-row');
+        const mobileCards = document.querySelectorAll('.mobile-product-card');
+        
+        if (isMobile) {
+            // On mobile: disable desktop inputs, enable mobile inputs
+            desktopRows.forEach(row => {
+                const inputs = row.querySelectorAll('input[name]');
+                inputs.forEach(input => {
+                    input.disabled = true;
+                    input.removeAttribute('name'); // Remove from form submission
+                    input.setAttribute('data-original-name', input.name || input.getAttribute('data-original-name') || '');
+                });
+            });
+            
+            mobileCards.forEach(card => {
+                const inputs = card.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.disabled = false;
+                    const originalName = input.getAttribute('data-original-name');
+                    if (originalName) {
+                        input.setAttribute('name', originalName);
+                    }
+                });
+            });
+        } else {
+            // On desktop: enable desktop inputs, disable mobile inputs
+            desktopRows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.disabled = false;
+                    const originalName = input.getAttribute('data-original-name');
+                    if (originalName) {
+                        input.setAttribute('name', originalName);
+                    }
+                });
+            });
+            
+            mobileCards.forEach(card => {
+                const inputs = card.querySelectorAll('input[name]');
+                inputs.forEach(input => {
+                    input.disabled = true;
+                    input.removeAttribute('name'); // Remove from form submission
+                    input.setAttribute('data-original-name', input.name || input.getAttribute('data-original-name') || '');
+                });
+            });
+        }
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', handleFormInputDuplicates);
+    
+    // Initial call
+    handleFormInputDuplicates();
+
     // Product search functionality
     let searchTimeout;
     productSearch.addEventListener('input', function() {
@@ -87,22 +146,44 @@ document.addEventListener('DOMContentLoaded', function () {
             // Reinitialize feather icons for the suggestions
             feather.replace();
             
-            // Add click handlers
+            // Add click handlers with duplicate prevention
             productSuggestions.querySelectorAll('.product-suggestion').forEach(item => {
-                item.addEventListener('click', function() {
+                item.addEventListener('click', function(e) {
+                    // Prevent double-clicks and rapid successive clicks
+                    if (this.dataset.processing === 'true') {
+                        return;
+                    }
+                    this.dataset.processing = 'true';
+                    
                     const productData = JSON.parse(this.dataset.product);
                     addProductRow(productData, '', false, true); // fromSearch = true
                     productSearch.value = '';
                     productSuggestions.classList.add('hidden');
+                    
+                    // Reset processing flag after a short delay
+                    setTimeout(() => {
+                        this.dataset.processing = 'false';
+                    }, 500);
                 });
             });
 
             productSuggestions.querySelectorAll('.new-product-suggestion').forEach(item => {
-                item.addEventListener('click', function() {
+                item.addEventListener('click', function(e) {
+                    // Prevent double-clicks and rapid successive clicks
+                    if (this.dataset.processing === 'true') {
+                        return;
+                    }
+                    this.dataset.processing = 'true';
+                    
                     const productName = this.dataset.name;
                     addProductRow(null, productName, false, true); // fromSearch = true
                     productSearch.value = '';
                     productSuggestions.classList.add('hidden');
+                    
+                    // Reset processing flag after a short delay
+                    setTimeout(() => {
+                        this.dataset.processing = 'false';
+                    }, 500);
                 });
             });
         } else {
@@ -111,8 +192,97 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateTotal() {
+        const rows = document.querySelectorAll('.product-row');
+        if (rows.length === 0) {
+            billTotal.textContent = '0.00';
+            return;
+        }
+
+        // Collect all line items for GST calculation
+        const lineItems = [];
+        rows.forEach(row => {
+            const qty = parseFloat(row.querySelector('.qty').value) || 0;
+            const price = parseFloat(row.querySelector('.price').value) || 0;
+            const discount = parseFloat(row.querySelector('.discount').value) || 0;
+            const gstRate = parseFloat(row.querySelector('.gst-rate-input').value) || 0;
+            
+            if (qty > 0 && price > 0) {
+                lineItems.push({
+                    price: price,
+                    qty: qty,
+                    gst_rate: gstRate,
+                    discount_percent: discount
+                });
+            }
+        });
+
+        if (lineItems.length === 0) {
+            billTotal.textContent = '0.00';
+            return;
+        }
+
+        // Get GST mode
+        const gstMode = document.getElementById('gst_mode') ? document.getElementById('gst_mode').value : 'EXCLUSIVE';
+        
+        // Call new GST preview API
+        fetch('/api/preview/gst', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                line_items: lineItems,
+                gst_mode: gstMode.toUpperCase(),
+                bill_gst_type: billGstType.value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update bill total
+                billTotal.textContent = data.totals.grand_total.toFixed(2);
+                
+                // Update individual row totals with calculated values
+                rows.forEach((row, index) => {
+                    if (index < data.line_calculations.length) {
+                        const calc = data.line_calculations[index];
+                        
+                        // Update row total display for desktop
+                        const rowTotalDisplay = row.querySelector('.row-total');
+                        if (rowTotalDisplay) {
+                            rowTotalDisplay.textContent = '₹' + calc.final_total.toFixed(2);
+                        }
+                        
+                        // Update corresponding mobile card total
+                        const rowId = row.dataset.rowId;
+                        const mobileCard = document.querySelector(`.mobile-product-card[data-row-id="${rowId}"]`);
+                        if (mobileCard) {
+                            const mobileRowTotal = mobileCard.querySelector('.row-total-mobile');
+                            if (mobileRowTotal) {
+                                mobileRowTotal.textContent = '₹' + calc.final_total.toFixed(2);
+                            }
+                        }
+                    }
+                });
+                
+                // Update GST summary display if element exists
+                updateGSTSummaryDisplay(data.gst_summary, data.totals);
+            } else {
+                console.error('GST calculation error:', data.error);
+                // Fallback to simple calculation
+                fallbackCalculation(rows);
+            }
+        })
+        .catch(error => {
+            console.error('Error calling GST API:', error);
+            // Fallback to simple calculation
+            fallbackCalculation(rows);
+        });
+    }
+
+    function fallbackCalculation(rows) {
         let total = 0;
-        document.querySelectorAll('.product-row').forEach(row => {
+        rows.forEach(row => {
             const qty = parseFloat(row.querySelector('.qty').value) || 0;
             const price = parseFloat(row.querySelector('.price').value) || 0;
             const discount = parseFloat(row.querySelector('.discount').value) || 0;
@@ -123,23 +293,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 rowTotal = rowTotal * (1 - discount / 100);
             }
             
-            // GST calculation
+            // Simple GST calculation for fallback
             if (billGstType.value === 'GST') {
                 const gstMode = document.getElementById('gst_mode') ? document.getElementById('gst_mode').value : 'exclusive';
                 if (gstMode === 'exclusive') {
                     rowTotal += rowTotal * gstRate / 100;
-                } // If inclusive, GST is already included in price
+                }
             }
             
             total += rowTotal;
             
-            // Update row total display for desktop
+            // Update row total displays
             const rowTotalDisplay = row.querySelector('.row-total');
             if (rowTotalDisplay) {
                 rowTotalDisplay.textContent = '₹' + rowTotal.toFixed(2);
             }
             
-            // Update corresponding mobile card total
             const rowId = row.dataset.rowId;
             const mobileCard = document.querySelector(`.mobile-product-card[data-row-id="${rowId}"]`);
             if (mobileCard) {
@@ -150,6 +319,40 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
         billTotal.textContent = total.toFixed(2);
+    }
+
+    function updateGSTSummaryDisplay(gstSummary, totals) {
+        // Update GST summary display if elements exist on the page
+        const summaryContainer = document.getElementById('gst-summary-display');
+        if (!summaryContainer) return;
+        
+        let html = '<div class="bg-gray-50 p-4 rounded-lg mt-4">';
+        html += '<h4 class="font-semibold mb-2">GST Summary</h4>';
+        
+        // Display by GST rate
+        Object.entries(gstSummary).forEach(([rate, summary]) => {
+            if (parseFloat(rate) > 0) {
+                html += `
+                    <div class="text-sm mb-1">
+                        <span class="font-medium">${rate}% GST:</span>
+                        Taxable: ₹${summary.taxable_amount.toFixed(2)}, 
+                        CGST: ₹${summary.cgst_amount.toFixed(2)}, 
+                        SGST: ₹${summary.sgst_amount.toFixed(2)}
+                    </div>
+                `;
+            }
+        });
+        
+        html += `
+            <div class="border-t pt-2 mt-2 font-semibold">
+                <div>Total Taxable: ₹${totals.total_taxable_amount.toFixed(2)}</div>
+                <div>Total GST: ₹${totals.total_gst_amount.toFixed(2)}</div>
+                <div>Grand Total: ₹${totals.grand_total.toFixed(2)}</div>
+            </div>
+        `;
+        html += '</div>';
+        
+        summaryContainer.innerHTML = html;
     }
 
     function removeRow(desktopRow, mobileCard) {
@@ -206,6 +409,18 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function addProductRow(productData = null, productName = '', isInitialBlank = false, fromSearch = false) {
+        // Prevent duplicate products (same product ID) from being added
+        if (productData && productData.id) {
+            const existingRows = document.querySelectorAll('.product-row');
+            for (let row of existingRows) {
+                const existingProductId = row.querySelector('.product-id').value;
+                if (existingProductId === productData.id.toString()) {
+                    console.log('Duplicate product prevented:', productData.name);
+                    return; // Don't add duplicate
+                }
+            }
+        }
+        
         // Hide no products messages when adding first product
         if (noProductsMessage) {
             noProductsMessage.style.display = 'none';
@@ -506,6 +721,9 @@ document.addEventListener('DOMContentLoaded', function () {
         feather.replace();
         
         updateTotal();
+        
+        // Handle form input duplicates for the new row
+        handleFormInputDuplicates();
         
         // Reset the add button styling if it was changed
         if (addBtn.classList.contains('bg-blue-500')) {

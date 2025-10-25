@@ -64,3 +64,8 @@ app/.env
 
 flask_session/
 app/config.py
+
+
+temp/
+.github/copilot-instructions.md
+rough.md

@@ -15,6 +15,7 @@ from ..utils import shopkeeper_required, get_current_shopkeeper
 from app.models import (Bill, BillItem, Product, Customer, CustomerLedger, 
                        Shopkeeper, CharteredAccountant, CAConnection, EmployeeClient)
 from app.extensions import db
+from app.utils.gst import calc_line, generate_gst_summary, calculate_bill_totals
 from .profile import generate_next_invoice_number, is_custom_numbering_enabled
 
 
@@ -150,14 +151,12 @@ def register_routes(bp):
             emp_client = EmployeeClient.query.filter_by(shopkeeper_id=bill.shopkeeper_id, employee_id=current_user.ca_employee.employee_id).first()
             is_editable = bool(emp_client)
         
-        # Calculate GST summary for each item
+        # Calculate GST summary using new engine
         bill_items_data = []
-        gst_summary_by_rate = {}
-        total_taxable_amount = 0
-        total_cgst_amount = 0
-        total_sgst_amount = 0
-        total_gst_amount = 0
-        overall_grand_total = 0
+        calculated_items = []
+        
+        # Determine GST mode (default to EXCLUSIVE for backward compatibility)
+        gst_mode = getattr(bill, 'gst_mode', 'EXCLUSIVE') or 'EXCLUSIVE'
 
         for item in bill_items:
             # Handle both existing products and custom products
@@ -167,74 +166,118 @@ def register_routes(bp):
                     continue  # Skip if product not found
                 
                 gst_rate = float(product.gst_rate or 0)
-                hsn_code = product.hsn_code if hasattr(product, 'hsn_code') else ''
+                hsn_code = getattr(product, 'hsn_code', '') or ''
                 product_name = product.product_name
                 is_custom = False
             else:  # Custom product
-                # Create a mock product object for custom products
-                product = type('Product', (), {
-                    'product_name': item.custom_product_name,
-                    'gst_rate': float(item.custom_gst_rate or 0),
-                    'hsn_code': item.custom_hsn_code or '',
-                    'product_id': f'custom_{item.bill_item_id}'
-                })()
-                
                 gst_rate = float(item.custom_gst_rate or 0)
                 hsn_code = item.custom_hsn_code or ''
                 product_name = item.custom_product_name
                 is_custom = True
+                
+                # Create a mock product object for template compatibility
+                product = type('Product', (), {
+                    'product_name': product_name,
+                    'gst_rate': gst_rate,
+                    'hsn_code': hsn_code,
+                    'product_id': f'custom_{item.bill_item_id}'
+                })()
             
             base_price = float(item.price_per_unit)
             quantity = int(item.quantity)
-            total_price = base_price * quantity
             
-            # Assuming discount percentage is stored or calculated
-            discount = 0  # You can modify this based on your discount logic
-            discount_amount = (discount / 100) * total_price
-            discounted_price = total_price - discount_amount
+            # For viewing existing bills, assume discount = 0 unless stored elsewhere
+            discount_percent = 0  # You can extend this if discount is stored
             
-            # GST calculations
-            sgst_rate = cgst_rate = gst_rate / 2
-            sgst_amount = (sgst_rate / 100) * discounted_price
-            cgst_amount = (cgst_rate / 100) * discounted_price
-            final_price = discounted_price + sgst_amount + cgst_amount
-
-            item_data = {
-                'product': product,
-                'is_custom': is_custom,
-                'hsn_code': hsn_code,
-                'quantity': quantity,
-                'base_price': base_price,
-                'discount': discount,
-                'discount_amount': discount_amount,
-                'discounted_price': discounted_price,
-                'sgst_rate': sgst_rate,
-                'sgst_amount': sgst_amount,
-                'cgst_rate': cgst_rate,
-                'cgst_amount': cgst_amount,
-                'final_price': final_price
-            }
-            bill_items_data.append(item_data)
-
-            # Update GST summary
-            if gst_rate not in gst_summary_by_rate:
-                gst_summary_by_rate[gst_rate] = {
-                    'taxable_amount': 0,
+            # Use new GST calculation engine
+            try:
+                gst_calc = calc_line(
+                    price=base_price,
+                    qty=quantity,
+                    gst_rate=gst_rate,
+                    discount_percent=discount_percent,
+                    mode=gst_mode
+                )
+                
+                # Prepare item data for template with all GST details
+                item_data = {
+                    'product': product,
+                    'is_custom': is_custom,
+                    'quantity': quantity,
+                    'unit_price': base_price,
+                    'unit_price_base': float(gst_calc['unit_price_base']),
+                    'line_base_total': float(gst_calc['line_base_total']),
+                    'discount_percent': discount_percent,
+                    'discount_amount': float(gst_calc['discount_amount']),
+                    'taxable_amount': float(gst_calc['taxable_amount']),
+                    'gst_rate': float(gst_calc['gst_rate']),
+                    'cgst_rate': float(gst_calc['cgst_rate']),
+                    'sgst_rate': float(gst_calc['sgst_rate']),
+                    'cgst_amount': float(gst_calc['cgst_amount']),
+                    'sgst_amount': float(gst_calc['sgst_amount']),
+                    'total_gst': float(gst_calc['total_gst']),
+                    'final_total': float(gst_calc['final_total']),
+                    'mode': gst_calc['mode'],
+                    'hsn_code': hsn_code
+                }
+                
+                bill_items_data.append(item_data)
+                calculated_items.append(gst_calc)
+                
+            except Exception as e:
+                current_app.logger.error(f"Error calculating GST for bill item {item.bill_item_id}: {str(e)}")
+                # Fallback to simple display
+                item_data = {
+                    'product': product,
+                    'is_custom': is_custom,
+                    'quantity': quantity,
+                    'unit_price': base_price,
+                    'line_base_total': base_price * quantity,
+                    'discount_percent': 0,
+                    'discount_amount': 0,
+                    'taxable_amount': base_price * quantity,
+                    'gst_rate': gst_rate,
+                    'cgst_rate': gst_rate / 2,
+                    'sgst_rate': gst_rate / 2,
                     'cgst_amount': 0,
                     'sgst_amount': 0,
-                    'total_gst_amount': 0
+                    'total_gst': 0,
+                    'final_total': float(item.total_price),
+                    'mode': gst_mode,
+                    'hsn_code': hsn_code
+                }
+                bill_items_data.append(item_data)
+        
+        # Generate GST summary and totals using new engine
+        if calculated_items:
+            gst_summary = generate_gst_summary(calculated_items)
+            bill_totals = calculate_bill_totals(calculated_items)
+            
+            # Convert summary for template (maintain backward compatibility)
+            gst_summary_by_rate = {}
+            for rate_str, summary_data in gst_summary.items():
+                rate_float = float(rate_str)
+                gst_summary_by_rate[rate_float] = {
+                    'taxable_amount': float(summary_data['taxable_amount']),
+                    'cgst_amount': float(summary_data['cgst_amount']),
+                    'sgst_amount': float(summary_data['sgst_amount']),
+                    'total_gst_amount': float(summary_data['total_gst'])
                 }
             
-            gst_summary_by_rate[gst_rate]['taxable_amount'] += discounted_price
-            gst_summary_by_rate[gst_rate]['cgst_amount'] += cgst_amount
-            gst_summary_by_rate[gst_rate]['sgst_amount'] += sgst_amount
-            gst_summary_by_rate[gst_rate]['total_gst_amount'] += (cgst_amount + sgst_amount)
-            
-            total_taxable_amount += discounted_price
-            total_cgst_amount += cgst_amount
-            total_sgst_amount += sgst_amount
-            total_gst_amount += (cgst_amount + sgst_amount)
-            overall_grand_total += final_price
+            # Set totals
+            overall_grand_total = float(bill_totals['grand_total'])
+            total_taxable_amount = float(bill_totals['total_taxable_amount'])
+            total_cgst_amount = float(bill_totals['total_cgst_amount'])
+            total_sgst_amount = float(bill_totals['total_sgst_amount'])
+            total_gst_amount = float(bill_totals['total_gst_amount'])
+        else:
+            # No items or calculation failed
+            gst_summary_by_rate = {}
+            overall_grand_total = float(bill.total_amount or 0)
+            total_taxable_amount = 0
+            total_cgst_amount = 0
+            total_sgst_amount = 0
+            total_gst_amount = 0
 
         is_editable = True  # You can set conditions for editability here
 
@@ -268,14 +311,12 @@ def register_routes(bp):
         products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
         products_dict = {str(p.product_id): p for p in products}
         
-        # Calculate GST summary
+        # Calculate GST summary using new engine
         bill_items_data = []
-        gst_summary_by_rate = {}
-        total_taxable_amount = 0
-        total_cgst_amount = 0
-        total_sgst_amount = 0
-        total_gst_amount = 0
-        overall_grand_total = 0
+        calculated_items = []
+        
+        # Determine GST mode (default to EXCLUSIVE for backward compatibility)
+        gst_mode = getattr(bill, 'gst_mode', 'EXCLUSIVE') or 'EXCLUSIVE'
 
         for item in bill_items:
             # Handle both existing products and custom products
@@ -285,69 +326,118 @@ def register_routes(bp):
                     continue  # Skip if product not found
                 
                 gst_rate = float(product.gst_rate or 0)
-                hsn_code = product.hsn_code if hasattr(product, 'hsn_code') else ''
+                hsn_code = getattr(product, 'hsn_code', '') or ''
+                product_name = product.product_name
                 is_custom = False
             else:  # Custom product
-                # Create a mock product object for custom products
-                product = type('Product', (), {
-                    'product_name': item.custom_product_name,
-                    'gst_rate': float(item.custom_gst_rate or 0),
-                    'hsn_code': item.custom_hsn_code or '',
-                    'product_id': f'custom_{item.bill_item_id}'
-                })()
-                
                 gst_rate = float(item.custom_gst_rate or 0)
                 hsn_code = item.custom_hsn_code or ''
+                product_name = item.custom_product_name
                 is_custom = True
+                
+                # Create a mock product object for template compatibility
+                product = type('Product', (), {
+                    'product_name': product_name,
+                    'gst_rate': gst_rate,
+                    'hsn_code': hsn_code,
+                    'product_id': f'custom_{item.bill_item_id}'
+                })()
             
             base_price = float(item.price_per_unit)
             quantity = int(item.quantity)
-            total_price = base_price * quantity
             
-            discount = 0
-            discount_amount = (discount / 100) * total_price
-            discounted_price = total_price - discount_amount
+            # For existing bills, assume discount = 0 unless stored elsewhere
+            discount_percent = 0
             
-            sgst_rate = cgst_rate = gst_rate / 2
-            sgst_amount = (sgst_rate / 100) * discounted_price
-            cgst_amount = (cgst_rate / 100) * discounted_price
-            final_price = discounted_price + sgst_amount + cgst_amount
-
-            item_data = {
-                'product': product,
-                'is_custom': is_custom,
-                'hsn_code': hsn_code,
-                'quantity': quantity,
-                'base_price': base_price,
-                'discount': discount,
-                'discount_amount': discount_amount,
-                'discounted_price': discounted_price,
-                'sgst_rate': sgst_rate,
-                'sgst_amount': sgst_amount,
-                'cgst_rate': cgst_rate,
-                'cgst_amount': cgst_amount,
-                'final_price': final_price
-            }
-            bill_items_data.append(item_data)
-
-            if gst_rate not in gst_summary_by_rate:
-                gst_summary_by_rate[gst_rate] = {
-                    'taxable_amount': 0,
+            # Use new GST calculation engine
+            try:
+                gst_calc = calc_line(
+                    price=base_price,
+                    qty=quantity,
+                    gst_rate=gst_rate,
+                    discount_percent=discount_percent,
+                    mode=gst_mode
+                )
+                
+                # Prepare item data for template with all GST details
+                item_data = {
+                    'product': product,
+                    'is_custom': is_custom,
+                    'quantity': quantity,
+                    'unit_price': base_price,
+                    'unit_price_base': float(gst_calc['unit_price_base']),
+                    'line_base_total': float(gst_calc['line_base_total']),
+                    'discount_percent': discount_percent,
+                    'discount_amount': float(gst_calc['discount_amount']),
+                    'taxable_amount': float(gst_calc['taxable_amount']),
+                    'gst_rate': float(gst_calc['gst_rate']),
+                    'cgst_rate': float(gst_calc['cgst_rate']),
+                    'sgst_rate': float(gst_calc['sgst_rate']),
+                    'cgst_amount': float(gst_calc['cgst_amount']),
+                    'sgst_amount': float(gst_calc['sgst_amount']),
+                    'total_gst': float(gst_calc['total_gst']),
+                    'final_total': float(gst_calc['final_total']),
+                    'mode': gst_calc['mode'],
+                    'hsn_code': hsn_code
+                }
+                
+                bill_items_data.append(item_data)
+                calculated_items.append(gst_calc)
+                
+            except Exception as e:
+                current_app.logger.error(f"Error calculating GST for bill item {item.bill_item_id}: {str(e)}")
+                # Fallback to simple display
+                item_data = {
+                    'product': product,
+                    'is_custom': is_custom,
+                    'quantity': quantity,
+                    'unit_price': base_price,
+                    'line_base_total': base_price * quantity,
+                    'discount_percent': 0,
+                    'discount_amount': 0,
+                    'taxable_amount': base_price * quantity,
+                    'gst_rate': gst_rate,
+                    'cgst_rate': gst_rate / 2,
+                    'sgst_rate': gst_rate / 2,
                     'cgst_amount': 0,
                     'sgst_amount': 0,
-                    'total_gst_amount': 0
+                    'total_gst': 0,
+                    'final_total': float(item.total_price),
+                    'mode': gst_mode,
+                    'hsn_code': hsn_code
+                }
+                bill_items_data.append(item_data)
+        
+        # Generate GST summary and totals using new engine
+        if calculated_items:
+            gst_summary = generate_gst_summary(calculated_items)
+            bill_totals = calculate_bill_totals(calculated_items)
+            
+            # Convert summary for template (maintain backward compatibility)
+            gst_summary_by_rate = {}
+            for rate_str, summary_data in gst_summary.items():
+                rate_float = float(rate_str)
+                gst_summary_by_rate[rate_float] = {
+                    'taxable_amount': float(summary_data['taxable_amount']),
+                    'cgst_amount': float(summary_data['cgst_amount']),
+                    'sgst_amount': float(summary_data['sgst_amount']),
+                    'total_gst_amount': float(summary_data['total_gst'])
                 }
             
-            gst_summary_by_rate[gst_rate]['taxable_amount'] += discounted_price
-            gst_summary_by_rate[gst_rate]['cgst_amount'] += cgst_amount
-            gst_summary_by_rate[gst_rate]['sgst_amount'] += sgst_amount
-            gst_summary_by_rate[gst_rate]['total_gst_amount'] += (cgst_amount + sgst_amount)
-            
-            total_taxable_amount += discounted_price
-            total_cgst_amount += cgst_amount
-            total_sgst_amount += sgst_amount
-            total_gst_amount += (cgst_amount + sgst_amount)
-            overall_grand_total += final_price
+            # Set totals
+            overall_grand_total = float(bill_totals['grand_total'])
+            total_taxable_amount = float(bill_totals['total_taxable_amount'])
+            total_cgst_amount = float(bill_totals['total_cgst_amount'])
+            total_sgst_amount = float(bill_totals['total_sgst_amount'])
+            total_gst_amount = float(bill_totals['total_gst_amount'])
+        else:
+            # No items or calculation failed
+            gst_summary_by_rate = {}
+            overall_grand_total = float(bill.total_amount or 0)
+            total_taxable_amount = 0
+            total_cgst_amount = 0
+            total_sgst_amount = 0
+            total_gst_amount = 0
 
         # Render template to HTML
         html = render_template('shopkeeper/bill_receipt.html',
@@ -546,6 +636,12 @@ def register_routes(bp):
         discounts = request.form.getlist('discount')
         gst_rates_custom = request.form.getlist('gst_rate')  # Get custom GST rates
         
+        # Debug: Log the form data to identify duplication source
+        current_app.logger.debug(f"Form data lengths - items:{len(items)}, names:{len(product_names)}, qty:{len(quantities)}, prices:{len(prices)}")
+        current_app.logger.debug(f"Items: {items}")
+        current_app.logger.debug(f"Product names: {product_names}")
+        current_app.logger.debug(f"Quantities: {quantities}")
+        
         # Parse bill_date from form (datetime-local input)
         bill_date_str = request.form.get('bill_date')
         if bill_date_str:
@@ -649,219 +745,187 @@ def register_routes(bp):
         db.session.add(bill)
         db.session.flush()
         
+        # Collect line items for GST calculation using new engine
+        line_items = []
+        calculated_items = []
         bill_items = []
         bill_items_data = []
-        gst_summary_by_rate = {}
-        overall_grand_total = 0.0
-        
-        # Handle customer creation BEFORE bill creation when toggle is enabled
-        if customer_type == 'new' and save_as_customer and customer_name and customer_name.strip():
-            try:
-                # Check for duplicate customer by phone number for this shopkeeper
-                existing_customer = None
-                if customer_contact and customer_contact.strip():
-                    existing_customer = Customer.query.filter_by(
-                        shopkeeper_id=shopkeeper.user_id,
-                        phone=customer_contact.strip()
-                    ).first()
-                
-                if existing_customer:
-                    # Use existing customer
-                    created_customer_id = existing_customer.customer_id
-                    print(f"Reusing existing customer: {existing_customer.name}")
-                else:
-                    # Create new customer
-                    new_customer = Customer(
-                        shopkeeper_id=shopkeeper.user_id,  # Use shopkeeper.user_id per project convention
-                        name=customer_name.strip(),
-                        phone=customer_contact.strip() if customer_contact else '',
-                        email='',  # Email not captured in current form
-                        address=customer_address.strip() if customer_address else '',
-                        is_active=True,
-                        total_balance=0.00
-                    )
-                    db.session.add(new_customer)
-                    db.session.flush()  # Get customer_id
-                    created_customer_id = new_customer.customer_id
-                    print(f"Created new customer: {new_customer.name} with ID {created_customer_id}")
-                    
-            except Exception as e:
-                # If customer creation fails, continue with bill creation (don't let it fail)
-                print(f"Error creating customer: {e}")
-                created_customer_id = None
         
         for idx, (pid, product_name, qty, price, discount, custom_gst) in enumerate(zip(items, product_names, quantities, prices, discounts, gst_rates_custom)):
-            qty = float(qty)
-            price = float(price)
-            discount = float(discount) if discount else 0
-            custom_gst = float(custom_gst) if custom_gst else 0
-            
-            # Check if this is an existing product or a custom product
-            if pid and pid.strip():  # Existing product
-                product = Product.query.get(pid)
-                if not product:
-                    continue
+            current_app.logger.debug(f"Processing item {idx}: pid={pid}, name={product_name}, qty={qty}, price={price}")
+            try:
+                qty = int(float(qty))
+                price = float(price)
+                discount = float(discount) if discount else 0
+                custom_gst = float(custom_gst) if custom_gst else 0
+                
+                # Check if this is an existing product or a custom product
+                if pid and pid.strip():  # Existing product
+                    product = Product.query.get(pid)
+                    if not product:
+                        continue
+                        
+                    # Get GST rate from product
+                    gst_rate = float(product.gst_rate or 0)
+                    hsn_code = getattr(product, 'hsn_code', '') or ''
+                    is_custom_product = False
+                    product_display_name = product.product_name
                     
-                # Get GST rate from product
-                gst_rate = float(product.gst_rate or 0)
-                hsn_code = product.hsn_code or ''
-                is_custom_product = False
+                else:  # Custom product (no product_id)
+                    product = None
+                    gst_rate = custom_gst
+                    hsn_code = ''  # Can be extended to accept HSN from form
+                    is_custom_product = True
+                    product_display_name = product_name.strip() if product_name else ''
+                    
+                    # Skip if no product name for custom product
+                    if not product_display_name:
+                        continue
                 
-            else:  # Custom product (no product_id)
-                product = None
-                gst_rate = custom_gst
-                hsn_code = ''  # Can be extended to accept HSN from form
-                is_custom_product = True
+                # Use new GST calculation engine
+                # Determine GST mode (default to EXCLUSIVE for backward compatibility)
+                item_gst_mode = gst_mode.upper() if gst_mode else 'EXCLUSIVE'
                 
-                # Skip if no product name for custom product
-                if not product_name or not product_name.strip():
-                    continue
-            
-            # Calculate base price
-            total_base_price = price * qty
-            
-            # Calculate discount
-            discount_amount = total_base_price * (discount / 100.0)
-            
-            # Calculate discounted price (taxable value)
-            discounted_price = total_base_price - discount_amount
-            
-            # Calculate CGST and SGST (50/50 split)
-            cgst_rate_percentage = gst_rate / 2.0
-            sgst_rate_percentage = gst_rate / 2.0
-            
-            cgst_amount = discounted_price * (cgst_rate_percentage / 100.0)
-            sgst_amount = discounted_price * (sgst_rate_percentage / 100.0)
-            total_gst_item_amount = cgst_amount + sgst_amount
-            
-            # Final price for item
-            final_price_item = discounted_price + total_gst_item_amount
-            
-            # Create bill item
-            if is_custom_product:
-                # Create bill item for custom product
-                bill_item = BillItem(
-                    bill_id=bill.bill_id,
-                    product_id=None,  # No product_id for custom products
-                    custom_product_name=product_name.strip(),
-                    custom_gst_rate=gst_rate,
-                    custom_hsn_code=hsn_code,
-                    quantity=qty,
-                    price_per_unit=price,
-                    total_price=final_price_item
+                # Calculate using new GST engine
+                gst_calc = calc_line(
+                    price=price,
+                    qty=qty,
+                    gst_rate=gst_rate,
+                    discount_percent=discount,
+                    mode=item_gst_mode
                 )
-            else:
-                # Create bill item for existing product
-                bill_item = BillItem(
-                    bill_id=bill.bill_id,
-                    product_id=pid,
-                    custom_product_name=None,
-                    custom_gst_rate=None,
-                    custom_hsn_code=None,
-                    quantity=qty,
-                    price_per_unit=price,
-                    total_price=final_price_item
-                )
-            db.session.add(bill_item)
-            bill_items.append(bill_item)
-            
-            # Store calculated data for template
-            if is_custom_product:
-                # Create a mock product object for custom products
-                mock_product = type('Product', (), {
-                    'product_name': product_name.strip(),
-                    'gst_rate': gst_rate,
+                
+                # Update stock for existing products
+                if not is_custom_product and product:
+                    if product.stock_qty >= qty:
+                        product.stock_qty -= qty
+                    else:
+                        current_app.logger.warning(f"Insufficient stock for product {product.product_name}. Available: {product.stock_qty}, Required: {qty}")
+                
+                # Create bill item with calculated values
+                if is_custom_product:
+                    bill_item = BillItem(
+                        bill_id=bill.bill_id,
+                        product_id=None,
+                        custom_product_name=product_display_name,
+                        custom_gst_rate=gst_rate,
+                        custom_hsn_code=hsn_code,
+                        quantity=qty,
+                        price_per_unit=price,
+                        total_price=float(gst_calc['final_total'])
+                    )
+                else:
+                    bill_item = BillItem(
+                        bill_id=bill.bill_id,
+                        product_id=pid,
+                        custom_product_name=None,
+                        custom_gst_rate=None,
+                        custom_hsn_code=None,
+                        quantity=qty,
+                        price_per_unit=price,
+                        total_price=float(gst_calc['final_total'])
+                    )
+                
+                db.session.add(bill_item)
+                bill_items.append(bill_item)
+                
+                # Prepare item data for template with all GST details
+                item_data = {
+                    'bill_item': bill_item,
+                    'product_name': product_display_name,
+                    'is_custom': is_custom_product,
                     'hsn_code': hsn_code,
-                    'product_id': f'custom_{idx}'  # Unique identifier for template
-                })()
+                    'quantity': qty,
+                    'unit_price': price,
+                    'unit_price_base': float(gst_calc['unit_price_base']),
+                    'line_base_total': float(gst_calc['line_base_total']),
+                    'discount_percent': discount,
+                    'discount_amount': float(gst_calc['discount_amount']),
+                    'taxable_amount': float(gst_calc['taxable_amount']),
+                    'gst_rate': float(gst_calc['gst_rate']),
+                    'cgst_rate': float(gst_calc['cgst_rate']),
+                    'sgst_rate': float(gst_calc['sgst_rate']),
+                    'cgst_amount': float(gst_calc['cgst_amount']),
+                    'sgst_amount': float(gst_calc['sgst_amount']),
+                    'total_gst': float(gst_calc['total_gst']),
+                    'final_total': float(gst_calc['final_total']),
+                    'mode': gst_calc['mode']
+                }
                 
-                item_data = {
-                    'product': mock_product,
-                    'is_custom': True,
-                    'quantity': qty,
-                    'base_price': price,
-                    'total_base_price': total_base_price,
-                    'discount': discount,
-                    'discount_amount': discount_amount,
-                    'discounted_price': discounted_price,
-                    'gst_rate': gst_rate,
-                    'cgst_rate': cgst_rate_percentage,
-                    'sgst_rate': sgst_rate_percentage,
-                    'cgst_amount': cgst_amount,
-                    'sgst_amount': sgst_amount,
-                    'total_gst_amount': total_gst_item_amount,
-                    'final_price': final_price_item,
-                    'hsn_code': hsn_code
-                }
-            else:
-                item_data = {
-                    'product': product,
-                    'is_custom': False,
-                    'quantity': qty,
-                    'base_price': price,
-                    'total_base_price': total_base_price,
-                    'discount': discount,
-                    'discount_amount': discount_amount,
-                    'discounted_price': discounted_price,
-                    'gst_rate': gst_rate,
-                    'cgst_rate': cgst_rate_percentage,
-                    'sgst_rate': sgst_rate_percentage,
-                    'cgst_amount': cgst_amount,
-                    'sgst_amount': sgst_amount,
-                    'total_gst_amount': total_gst_item_amount,
-                    'final_price': final_price_item,
-                    'hsn_code': hsn_code
-                }
-            bill_items_data.append(item_data)
+                # Add product reference for display
+                if not is_custom_product and product:
+                    item_data['product'] = product
+                else:
+                    # Create mock product for template compatibility
+                    item_data['product'] = type('Product', (), {
+                        'product_name': product_display_name,
+                        'gst_rate': gst_rate,
+                        'hsn_code': hsn_code,
+                        'product_id': f'custom_{idx}'
+                    })()
+                
+                bill_items_data.append(item_data)
+                calculated_items.append(gst_calc)
+                
+            except Exception as e:
+                current_app.logger.error(f"Error processing item {idx+1}: {str(e)}")
+                flash(f"Error processing item {idx+1}: {str(e)}", 'warning')
+                continue
+        
+        # Generate GST summary and totals using new engine
+        if calculated_items:
+            gst_summary = generate_gst_summary(calculated_items)
+            bill_totals = calculate_bill_totals(calculated_items)
             
-            # Aggregate by GST rate
-            gst_rate_key = str(int(gst_rate)) if gst_rate > 0 else '0'
-            if gst_rate_key not in gst_summary_by_rate:
-                gst_summary_by_rate[gst_rate_key] = {
-                    'taxable_amount': 0.0,
-                    'cgst_amount': 0.0,
-                    'sgst_amount': 0.0,
-                    'total_gst_amount': 0.0
+            # Convert summary for template (maintain backward compatibility)
+            gst_summary_by_rate = {}
+            for rate_str, summary_data in gst_summary.items():
+                rate_float = float(rate_str)
+                gst_summary_by_rate[rate_float] = {
+                    'taxable_amount': float(summary_data['taxable_amount']),
+                    'cgst_amount': float(summary_data['cgst_amount']),
+                    'sgst_amount': float(summary_data['sgst_amount']),
+                    'total_gst_amount': float(summary_data['total_gst'])
                 }
             
-            gst_summary_by_rate[gst_rate_key]['taxable_amount'] += discounted_price
-            gst_summary_by_rate[gst_rate_key]['cgst_amount'] += cgst_amount
-            gst_summary_by_rate[gst_rate_key]['sgst_amount'] += sgst_amount
-            gst_summary_by_rate[gst_rate_key]['total_gst_amount'] += total_gst_item_amount
-            
-            overall_grand_total += final_price_item
-            
-            # Update product stock only for existing products (not custom products)
-            if product and not is_custom_product:
-                product.stock_qty = product.stock_qty - int(qty)
+            # Update bill totals
+            overall_grand_total = float(bill_totals['grand_total'])
+            total_taxable_amount = float(bill_totals['total_taxable_amount'])
+            total_cgst_amount = float(bill_totals['total_cgst_amount'])
+            total_sgst_amount = float(bill_totals['total_sgst_amount'])
+            total_gst_amount = float(bill_totals['total_gst_amount'])
+        else:
+            # No items processed
+            gst_summary_by_rate = {}
+            overall_grand_total = 0.0
+            total_taxable_amount = 0.0
+            total_cgst_amount = 0.0
+            total_sgst_amount = 0.0
+            total_gst_amount = 0.0
         
         bill.total_amount = overall_grand_total
-        try:
+        
         # Update paid_amount and due_amount based on final total if needed
+        try:
             if payment_status == 'Paid':
                 paid_amount = overall_grand_total
                 due_amount = 0
             elif payment_status == 'Unpaid':
                 paid_amount = 0
                 due_amount = overall_grand_total
-            else:
-                    # For partial payments, use the calculated amounts
-                    paid_amount = float(request.form.get('calculated_paid_amount', 0))
-                    due_amount = float(request.form.get('calculated_unpaid_amount', 0))
-        except Exception:
-            # Fallback values
+            else:  # Partial payment
+                paid_amount = float(request.form.get('paid_amount', 0))
+                due_amount = overall_grand_total - paid_amount
+        except (ValueError, TypeError):
+            # Fallback values on error
             paid_amount = 0
-            due_amount = 0
+            due_amount = overall_grand_total
         
         bill.paid_amount = paid_amount
         bill.due_amount = due_amount
-        db.session.commit()
+        bill.payment_status = payment_status
         
-        # Calculate grand total summary
-        total_taxable_amount = sum(summary['taxable_amount'] for summary in gst_summary_by_rate.values())
-        total_cgst_amount = sum(summary['cgst_amount'] for summary in gst_summary_by_rate.values())
-        total_sgst_amount = sum(summary['sgst_amount'] for summary in gst_summary_by_rate.values())
-        total_gst_amount = sum(summary['total_gst_amount'] for summary in gst_summary_by_rate.values())
+        db.session.commit()
         
         # Prepare data for receipt
         bill_data = {

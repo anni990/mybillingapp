@@ -133,14 +133,14 @@
                         <td class="p-2 border">{{ item_data.product.product_name }}</td>
                         <td class="p-2 border">{{ item_data.hsn_code }}</td>
                         <td class="p-2 border text-right">{{ item_data.quantity }}</td>
-                        <td class="p-2 border text-right">₹{{ item_data.base_price|round(2) }}</td>
-                        <td class="p-2 border text-right">₹{{ item_data.discount_amount|round(2) }} ({{ item_data.discount }}%)</td>
-                        <td class="p-2 border text-right">₹{{ item_data.discounted_price|round(2) }}</td>
+                        <td class="p-2 border text-right">₹{{ item_data.unit_price|round(2) }}</td>
+                        <td class="p-2 border text-right">₹{{ item_data.discount_amount|round(2) }} ({{ item_data.discount_percent }}%)</td>
+                        <td class="p-2 border text-right">₹{{ item_data.taxable_amount|round(2) }}</td>
                         <td class="p-2 border text-right">{{ item_data.sgst_rate|round(2) }}</td>
                         <td class="p-2 border text-right">₹{{ item_data.sgst_amount|round(2) }}</td>
                         <td class="p-2 border text-right">{{ item_data.cgst_rate|round(2) }}</td>
                         <td class="p-2 border text-right">₹{{ item_data.cgst_amount|round(2) }}</td>
-                        <td class="p-2 border text-right">₹{{ item_data.final_price|round(2) }}</td>
+                        <td class="p-2 border text-right">₹{{ item_data.final_total|round(2) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -244,7 +244,7 @@
                                     <input type="number" name="quantity[]" value="{{ item.quantity }}" min="1" class="w-full border rounded px-2 py-1" required>
                                 </td>
                                 <td class="p-2 border">
-                                    <input type="number" name="price[]" value="{{ item.base_price }}" step="0.01" min="0.01" class="w-full border rounded px-2 py-1" required>
+                                    <input type="number" name="price[]" value="{{ item.unit_price }}" step="0.01" min="0.01" class="w-full border rounded px-2 py-1" required>
                                 </td>
                             </tr>
                             {% endfor %}
