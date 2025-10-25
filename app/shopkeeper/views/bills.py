@@ -41,7 +41,8 @@ def register_routes(bp):
                 'name': p.product_name,
                 'price': float(p.price),
                 'stock': p.stock_qty,
-                'gst_rate': float(p.gst_rate or 0)
+                'gst_rate': float(p.gst_rate or 0),
+                'hsn_code': p.hsn_code or ''
             } for p in products
         ]
         if request.method == 'POST':
@@ -50,7 +51,7 @@ def register_routes(bp):
             customer_address = request.form.get('customer_address')
             customer_gstin=request.form.get('customer_gstin')
             gst_type = request.form.get('gst_type')
-            bill_date = datetime.date.today()
+            bill_date = datetime.datetime.now()
             items = request.form.getlist('product_id')
             quantities = request.form.getlist('quantity')
             prices = request.form.getlist('price_per_unit')

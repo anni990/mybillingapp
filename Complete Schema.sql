@@ -35,7 +35,7 @@ CREATE TABLE `bills` (
   `customer_address` varchar(255) DEFAULT NULL,
   `customer_gstin` varchar(20) DEFAULT NULL,
   `customer_contact` varchar(20) DEFAULT NULL,
-  `bill_date` date NOT NULL,
+  `bill_date` datetime NOT NULL,
   `gst_type` enum('GST','Non-GST') NOT NULL,
   `total_amount` decimal(12,2) NOT NULL,
   `payment_status` enum('Paid','Unpaid','Partial') NOT NULL DEFAULT 'Paid',
