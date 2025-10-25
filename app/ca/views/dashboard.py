@@ -49,26 +49,35 @@ def register_routes(bp):
         
         # Removed monthly revenue calculation
         
-        # Recent bills (last 5)
-        recent_bills = db.session.query(Bill, Shopkeeper.shop_name).join(
-            Shopkeeper, Bill.shopkeeper_id == Shopkeeper.shopkeeper_id
+        # Connected shopkeepers with GST filing status
+        connected_shopkeepers_query = db.session.query(
+            Shopkeeper, GSTFilingStatus
         ).join(
             CAConnection, and_(
                 CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id,
                 CAConnection.ca_id == ca.ca_id,
                 CAConnection.status == 'approved'
             )
-        ).order_by(Bill.bill_date.desc()).limit(5).all()
+        ).outerjoin(
+            GSTFilingStatus, and_(
+                GSTFilingStatus.shopkeeper_id == Shopkeeper.shopkeeper_id,
+                GSTFilingStatus.month == current_month
+            )
+        ).order_by(Shopkeeper.shop_name).all()
         
-        bills_data = []
-        for bill, shopkeeper_name in recent_bills:
-            bills_data.append({
-                'bill_id': bill.bill_id,
-                'shopkeeper_name': shopkeeper_name,
-                'bill_number': bill.bill_number,
-                'bill_date': bill.bill_date,
-                'total_amount': bill.total_amount,
-                'payment_status': bill.payment_status
+        connected_shopkeepers_data = []
+        for shopkeeper, gst_status in connected_shopkeepers_query:
+            filing_status = gst_status.status if gst_status else 'Not Filed'
+            filed_date = gst_status.filed_at if gst_status and gst_status.filed_at else None
+            
+            connected_shopkeepers_data.append({
+                'shopkeeper_id': shopkeeper.shopkeeper_id,
+                'shop_name': shopkeeper.shop_name,
+                'contact_number': shopkeeper.contact_number,
+                'gst_number': shopkeeper.gst_number,
+                'domain': shopkeeper.domain,
+                'filing_status': filing_status,
+                'filed_date': filed_date
             })
         
         # GST Filing Status for current month
@@ -143,8 +152,7 @@ def register_routes(bp):
             total_clients=total_clients,
             total_employees=total_employees,
             pending_approvals=pending_approvals,
-
-            recent_bills=bills_data,
+            connected_shopkeepers=connected_shopkeepers_data,
             current_month=datetime.now().strftime('%B %Y'),
             gst_filed_count=gst_filed_count,
             gst_pending_count=gst_pending_count,
