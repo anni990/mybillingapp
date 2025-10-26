@@ -96,7 +96,7 @@ def register_routes(bp):
                     'paid_amount':bill.paid_amount,
                     'due_amount':bill.due_amount
                 })
-                print(f"Added bill {bill.bill_id} to bills_data")
+                # print(f"Added bill {bill.bill_id} to bills_data")
             except Exception as e:
                 print(f"Error processing bill: {e}")
         # Shopkeepers for filter dropdown
@@ -113,16 +113,11 @@ def register_routes(bp):
         products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
         products_dict = {str(p.product_id): p for p in products}
         
-        # Check if user can edit (you can customize this based on roles)
+        # Check if user can edit - Only shopkeepers can edit bills
         is_editable = False
         if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id == current_user.user_id:
             is_editable = True
-        elif current_user.role == 'CA':
-            ca_conn = CAConnection.query.filter_by(shopkeeper_id=bill.shopkeeper_id, ca_id=current_user.ca.ca_id, status='approved').first()
-            is_editable = bool(ca_conn)
-        elif current_user.role == 'employee':
-            emp_client = EmployeeClient.query.filter_by(shopkeeper_id=bill.shopkeeper_id, employee_id=current_user.ca_employee.employee_id).first()
-            is_editable = bool(emp_client)
+        # CA and employees cannot edit bills - only view them
         
         # Calculate GST summary using new engine
         bill_items_data = []
@@ -252,8 +247,6 @@ def register_routes(bp):
             total_sgst_amount = 0
             total_gst_amount = 0
 
-        is_editable = True  # You can set conditions for editability here
-
         return render_template('shopkeeper/bill_receipt.html',
             bill=bill,
             bill_items_data=bill_items_data,
@@ -271,24 +264,19 @@ def register_routes(bp):
     @bp.route('/bill/<int:bill_id>/edit', methods=['POST'])
     @login_required
     def update_bill_ca(bill_id):
-        """Update bill - preserves original logic."""
+        """Update bill - Only shopkeepers can edit bills."""
         bill = Bill.query.get_or_404(bill_id)
 
-        # Access control
-        if current_user.role == 'CA':
-            ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
-            allowed = CAConnection.query.filter_by(shopkeeper_id=bill.shopkeeper_id, ca_id=ca.ca_id, status='approved').first()
-            if not allowed:
-                flash("Access denied: CA not connected to this client.", "danger")
-                return redirect(url_for('ca.bills_panel'))
-
-        elif current_user.role == 'employee':
-            employee = CAEmployee.query.filter_by(user_id=current_user.user_id).first()
-            allowed = EmployeeClient.query.filter_by(shopkeeper_id=bill.shopkeeper_id, employee_id=employee.employee_id).first()
-            if not allowed:
-                flash("Access denied: Employee not assigned to this client.", "danger")
-                return redirect(url_for('ca.bills_panel'))
-
+        # Access control - Only shopkeepers can edit bills
+        if current_user.role in ['CA', 'employee']:
+            flash("Only Shop Owner can Edit bills.", "warning")
+            return redirect(url_for('ca.view_bill', bill_id=bill_id))
+        
+        elif current_user.role == 'shopkeeper':
+            # Check if this shopkeeper owns the bill
+            if bill.shopkeeper.user_id != current_user.user_id:
+                flash("Access denied: You can only edit your own bills.", "danger")
+                return redirect(url_for('shopkeeper.bills'))
         else:
             flash("Access denied: Unauthorized role.", "danger")
             return redirect(url_for('auth.login'))

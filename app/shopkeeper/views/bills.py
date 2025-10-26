@@ -296,6 +296,161 @@ def register_routes(bp):
             is_editable=is_editable,
             back_url=url_for('shopkeeper.manage_bills'))
 
+    @bp.route('/bill/<int:bill_id>/edit')
+    @login_required
+    @shopkeeper_required
+    def edit_bill(bill_id):
+        """Edit bill page - separate UI for editing."""
+        bill = Bill.query.get_or_404(bill_id)
+        if bill.shopkeeper.user_id != current_user.user_id:
+            flash('Access denied.', 'danger')
+            return redirect(url_for('shopkeeper.manage_bills'))
+        
+        bill_items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
+        shopkeeper = bill.shopkeeper
+        products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
+        products_dict = {str(p.product_id): p for p in products}
+        
+        # Calculate GST summary using new engine
+        bill_items_data = []
+        calculated_items = []
+        
+        # Determine GST mode (default to EXCLUSIVE for backward compatibility)
+        gst_mode = getattr(bill, 'gst_mode', 'EXCLUSIVE') or 'EXCLUSIVE'
+
+        for item in bill_items:
+            # Handle both existing products and custom products
+            if item.product_id:  # Existing product
+                product = products_dict.get(str(item.product_id))
+                if not product:
+                    continue  # Skip if product not found
+                
+                gst_rate = float(product.gst_rate or 0)
+                hsn_code = getattr(product, 'hsn_code', '') or ''
+                product_name = product.product_name
+                is_custom = False
+            else:  # Custom product
+                gst_rate = float(item.custom_gst_rate or 0)
+                hsn_code = item.custom_hsn_code or ''
+                product_name = item.custom_product_name
+                is_custom = True
+                
+                # Create a mock product object for template compatibility
+                product = type('Product', (), {
+                    'product_name': product_name,
+                    'gst_rate': gst_rate,
+                    'hsn_code': hsn_code,
+                    'product_id': f'custom_{item.bill_item_id}'
+                })()
+            
+            base_price = float(item.price_per_unit)
+            quantity = int(item.quantity)
+            
+            # For viewing existing bills, assume discount = 0 unless stored elsewhere
+            discount_percent = 0  # You can extend this if discount is stored
+            
+            # Use new GST calculation engine
+            try:
+                gst_calc = calc_line(
+                    price=base_price,
+                    qty=quantity,
+                    gst_rate=gst_rate,
+                    discount_percent=discount_percent,
+                    mode=gst_mode
+                )
+                
+                # Prepare item data for template with all GST details
+                item_data = {
+                    'product': product,
+                    'is_custom': is_custom,
+                    'quantity': quantity,
+                    'unit_price': base_price,
+                    'unit_price_base': float(gst_calc['unit_price_base']),
+                    'line_base_total': float(gst_calc['line_base_total']),
+                    'discount_percent': discount_percent,
+                    'discount_amount': float(gst_calc['discount_amount']),
+                    'taxable_amount': float(gst_calc['taxable_amount']),
+                    'gst_rate': float(gst_calc['gst_rate']),
+                    'cgst_rate': float(gst_calc['cgst_rate']),
+                    'sgst_rate': float(gst_calc['sgst_rate']),
+                    'cgst_amount': float(gst_calc['cgst_amount']),
+                    'sgst_amount': float(gst_calc['sgst_amount']),
+                    'total_gst': float(gst_calc['total_gst']),
+                    'final_total': float(gst_calc['final_total']),
+                    'mode': gst_calc['mode'],
+                    'hsn_code': hsn_code
+                }
+                
+                bill_items_data.append(item_data)
+                calculated_items.append(gst_calc)
+                
+            except Exception as e:
+                current_app.logger.error(f"Error calculating GST for bill item {item.bill_item_id}: {str(e)}")
+                # Fallback to simple display
+                item_data = {
+                    'product': product,
+                    'is_custom': is_custom,
+                    'quantity': quantity,
+                    'unit_price': base_price,
+                    'line_base_total': base_price * quantity,
+                    'discount_percent': 0,
+                    'discount_amount': 0,
+                    'taxable_amount': base_price * quantity,
+                    'gst_rate': gst_rate,
+                    'cgst_rate': gst_rate / 2,
+                    'sgst_rate': gst_rate / 2,
+                    'cgst_amount': 0,
+                    'sgst_amount': 0,
+                    'total_gst': 0,
+                    'final_total': float(item.total_price),
+                    'mode': gst_mode,
+                    'hsn_code': hsn_code
+                }
+                bill_items_data.append(item_data)
+        
+        # Generate GST summary and totals using new engine
+        if calculated_items:
+            gst_summary = generate_gst_summary(calculated_items)
+            bill_totals = calculate_bill_totals(calculated_items)
+            
+            # Convert summary for template (maintain backward compatibility)
+            gst_summary_by_rate = {}
+            for rate_str, summary_data in gst_summary.items():
+                rate_float = float(rate_str)
+                gst_summary_by_rate[rate_float] = {
+                    'taxable_amount': float(summary_data['taxable_amount']),
+                    'cgst_amount': float(summary_data['cgst_amount']),
+                    'sgst_amount': float(summary_data['sgst_amount']),
+                    'total_gst_amount': float(summary_data['total_gst'])
+                }
+            
+            # Set totals
+            overall_grand_total = float(bill_totals['grand_total'])
+            total_taxable_amount = float(bill_totals['total_taxable_amount'])
+            total_cgst_amount = float(bill_totals['total_cgst_amount'])
+            total_sgst_amount = float(bill_totals['total_sgst_amount'])
+            total_gst_amount = float(bill_totals['total_gst_amount'])
+        else:
+            # No items or calculation failed
+            gst_summary_by_rate = {}
+            overall_grand_total = float(bill.total_amount or 0)
+            total_taxable_amount = 0
+            total_cgst_amount = 0
+            total_sgst_amount = 0
+            total_gst_amount = 0
+
+        return render_template('shopkeeper/edit_bill.html',
+            bill=bill,
+            bill_items_data=bill_items_data,
+            shopkeeper=shopkeeper,
+            products=products_dict,
+            gst_summary_by_rate=gst_summary_by_rate,
+            total_taxable_amount=total_taxable_amount,
+            total_cgst_amount=total_cgst_amount,
+            total_sgst_amount=total_sgst_amount,
+            total_gst_amount=total_gst_amount,
+            overall_grand_total=overall_grand_total)
+
     @bp.route('/bill/download/<int:bill_id>')
     @login_required
     def download_bill_pdf(bill_id):
@@ -468,97 +623,120 @@ def register_routes(bp):
     @bp.route('/bill/<int:bill_id>/edit', methods=['POST'])
     @login_required
     def update_bill(bill_id):
-        print("Update bill route called")
-        print("Form data:", request.form)
-        
+        """Updated method to handle comprehensive edit bill form data"""
         try:
             bill = Bill.query.get_or_404(bill_id)
             
-            # Check permissions
-            if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id != current_user.user_id:
-                flash('Access denied.', 'danger')
+            # Check permissions - only shopkeepers can edit bills
+            if current_user.role != 'shopkeeper' or bill.shopkeeper.user_id != current_user.user_id:
+                flash('Access denied. Only shopkeepers can edit bills.', 'danger')
                 return redirect(url_for('shopkeeper.manage_bills'))
 
-            # Get form data
-            customer_name = request.form.get('customer_name')
-            customer_contact = request.form.get('customer_contact')
-            payment_status = request.form.get('payment_status', bill.payment_status)
+            # Get form data from the new comprehensive edit bill form
+            customer_name = request.form.get('customer_name', '').strip()
+            customer_contact = request.form.get('customer_contact', '').strip()
+            customer_address = request.form.get('customer_address', '').strip()
+            customer_gstin = request.form.get('customer_gstin', '').strip()
+            payment_status = request.form.get('payment_status', 'Paid')
+            paid_amount = float(request.form.get('paid_amount', 0) or 0)
             
-            print(f"Customer details - Name: {customer_name}, Contact: {customer_contact}")
-
             # Update basic bill information
-            if customer_name:
-                bill.customer_name = customer_name
-            if customer_contact:
-                bill.customer_contact = customer_contact
+            bill.customer_name = customer_name
+            bill.customer_contact = customer_contact
+            bill.customer_address = customer_address
+            bill.customer_gstin = customer_gstin
             bill.payment_status = payment_status
+            bill.paid_amount = paid_amount
 
-            # Get bill items data from form
-            item_ids = request.form.getlist('item_id[]')
+            # Get bill items data from dynamic form arrays
+            product_ids = request.form.getlist('product_id[]')
             quantities = request.form.getlist('quantity[]')
-            prices = request.form.getlist('price[]')
+            unit_prices = request.form.getlist('unit_price[]')
             
-            print(f"Bill items - IDs: {item_ids}, Quantities: {quantities}, Prices: {prices}")
+            # Validate form data
+            if not product_ids or len(product_ids) != len(quantities) or len(quantities) != len(unit_prices):
+                flash('Invalid item data. Please check all fields.', 'error')
+                return redirect(url_for('shopkeeper.edit_bill', bill_id=bill_id))
 
-            # Update bill items
-            total_bill_amount = 0
+            # First, restore stock for all existing bill items
+            existing_items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
+            for existing_item in existing_items:
+                if existing_item.product_id:  # Only for real products, not custom ones
+                    product = Product.query.get(existing_item.product_id)
+                    if product:
+                        product.stock_qty += existing_item.quantity  # Restore stock
+
+            # Clear existing bill items
+            BillItem.query.filter_by(bill_id=bill.bill_id).delete()
+
+            # Process new/updated items and calculate totals using GST engine
+            calculated_items = []
+            gst_mode = getattr(bill, 'gst_mode', 'EXCLUSIVE') or 'EXCLUSIVE'
             
-            for index, (item_id, qty, price) in enumerate(zip(item_ids, quantities, prices)):
+            for i, (product_id, qty_str, price_str) in enumerate(zip(product_ids, quantities, unit_prices)):
                 try:
-                    # Convert form data to appropriate types
-                    item_id = str(item_id)  # Convert to string to match product_id
-                    qty = int(qty)
-                    price = float(price)
+                    quantity = int(qty_str)
+                    unit_price = float(price_str)
                     
-                    # Get the bill item
-                    bill_item = BillItem.query.filter_by(
-                        bill_id=bill.bill_id,
-                        product_id=item_id
-                    ).first()
+                    if quantity <= 0 or unit_price < 0:
+                        continue
                     
-                    if bill_item:
-                        print(f"Processing item {item_id} - Old qty: {bill_item.quantity}, New qty: {qty}")
-                        print(f"Old price: {bill_item.price_per_unit}, New price: {price}")
+                    # Get product details
+                    product = Product.query.get(product_id) if product_id else None
+                    
+                    if product:
+                        # Check stock availability
+                        if product.stock_qty < quantity:
+                            flash(f'Insufficient stock for {product.product_name}. Available: {product.stock_qty}', 'warning')
+                            # Allow the update but warn user
                         
-                        # Update product stock
-                        product = Product.query.get(item_id)
-                        if product:
-                            # Adjust stock
-                            old_qty = bill_item.quantity
-                            stock_adjustment = old_qty - qty
-                            product.stock_qty += stock_adjustment
-                            print(f"Stock adjustment for product {product.product_name}: {stock_adjustment}")
-                            
-                            # Calculate item total with GST
-                            gst_rate = float(product.gst_rate or 0)
-                            base_amount = qty * price
-                            gst_amount = (gst_rate / 100) * base_amount
-                            item_total = base_amount + gst_amount
-                            
-                            # Update bill item
-                            bill_item.quantity = qty
-                            bill_item.price_per_unit = price
-                            bill_item.total_price = item_total
-                            
-                            print(f"Updated totals - Base: {base_amount}, GST: {gst_amount}, Total: {item_total}")
-                            
-                            total_bill_amount += item_total
-                        else:
-                            print(f"Product not found for ID: {item_id}")
+                        # Update stock
+                        product.stock_qty -= quantity
+                        
+                        # Use product GST rate
+                        gst_rate = float(product.gst_rate or 0)
+                        
+                        # Calculate using GST engine
+                        gst_calc = calc_line(
+                            price=unit_price,
+                            qty=quantity,
+                            gst_rate=gst_rate,
+                            discount_percent=0,  # No discount in edit form
+                            mode=gst_mode
+                        )
+                        
+                        # Create new bill item
+                        bill_item = BillItem(
+                            bill_id=bill.bill_id,
+                            product_id=product_id,
+                            quantity=quantity,
+                            price_per_unit=unit_price,
+                            total_price=float(gst_calc['final_total']),
+                            custom_product_name=None,
+                            custom_gst_rate=None,
+                            custom_hsn_code=None
+                        )
+                        db.session.add(bill_item)
+                        calculated_items.append(gst_calc)
+                        
                     else:
-                        print(f"Bill item not found for ID: {item_id}")
-                
-                except ValueError as ve:
-                    print(f"Value error processing item {item_id}: {str(ve)}")
-                    flash(f"Invalid value for item {index + 1}", 'error')
-                    continue
-                except Exception as e:
-                    print(f"Error processing item {item_id}: {str(e)}")
+                        flash(f'Product not found for item {i+1}', 'warning')
+                        continue
+                        
+                except (ValueError, TypeError) as e:
+                    flash(f'Invalid data for item {i+1}: {str(e)}', 'error')
                     continue
 
-            # Update bill total
-            bill.total_amount = total_bill_amount
-            print(f"Final bill amount: {total_bill_amount}")
+            # Calculate bill totals using GST engine
+            if calculated_items:
+                bill_totals = calculate_bill_totals(calculated_items)
+                bill.total_amount = float(bill_totals['grand_total'])
+                
+                # Update due amount
+                bill.due_amount = bill.total_amount - bill.paid_amount
+            else:
+                bill.total_amount = 0
+                bill.due_amount = 0
             
             # Commit all changes
             db.session.commit()
@@ -566,14 +744,10 @@ def register_routes(bp):
             return redirect(url_for('shopkeeper.view_bill', bill_id=bill_id))
             
         except Exception as e:
-            print(f"Error updating bill: {str(e)}")
             db.session.rollback()
-            flash('Error updating bill. Please try again.', 'danger')
-            return redirect(url_for('shopkeeper.view_bill', bill_id=bill_id))
-        
-        db.session.commit()
-        flash('Bill updated successfully.', 'success')
-        return redirect(url_for('shopkeeper.view_bill', bill_id=bill_id))
+            current_app.logger.error(f"Error updating bill {bill_id}: {str(e)}")
+            flash('Error updating bill. Please try again.', 'error')
+            return redirect(url_for('shopkeeper.edit_bill', bill_id=bill_id))
 
     @bp.route('/bill/delete/<int:bill_id>', methods=['POST'])
     @login_required
