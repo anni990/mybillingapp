@@ -4,46 +4,50 @@
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
 
-<style>
-    .modal-backdrop {
-        backdrop-filter: blur(5px);
-    }
-
-    @media (max-width: 768px) {
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .table-responsive table {
-            min-width: 600px;
-        }
-    }
-</style>
-
+<link rel="stylesheet" href="../../static/css/manage_bills.css">
 <div class="p-4 md:p-8">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
-        <div>
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
-                <i data-feather="file-text" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
-                Manage Bills
-            </h1>
-            <p class="text-gray-600 text-sm md:text-base mt-1">View, search, and manage all your bills</p>
-        </div>
-        <div class="flex items-center space-x-2 md:space-x-4">
-            <a href="{{ url_for('shopkeeper.create_bill') }}"
-                class="flex items-center space-x-2 bg-[#ed6a3e] hover:bg-orange-700 text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
-                <i data-feather="plus" class="w-4 h-4"></i>
-                <span class="hidden md:inline">Create Bill</span>
-                <span class="md:hidden">New</span>
-            </a>
-            <a href="{{ url_for('shopkeeper.dashboard') }}"
-                class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
-                <i data-feather="home" class="w-4 h-4"></i>
-                <span class="hidden md:inline">Dashboard</span>
-                <span class="md:hidden">Home</span>
-            </a>
+    <!-- Enhanced Header Section -->
+    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 border border-gray-200">
+        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
+            <!-- Title Section -->
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                    <i data-feather="file-text" class="w-6 h-6 lg:w-8 lg:h-8 mr-3 text-[#ed6a3e]"></i>
+                    Manage Bills
+                </h1>
+                <p class="text-gray-600 text-sm lg:text-base mt-2">View, search, and manage all your bills</p>
+            </div>
+            
+            <!-- Action Buttons with Toggle -->
+            <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <!-- Bill Type Toggle -->
+                <div class="bill-type-toggle">
+                    <button id="sales-bills-tab" class="tab-button active">
+                        <i class="fas fa-receipt"></i>
+                        <span class="tab-text">Sales Bills</span>
+                    </button>
+                    <button id="purchase-bills-tab" class="tab-button">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="tab-text">Purchase Bills</span>
+                    </button>
+                </div>
+                
+                <!-- Action Buttons -->
+                <!-- <div class="flex space-x-2">
+                    <a href="{{ url_for('shopkeeper.create_bill') }}" 
+                       class="flex items-center space-x-2 bg-[#ed6a3e] hover:bg-orange-700 text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                        <i data-feather="plus" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Create Bill</span>
+                        <span class="sm:hidden">New</span>
+                    </a>
+                    <a href="{{ url_for('shopkeeper.dashboard') }}" 
+                       class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                        <i data-feather="home" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Dashboard</span>
+                        <span class="sm:hidden">Home</span>
+                    </a>
+                </div> -->
+            </div>
         </div>
     </div>
 
@@ -93,7 +97,6 @@
                 </select>
             </div>
 
-
             <div class="flex items-end">
                 <button id="clear-filters"
                     class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 md:py-3 rounded-lg transition duration-300 text-sm md:text-base font-medium">
@@ -103,8 +106,8 @@
         </div>
     </div>
 
-    <!-- Bills Table Section -->
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200">
+    <!-- Sales Bills Table Section -->
+    <div id="sales-bills-section" class="bg-white rounded-xl shadow-lg border border-gray-200">
         <!-- Desktop Table View -->
         <div class="hidden md:block">
             <div class="table-responsive">
@@ -145,12 +148,7 @@
                                 <div class="text-sm text-gray-500">{{ bill.bill_date.strftime('%I:%M %p') }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">₹{{ "{:,.2f}".format(bill.total_amount)
-                                    }}</div>
-                                <!-- {% if bill.payment_status != 'Paid' %}
-                                <div class="text-sm text-red-600">₹{{ "{:,.2f}".format(bill.due_amount) }} pending
-                                </div>
-                                {% endif %} -->
+                                <div class="text-sm font-medium text-gray-900">₹{{ "{:,.2f}".format(bill.total_amount) }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full
@@ -167,19 +165,6 @@
                                         title="View Bill">
                                         <i data-feather="eye" class="w-4 h-4"></i>
                                     </a>
-                                    <!-- {% if bill.payment_status in ['Unpaid', 'Partial'] %}
-                                    <button
-                                        class="update-payment-btn text-green-600 hover:text-green-900 transition duration-200"
-                                        title="Update Payment" data-bill-id="{{ bill.bill_id }}"
-                                        data-bill-number="{{ bill.bill_number }}"
-                                        data-customer="{{ bill.customer_name }}"
-                                        data-customer-phone="{{ bill.customer_contact }}"
-                                        data-bill-date="{{ bill.bill_date.strftime('%Y-%m-%d') }}"
-                                        data-amount="{{ bill.total_amount }}" data-status="{{ bill.payment_status }}"
-                                        data-paid="{{ bill.paid_amount }}" data-unpaid="{{ bill.due_amount }}">
-                                        <i data-feather="credit-card" class="w-4 h-4"></i>
-                                    </button>
-                                    {% endif %} -->
                                     <button class="text-red-600 hover:text-red-900 transition duration-200"
                                         title="Delete Bill" onclick="deleteBill('{{ bill.bill_id }}')">
                                         <i data-feather="trash-2" class="w-4 h-4"></i>
@@ -225,12 +210,6 @@
                         <span class="text-gray-500">Total Amount:</span>
                         <div class="font-medium text-[#ed6a3e]">₹{{ "{:,.2f}".format(bill.total_amount) }}</div>
                     </div>
-                    {% if bill.payment_status != 'Paid' %}
-                    <div class="col-span-2">
-                        <span class="text-gray-500">Pending:</span>
-                        <div class="font-medium text-red-600">₹{{ "{:,.2f}".format(bill.due_amount) }}</div>
-                    </div>
-                    {% endif %}
                 </div>
 
                 <div class="flex space-x-2">
@@ -238,17 +217,6 @@
                         class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-center py-2 rounded-lg transition duration-300 text-sm font-medium">
                         View
                     </a>
-                    {% if bill.payment_status in ['Unpaid', 'Partial'] %}
-                    <button
-                        class="update-payment-btn flex-1 bg-green-100 hover:bg-green-200 text-green-700 py-2 rounded-lg transition duration-300 text-sm font-medium"
-                        data-bill-id="{{ bill.bill_id }}" data-bill-number="{{ bill.bill_number }}"
-                        data-customer="{{ bill.customer_name }}" data-customer-phone="{{ bill.customer_contact }}"
-                        data-bill-date="{{ bill.bill_date.strftime('%Y-%m-%d') }}" data-amount="{{ bill.total_amount }}"
-                        data-status="{{ bill.payment_status }}" data-paid="{{ bill.paid_amount }}"
-                        data-unpaid="{{ bill.due_amount }}">
-                        Update Amt.
-                    </button>
-                    {% endif %}
                     <button
                         class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg transition duration-300 text-sm font-medium"
                         onclick="deleteBill('{{ bill.bill_id }}')">
@@ -273,115 +241,226 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Purchase Bills Table Section -->
+    <div id="purchase-bills-section" class="bg-white rounded-xl shadow-lg border border-gray-200 hidden">
+        <!-- Desktop Table View -->
+        <div class="hidden md:block">
+            <div class="table-responsive">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Vendor</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Invoice #</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="purchase-bills-table-body">
+                        {% for bill in purchase_bills %}
+                        <tr class="purchase-bill-row hover:bg-gray-50 transition duration-200"
+                            data-vendor="{{ (bill.vendor_name or 'Unknown')|lower }}"
+                            data-invoice="{{ (bill.invoice_number or '')|lower }}"
+                            data-date="{{ bill.scanned_at.isoformat() }}"
+                            data-status="{{ bill.processing_status }}"
+                            data-amount="{{ bill.total_amount or 0 }}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ bill.vendor_name or 'Unknown Vendor' }}</div>
+                                {% if bill.vendor_gst_number %}
+                                <div class="text-sm text-gray-500">GST: {{ bill.vendor_gst_number }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ bill.invoice_number or 'N/A' }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ bill.scanned_at.strftime('%d %b %Y') }}</div>
+                                <div class="text-sm text-gray-500">{{ bill.scanned_at.strftime('%I:%M %p') }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {% if bill.total_amount %}
+                                    ₹{{ "{:,.2f}".format(bill.total_amount) }}
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if bill.processing_status == 'completed' %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Completed
+                                </span>
+                                {% elif bill.processing_status == 'processing' %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    Processing
+                                </span>
+                                {% else %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    Failed
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <button onclick="viewPurchaseBillFile({{ bill.purchase_bill_id }})"
+                                        class="text-blue-600 hover:text-blue-900 transition duration-200"
+                                        title="View Bill File">
+                                        <i data-feather="eye" class="w-4 h-4"></i>
+                                    </button>
+                                    <button onclick="deletePurchaseBill({{ bill.purchase_bill_id }})"
+                                        class="text-red-600 hover:text-red-900 transition duration-200"
+                                        title="Delete Bill">
+                                        <i data-feather="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Mobile Card View for Purchase Bills -->
+        <div class="md:hidden" id="purchase-bills-mobile-container">
+            {% for bill in purchase_bills %}
+            <div class="purchase-bill-card border-b border-gray-200 p-4 hover:bg-gray-50 transition duration-200"
+                data-vendor="{{ (bill.vendor_name or 'Unknown')|lower }}"
+                data-invoice="{{ (bill.invoice_number or '')|lower }}"
+                data-date="{{ bill.scanned_at.isoformat() }}"
+                data-status="{{ bill.processing_status }}"
+                data-amount="{{ bill.total_amount or 0 }}">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <div class="text-sm font-medium text-gray-900">{{ bill.vendor_name or 'Unknown Vendor' }}</div>
+                        <div class="text-sm text-gray-600">{{ bill.invoice_number or 'N/A' }}</div>
+                        {% if bill.vendor_gst_number %}
+                        <div class="text-xs text-gray-500">GST: {{ bill.vendor_gst_number }}</div>
+                        {% endif %}
+                    </div>
+                    {% if bill.processing_status == 'completed' %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        Completed
+                    </span>
+                    {% elif bill.processing_status == 'processing' %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        Processing
+                    </span>
+                    {% else %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                        Failed
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-sm mb-3">
+                    <div>
+                        <span class="text-gray-500">Date:</span>
+                        <div class="font-medium">{{ bill.scanned_at.strftime('%d %b %Y') }}</div>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Amount:</span>
+                        <div class="font-medium text-[#ed6a3e]">
+                            {% if bill.total_amount %}
+                            ₹{{ "{:,.2f}".format(bill.total_amount) }}
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex space-x-2">
+                    <button onclick="viewPurchaseBillFile({{ bill.purchase_bill_id }})"
+                        class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-center py-2 rounded-lg transition duration-300 text-sm font-medium">
+                        View File
+                    </button>
+                    <button onclick="deletePurchaseBill({{ bill.purchase_bill_id }})"
+                        class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg transition duration-300 text-sm font-medium">
+                        Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Empty State for Purchase Bills -->
+        {% if not purchase_bills %}
+        <div class="text-center py-12">
+            <i class="fas fa-shopping-cart text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No purchase bills found</h3>
+            <p class="text-gray-500 mb-6">Start scanning your purchase bills to track inventory purchases.</p>
+            <a href="{{ url_for('shopkeeper.products_stock') }}"
+                class="inline-flex items-center px-4 py-2 bg-[#ed6a3e] text-white rounded-lg hover:bg-orange-700 transition duration-300">
+                <i class="fas fa-camera w-4 h-4 mr-2"></i>
+                Scan Purchase Bill
+            </a>
+        </div>
+        {% endif %}
+    </div>
 </div>
 
+<!-- File Viewer Modal -->
+<div id="file-viewer-modal" class="fixed inset-0 bg-opacity-75 backdrop-blur-sm hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
+        <!-- Header -->
+        <div class="file-viewer-header">
+            <h3 class="text-lg font-bold text-gray-800">Purchase Bill</h3>
+            <div class="zoom-controls">
+                <button id="zoom-out-btn" class="zoom-btn" title="Zoom Out">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <span id="zoom-level" class="text-sm text-gray-600">100%</span>
+                <button id="zoom-in-btn" class="zoom-btn" title="Zoom In">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <button id="close-file-viewer" class="zoom-btn text-gray-400 hover:text-gray-600" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-4 overflow-auto max-h-[75vh]" id="file-content-container">
+            <div class="text-center" id="file-loading">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ed6a3e] mx-auto mb-4"></div>
+                <p class="text-gray-600">Loading file...</p>
+            </div>
+            <img id="file-image" class="max-w-full h-auto mx-auto hidden transition-transform duration-200" style="transform: scale(1);">
+        </div>
+    </div>
+</div>
 
 <!-- Flash Popup HTML -->
 <div id="flash-popup" class="bg-opacity-50 backdrop-blur-sm z-50 hidden">
     <div class="flash-title">Payment Updated!</div>
-    <div class="flash-row"><span class="flash-label">Customer:</span> <span class="flash-value"
-            id="flash-customer"></span></div>
-    <div class="flash-row"><span class="flash-label">Bill Number:</span> <span class="flash-value"
-            id="flash-bill-number"></span></div>
-    <div class="flash-row"><span class="flash-label">Phone:</span> <span class="flash-value"
-            id="flash-customer-phone"></span></div>
-    <div class="flash-row"><span class="flash-label">Bill Date:</span> <span class="flash-value"
-            id="flash-bill-date"></span></div>
-    <div class="flash-row"><span class="flash-label">Total Amount:</span> <span class="flash-value"
-            id="flash-bill-amount"></span></div>
-    <div class="flash-row"><span class="flash-label">Amount Paid:</span> <span class="flash-value"
-            id="flash-bill-paid"></span></div>
-    <div class="flash-row"><span class="flash-label">Balance Due:</span> <span class="flash-value"
-            id="flash-bill-unpaid"></span></div>
-    <div class="flash-row"><span class="flash-label">Bill Status:</span> <span class="flash-value"
-            id="flash-bill-status"></span></div>
+    <div class="flash-row"><span class="flash-label">Customer:</span> <span class="flash-value" id="flash-customer"></span></div>
+    <div class="flash-row"><span class="flash-label">Bill Number:</span> <span class="flash-value" id="flash-bill-number"></span></div>
+    <div class="flash-row"><span class="flash-label">Phone:</span> <span class="flash-value" id="flash-customer-phone"></span></div>
+    <div class="flash-row"><span class="flash-label">Bill Date:</span> <span class="flash-value" id="flash-bill-date"></span></div>
+    <div class="flash-row"><span class="flash-label">Total Amount:</span> <span class="flash-value" id="flash-bill-amount"></span></div>
+    <div class="flash-row"><span class="flash-label">Amount Paid:</span> <span class="flash-value" id="flash-bill-paid"></span></div>
+    <div class="flash-row"><span class="flash-label">Balance Due:</span> <span class="flash-value" id="flash-bill-unpaid"></span></div>
+    <div class="flash-row"><span class="flash-label">Bill Status:</span> <span class="flash-value" id="flash-bill-status"></span></div>
     <button class="flash-ok-btn" id="flash-ok-btn">OK</button>
 </div>
-<style>
-    .animate-bounce-on-hover:hover {
-        animation: bounce 0.5s;
-    }
 
-
-    /* Flash Popup Styles */
-    #flash-popup {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #fff;
-        border-radius: 1rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-        z-index: 100;
-        min-width: 320px;
-        max-width: 90vw;
-        padding: 2rem 2.5rem;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s, transform 0.3s;
-        font-family: 'Inter', sans-serif;
-    }
-
-    #flash-popup.popup-visible {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translate(-50%, -50%) scale(1.04);
-    }
-
-    #flash-popup .flash-title {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #ed6a3e;
-        margin-bottom: 1rem;
-        text-align: center;
-    }
-
-    #flash-popup .flash-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
-        font-size: 1rem;
-    }
-
-    #flash-popup .flash-label {
-        font-weight: 500;
-        color: #555;
-    }
-
-    #flash-popup .flash-value {
-        font-weight: 600;
-        color: #222;
-    }
-
-    #flash-popup .flash-ok-btn {
-        display: block;
-        margin: 1.5rem auto 0 auto;
-        background: #ed6a3e;
-        color: #fff;
-        font-weight: 600;
-        border: none;
-        border-radius: 0.5rem;
-        padding: 0.7rem 2.5rem;
-        font-size: 1rem;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(237, 106, 62, 0.08);
-        transition: background 0.2s;
-    }
-
-    #flash-popup .flash-ok-btn:hover {
-        background: #f0825d;
-    }
-</style>
-<!-- 🔹 Updated Modern Modal -->
-<div id="update-payment-modal"
-    class="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-sm z-50 hidden">
+<!-- Update Payment Modal -->
+<div id="update-payment-modal" class="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-sm z-50 hidden">
     <div class="bg-slate-50 rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4">
-
         <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-4">
             <h3 class="text-2xl font-bold text-slate-800">Update Payment</h3>
             <button id="modal-close-btn" class="text-slate-400 hover:text-slate-600 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
@@ -423,15 +502,16 @@
                     </div>
                 </div>
             </div>
+            
             <div class="my-4">
                 <button type="button" id="complete-payment-btn"
                     class="w-full bg-green-500 text-white px-4 py-2.5 rounded-md font-semibold hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400">
                     Complete Payment
                 </button>
             </div>
+            
             <div>
-                <label for="modal-new-payment" class="block text-sm font-medium text-slate-700 mb-2">Or Enter New
-                    Payment Amount</label>
+                <label for="modal-new-payment" class="block text-sm font-medium text-slate-700 mb-2">Or Enter New Payment Amount</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">₹</span>
                     <input type="number" id="modal-new-payment"
@@ -455,8 +535,7 @@
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div id="delete-confirmation-modal"
-    class="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50 hidden">
+<div id="delete-confirmation-modal" class="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50 hidden">
     <div class="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-md m-4 transform transition-all">
         <div class="text-center">
             <!-- Warning Icon -->
@@ -486,307 +565,5 @@
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        feather.replace();
-
-        // Search and Filter functionality
-        const searchInput = document.getElementById('bill-search');
-        const startDateInput = document.getElementById('start-date');
-        const endDateInput = document.getElementById('end-date');
-        const statusFilter = document.getElementById('payment-status-filter');
-        const clearFiltersBtn = document.getElementById('clear-filters');
-
-        function filterBills() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const startDate = startDateInput.value;
-            const endDate = endDateInput.value;
-            const statusValue = statusFilter.value;
-
-            const rows = document.querySelectorAll('.bill-row, .bill-card');
-
-            rows.forEach(row => {
-                const billNumber = row.dataset.billNumber || '';
-                const customer = row.dataset.customer || '';
-                const date = row.dataset.date || '';
-                const status = row.dataset.status || '';
-
-                let showRow = true;
-
-                // Search filter
-                if (searchTerm && !billNumber.includes(searchTerm) && !customer.includes(searchTerm)) {
-                    showRow = false;
-                }
-
-                // Date range filter
-                if (startDate && date < startDate) showRow = false;
-                if (endDate && date > endDate) showRow = false;
-
-                // Status filter
-                if (statusValue && status !== statusValue) showRow = false;
-
-                row.style.display = showRow ? '' : 'none';
-            });
-        }
-
-        searchInput.addEventListener('input', filterBills);
-        startDateInput.addEventListener('change', filterBills);
-        endDateInput.addEventListener('change', filterBills);
-        statusFilter.addEventListener('change', filterBills);
-
-        clearFiltersBtn.addEventListener('click', function () {
-            searchInput.value = '';
-            startDateInput.value = '';
-            endDateInput.value = '';
-            statusFilter.value = '';
-            filterBills();
-        });
-
-        // Payment Modal Logic
-        const modal = document.getElementById('update-payment-modal');
-        const closeModal = () => modal.classList.add('hidden');
-
-        document.querySelectorAll('.update-payment-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                modal.classList.remove('hidden');
-                document.getElementById('modal-customer').textContent = btn.dataset.customer;
-                document.getElementById('modal-bill-number').textContent = btn.dataset.billNumber;
-                document.getElementById('modal-customer-phone').textContent = btn.dataset.customerPhone;
-                document.getElementById('modal-bill-date').textContent = btn.dataset.billDate;
-                document.getElementById('modal-bill-amount').textContent = btn.dataset.amount;
-                document.getElementById('modal-bill-paid').textContent = btn.dataset.paid;
-                document.getElementById('modal-bill-unpaid').textContent = btn.dataset.unpaid;
-                document.getElementById('modal-new-payment').value = '';
-                document.getElementById('update-payment-form').dataset.billId = btn.dataset.billId;
-                document.getElementById('update-payment-form').dataset.paid = btn.dataset.paid;
-                document.getElementById('update-payment-form').dataset.unpaid = btn.dataset.unpaid;
-                document.getElementById('update-payment-form').dataset.amount = btn.dataset.amount;
-            });
-        });
-
-        document.getElementById('modal-cancel').onclick = closeModal;
-        document.getElementById('modal-close-btn').onclick = closeModal;
-
-        document.getElementById('update-payment-form').onsubmit = function (e) {
-            e.preventDefault();
-            const billId = this.dataset.billId;
-            const newPayment = parseFloat(document.getElementById('modal-new-payment').value) || 0;
-            const paid = parseFloat(this.dataset.paid) || 0;
-            const amount = parseFloat(this.dataset.amount) || 0;
-            let newStatus = 'Partial';
-            let finalPaid = paid + newPayment;
-            let finalUnpaid = amount - finalPaid;
-            if (finalPaid >= amount) {
-                newStatus = 'Paid';
-                finalPaid = amount;
-                finalUnpaid = 0;
-            }
-            fetch(`/shopkeeper/update_payment/${billId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ new_payment: newPayment, new_status: newStatus })
-            }).then(res => res.json()).then(data => {
-                if (data.success) {
-                    showFlashPopup({
-                        customer: document.getElementById('modal-customer').textContent,
-                        billNumber: document.getElementById('modal-bill-number').textContent,
-                        customerPhone: document.getElementById('modal-customer-phone').textContent,
-                        billDate: document.getElementById('modal-bill-date').textContent,
-                        amount: document.getElementById('modal-bill-amount').textContent,
-                        paid: `₹${finalPaid.toFixed(2)}`,
-                        unpaid: `₹${finalUnpaid.toFixed(2)}`,
-                        status: newStatus
-                    });
-                    closeModal();
-                } else {
-                    alert('Error updating payment');
-                }
-            });
-        };
-
-        // Complete Payment Button Logic
-        document.getElementById('complete-payment-btn').onclick = function () {
-            const billId = document.getElementById('update-payment-form').dataset.billId;
-            const amount = parseFloat(document.getElementById('update-payment-form').dataset.amount) || 0;
-            fetch(`/shopkeeper/update_payment/${billId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ new_payment: amount, new_status: 'Paid' })
-            }).then(res => res.json()).then(data => {
-                if (data.success) {
-                    showFlashPopup({
-                        customer: document.getElementById('modal-customer').textContent,
-                        billNumber: document.getElementById('modal-bill-number').textContent,
-                        customerPhone: document.getElementById('modal-customer-phone').textContent,
-                        billDate: document.getElementById('modal-bill-date').textContent,
-                        amount: document.getElementById('modal-bill-amount').textContent,
-                        paid: `₹${amount.toFixed(2)}`,
-                        unpaid: `₹0.00`,
-                        status: 'Paid'
-                    });
-                    closeModal();
-                } else {
-                    alert('Error updating payment');
-                }
-            });
-        };
-
-        // --- Flash Popup Logic ---
-        function showFlashPopup(billData) {
-            const popup = document.getElementById('flash-popup');
-            document.getElementById('flash-customer').textContent = billData.customer;
-            document.getElementById('flash-bill-number').textContent = billData.billNumber;
-            document.getElementById('flash-customer-phone').textContent = billData.customerPhone;
-            document.getElementById('flash-bill-date').textContent = billData.billDate;
-            document.getElementById('flash-bill-amount').textContent = billData.amount;
-            document.getElementById('flash-bill-paid').textContent = billData.paid;
-            document.getElementById('flash-bill-unpaid').textContent = billData.unpaid;
-            document.getElementById('flash-bill-status').textContent = billData.status;
-            popup.classList.remove('hidden');
-            popup.classList.add('popup-visible');
-            // Auto-hide after 30 seconds
-            if (popup._timeout) clearTimeout(popup._timeout);
-            popup._timeout = setTimeout(() => {
-                hideFlashPopup();
-            }, 5000);
-        }
-        function hideFlashPopup() {
-            const popup = document.getElementById('flash-popup');
-            popup.classList.remove('popup-visible');
-            popup.classList.add('hidden');
-            if (popup._timeout) clearTimeout(popup._timeout);
-        }
-        document.getElementById('flash-ok-btn').addEventListener('click', hideFlashPopup);
-
-        // Delete Modal Logic
-        const deleteModal = document.getElementById('delete-confirmation-modal');
-        const deleteCancelBtn = document.getElementById('delete-cancel-btn');
-        const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
-        let billToDelete = null;
-
-        // Make deleteBill function global so onclick can access it
-        window.deleteBill = function(billId) {
-            billToDelete = billId;
-            if (deleteModal) {
-                deleteModal.classList.remove('hidden');
-            } else {
-                console.error('Delete modal not found!');
-                showErrorMessage('Modal not found. Please refresh the page and try again.');
-            }
-        };
-
-        function closeDeleteModal() {
-            if (deleteModal) {
-                deleteModal.classList.add('hidden');
-            }
-            billToDelete = null;
-        }
-
-        if (deleteCancelBtn) {
-            deleteCancelBtn.addEventListener('click', closeDeleteModal);
-        }
-
-        if (deleteConfirmBtn) {
-            deleteConfirmBtn.addEventListener('click', function() {
-                if (!billToDelete) {
-                    showErrorMessage('No bill selected for deletion.');
-                    return;
-                }
-                
-                fetch(`/shopkeeper/bill/delete/${billToDelete}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    closeDeleteModal();
-                    if (data.success) {
-                        showSuccessMessage(data.message || 'Bill deleted successfully!');
-                        setTimeout(() => {
-                            location.reload();
-                        }, 1000);
-                    } else {
-                        showErrorMessage(data.message || 'Error deleting bill. Please try again.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    closeDeleteModal();
-                    showErrorMessage('Error deleting bill: ' + error.message);
-                });
-            });
-        }
-
-        // Close modal when clicking outside
-        if (deleteModal) {
-            deleteModal.addEventListener('click', function(e) {
-                if (e.target === deleteModal) {
-                    closeDeleteModal();
-                }
-            });
-        }
-
-        // Custom notification functions
-        function showSuccessMessage(message) {
-            showNotification(message, 'success');
-        }
-
-        function showErrorMessage(message) {
-            showNotification(message, 'error');
-        }
-
-        function showNotification(message, type) {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
-            
-            if (type === 'success') {
-                notification.className += ' bg-green-500 text-white';
-                notification.innerHTML = `
-                    <div class="flex items-center">
-                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        ${message}
-                    </div>
-                `;
-            } else {
-                notification.className += ' bg-red-500 text-white';
-                notification.innerHTML = `
-                    <div class="flex items-center">
-                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        ${message}
-                    </div>
-                `;
-            }
-
-            document.body.appendChild(notification);
-
-            // Animate in
-            setTimeout(() => {
-                notification.classList.remove('translate-x-full');
-            }, 100);
-
-            // Auto remove after 3 seconds
-            setTimeout(() => {
-                notification.classList.add('translate-x-full');
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-    });
-</script>
+<script src="../../static/js/manage_bills.js"></script>
 {% endblock %}
