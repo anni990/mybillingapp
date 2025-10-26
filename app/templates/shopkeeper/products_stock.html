@@ -1,5 +1,6 @@
 {% extends 'shopkeeper/s_base.html' %}
 {% block title %}Stock Management | MyBillingApp{% endblock %}
+{% block shop_name %} {{ shop_name }} {% endblock %}
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
@@ -30,9 +31,9 @@
     }
 </style>
 
-<div class="p-4 md:p-8">
+<div class="p-4 md:p-8 max-w-full overflow-hidden">
     <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0 lg:-mt-8">
         <div>
             <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
                 <i data-feather="package" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
@@ -42,7 +43,7 @@
         </div>
         <div class="flex items-center space-x-2 md:space-x-4">
             <button id="add-product-btn"
-                class="flex items-center space-x-2 bg-[#ed6a3e] hover:bg-orange-700 text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                class="flex items-center space-x-2 bg-[#667eea] hover:bg-[#5a67d8] text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
                 <i data-feather="plus" class="w-4 h-4"></i>
                 <span class="hidden md:inline">Add Product</span>
                 <span class="md:hidden">Add</span>
@@ -108,13 +109,13 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barcode</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GST Rate</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HSN Code</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-32">Product</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-20">Barcode</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">Price</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">GST Rate</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">Stock</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-20">HSN Code</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200" id="products-table-body">
@@ -124,21 +125,21 @@
                         data-barcode="{{ product.barcode|lower if product.barcode else '' }}"
                         data-stock="{{ product.stock_qty }}"
                         data-threshold="{{ product.low_stock_threshold }}">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ product.product_name }}</div>
+                        <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div class="text-xs md:text-sm font-medium text-gray-900">{{ product.product_name }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ product.barcode or '-' }}</div>
+                        <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div class="text-xs md:text-sm text-gray-900">{{ product.barcode or '-' }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">₹{{ "{:,.2f}".format(product.price) }}</div>
+                        <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div class="text-xs md:text-sm font-medium text-gray-900">₹{{ "{:,.2f}".format(product.price) }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ product.gst_rate }}%</div>
+                        <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div class="text-xs md:text-sm text-gray-900">{{ product.gst_rate }}%</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
                             <div class="flex items-center">
-                                <span class="text-sm font-medium 
+                                <span class="text-xs md:text-sm font-medium 
                                     {% if product.stock_qty == 0 %}text-red-600
                                     {% elif product.stock_qty <= product.low_stock_threshold %}text-yellow-600 stock-indicator
                                     {% else %}text-green-600{% endif %}">
@@ -150,10 +151,10 @@
                             </div>
                             <div class="text-xs text-gray-500">Threshold: {{ product.low_stock_threshold }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ product.hsn_code or '-' }}</div>
+                        <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div class="text-xs md:text-sm text-gray-900">{{ product.hsn_code or '-' }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium">
                             <div class="flex space-x-2">
                                 <button class="edit-product-btn text-blue-600 hover:text-blue-900 transition duration-200"
                                         title="Edit Product"

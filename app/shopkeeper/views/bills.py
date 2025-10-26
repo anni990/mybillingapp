@@ -30,6 +30,7 @@ def register_routes(bp):
     @shopkeeper_required
     def create_bill():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name=shopkeeper.shop_name
         # In all relevant routes, comment out the is_verified restriction logic
         # Example for create_bill:
         #    if not shopkeeper.is_verified:
@@ -98,6 +99,7 @@ def register_routes(bp):
             return redirect(url_for('shopkeeper.manage_bills'))
         return render_template(
             'shopkeeper/create_bill.html',
+            shop_name=shop_name,
             products=products,
             products_js=products_js,
             shopkeeper=shopkeeper,
@@ -110,6 +112,7 @@ def register_routes(bp):
     @shopkeeper_required
     def manage_bills():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name=shopkeeper.shop_name
         # In all relevant routes, comment out the is_verified restriction logic
         # Example for create_bill:
         #    if not shopkeeper.is_verified:
@@ -139,6 +142,7 @@ def register_routes(bp):
         purchase_bills = purchase_query.order_by(PurchaseBill.bill_date.desc()).all() if shopkeeper else []
         
         return render_template('shopkeeper/manage_bills.html', 
+                             shop_name=shop_name,
                              bills=bills, 
                              purchase_bills=purchase_bills,
                              selected_statuses=selected_statuses)

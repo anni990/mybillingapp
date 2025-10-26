@@ -26,8 +26,9 @@ def register_routes(bp):
     @shopkeeper_required
     def products_stock():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name = shopkeeper.shop_name
         products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
-        return render_template('shopkeeper/products_stock.html', products=products)
+        return render_template('shopkeeper/products_stock.html', shop_name=shop_name, products=products)
 
     @bp.route('/products/add', methods=['POST'])
     @login_required

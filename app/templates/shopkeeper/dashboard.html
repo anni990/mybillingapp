@@ -2,6 +2,9 @@
 
 {% block title %}Dashboard - MyBilling{% endblock %}
 
+{% block shop_name %} {{ shop_name }} {% endblock %}
+
+
 {% block head %}
 <style>
     .custom-scrollbar {
@@ -40,12 +43,14 @@
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+<div class="min-h-screen bg-gray-50 p-4 md:p-6 lg:-mt-8">
     <!-- Header Section -->
     <div class="mb-6 md:mb-8">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div class="mb-4 sm:mb-0">
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
+                <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-720 flex items-center">
+                    <i data-feather="bar-chart" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
+                    Dashboard</h1>
                 <p class="text-gray-600 text-sm md:text-base">Welcome back, {{ current_user.name or
                     current_user.username or 'User' }}!</p>
             </div>

@@ -1,5 +1,6 @@
 {% extends 'shopkeeper/s_base.html' %}
 {% block title %}Manage Bills | MyBillingApp{% endblock %}
+{% block shop_name %} {{ shop_name }} {% endblock %}
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
@@ -7,7 +8,7 @@
 <link rel="stylesheet" href="../../static/css/manage_bills.css">
 <div class="p-4 md:p-8">
     <!-- Enhanced Header Section -->
-    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 border border-gray-200">
+    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-6 border border-gray-200 lg:-mt-8">
         <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
             <!-- Title Section -->
             <div>

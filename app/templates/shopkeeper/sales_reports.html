@@ -1,5 +1,6 @@
 {% extends 'shopkeeper/s_base.html' %}
 {% block title %}Sales Reports | MyBillingApp{% endblock %}
+{% block shop_name %} {{ shop_name }} {% endblock %}
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
@@ -27,9 +28,9 @@
     }
 </style>
 
-<div class="p-4 md:p-8">
+<div class="p-4 md:p-8 max-w-full overflow-hidden">
     <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0 lg:-mt-8">
         <div>
             <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
                 <i data-feather="bar-chart-2" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
@@ -114,12 +115,12 @@
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Bills</th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unpaid</th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Partial</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-20">Date</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">Total Bills</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">Total Amount</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">Paid</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">Unpaid</th>
+                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">Partial</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -134,20 +135,20 @@
                     {% for i in range(chart_labels|length) %}
                         {% set d = chart_labels[i] %}
                         <tr class="hover:bg-gray-50 transition duration-200">
-                            <td class="px-6 py-4 whitespace-nowrap text-gray-900 font-medium">{{ d }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-gray-700">{{ date_bills[d]|length if d in date_bills else 0 }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap font-bold text-[#ed6a3e]">₹{{ chart_values[i] }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-gray-900 font-medium text-xs md:text-sm">{{ d }}</td>
+                            <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-gray-700 text-xs md:text-sm">{{ date_bills[d]|length if d in date_bills else 0 }}</td>
+                            <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap font-bold text-[#ed6a3e] text-xs md:text-sm">₹{{ chart_values[i] }}</td>
+                            <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                     {{ date_bills[d]|selectattr('payment_status', 'equalto', 'Paid')|list|length if d in date_bills else 0 }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                     {{ date_bills[d]|selectattr('payment_status', 'equalto', 'Unpaid')|list|length if d in date_bills else 0 }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
                                     {{ date_bills[d]|selectattr('payment_status', 'equalto', 'Partial')|list|length if d in date_bills else 0 }}
                                 </span>

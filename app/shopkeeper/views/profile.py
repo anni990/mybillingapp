@@ -53,8 +53,10 @@ def register_routes(bp):
     @shopkeeper_required
     def profile():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name = shopkeeper.shop_name
         return render_template('shopkeeper/profile.html', 
                              shopkeeper=shopkeeper,
+                             shop_name=shop_name,
                              preview_next_invoice_number=preview_next_invoice_number)
 
     @bp.route('/profile/edit', methods=['GET', 'POST'])
@@ -62,6 +64,7 @@ def register_routes(bp):
     @shopkeeper_required
     def profile_edit():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name = shopkeeper.shop_name
         if request.method == 'POST':
             shopkeeper.shop_name = request.form.get('shop_name')
             shopkeeper.domain = request.form.get('domain')
@@ -99,6 +102,7 @@ def register_routes(bp):
             flash('Profile updated successfully.', 'success')
             return redirect(url_for('shopkeeper.profile'))
         return render_template('shopkeeper/profile_edit.html', 
+                             shop_name=shop_name,
                              shopkeeper=shopkeeper,
                              preview_next_invoice_number=preview_next_invoice_number)
 
