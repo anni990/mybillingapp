@@ -13,7 +13,8 @@ from decimal import Decimal
 
 from ..utils import shopkeeper_required, get_current_shopkeeper
 from app.models import (Bill, BillItem, Product, Customer, CustomerLedger, 
-                       Shopkeeper, CharteredAccountant, CAConnection, EmployeeClient)
+                       Shopkeeper, CharteredAccountant, CAConnection, EmployeeClient, 
+                       PurchaseBill, PurchaseBillItem)
 from app.extensions import db
 from app.utils.gst import calc_line, generate_gst_summary, calculate_bill_totals
 from .profile import generate_next_invoice_number, is_custom_numbering_enabled
@@ -29,6 +30,7 @@ def register_routes(bp):
     @shopkeeper_required
     def create_bill():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name=shopkeeper.shop_name
         # In all relevant routes, comment out the is_verified restriction logic
         # Example for create_bill:
         #    if not shopkeeper.is_verified:
@@ -97,6 +99,7 @@ def register_routes(bp):
             return redirect(url_for('shopkeeper.manage_bills'))
         return render_template(
             'shopkeeper/create_bill.html',
+            shop_name=shop_name,
             products=products,
             products_js=products_js,
             shopkeeper=shopkeeper,
@@ -109,6 +112,7 @@ def register_routes(bp):
     @shopkeeper_required
     def manage_bills():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name=shopkeeper.shop_name
         # In all relevant routes, comment out the is_verified restriction logic
         # Example for create_bill:
         #    if not shopkeeper.is_verified:
@@ -116,6 +120,8 @@ def register_routes(bp):
         #        return redirect(url_for('shopkeeper.profile'))
         search = request.args.get('search', '').strip()
         selected_statuses = request.args.getlist('status')
+        
+        # Sales Bills Query
         query = Bill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
         if search:
             query = query.filter(
@@ -125,7 +131,21 @@ def register_routes(bp):
         if selected_statuses:
             query = query.filter(Bill.payment_status.in_(selected_statuses))
         bills = query.order_by(Bill.bill_date.desc()).all() if shopkeeper else []
-        return render_template('shopkeeper/manage_bills.html', bills=bills, selected_statuses=selected_statuses)
+        
+        # Purchase Bills Query
+        purchase_query = PurchaseBill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
+        if search:
+            purchase_query = purchase_query.filter(
+                (PurchaseBill.vendor_name.ilike(f'%{search}%')) |
+                (PurchaseBill.bill_number.ilike(f'%{search}%'))
+            )
+        purchase_bills = purchase_query.order_by(PurchaseBill.bill_date.desc()).all() if shopkeeper else []
+        
+        return render_template('shopkeeper/manage_bills.html', 
+                             shop_name=shop_name,
+                             bills=bills, 
+                             purchase_bills=purchase_bills,
+                             selected_statuses=selected_statuses)
 
     @bp.route('/bill/<int:bill_id>')
     @login_required
