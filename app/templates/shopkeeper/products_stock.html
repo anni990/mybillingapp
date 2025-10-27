@@ -9,14 +9,21 @@
     .modal-backdrop {
         backdrop-filter: blur(5px);
     }
-    
+
     .stock-indicator {
         animation: pulse 2s infinite;
     }
 
     @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.7;
+        }
     }
 
     @media (max-width: 768px) {
@@ -33,7 +40,8 @@
 
 <div class="p-4 md:p-8 max-w-full overflow-hidden">
     <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0 lg:-mt-8">
+    <div
+        class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0 lg:-mt-8">
         <div>
             <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
                 <i data-feather="package" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
@@ -48,18 +56,26 @@
                 <span class="hidden md:inline">Add Product</span>
                 <span class="md:hidden">Add</span>
             </button>
-            <button id="scan-bill-btn"
+
+            <!-- ============= Scan Purchase Bill button active ==================== -->
+
+            <!-- <button id="scan-bill-btn"
                 class="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
                 <i data-feather="camera" class="w-4 h-4"></i>
-                <span class="hidden md:inline">Scan Purchase Bill</span>
+                <span class="hidden md:inline">
+                    Scan Purchase Bill</span>
+                <span class="md:hidden">Scan</span>
+            </button> -->
+
+            <!-- ============= Scan Purchase Bill button inactive ==================== -->
+
+            <button onclick="showEditRestriction()" id="editBtn"
+                class="flex items-center space-x-2 bg-gray-400 hover:bg-gray-500 text-white px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base cursor-not-allowed">
+                <i data-feather="camera" class="w-4 h-4"></i>
+                <span class="hidden md:inline">
+                    Scan Purchase Bill</span>
                 <span class="md:hidden">Scan</span>
             </button>
-            <!-- <a href="{{ url_for('shopkeeper.dashboard') }}"
-                class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
-                <i data-feather="home" class="w-4 h-4"></i>
-                <span class="hidden md:inline">Dashboard</span>
-                <span class="md:hidden">Home</span>
-            </a> -->
         </div>
     </div>
 
@@ -93,10 +109,10 @@
                     <option value="good">Good Stock</option>
                 </select>
             </div>
-            
+
             <div class="flex items-end">
-                <button id="clear-filters" 
-                        class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 md:py-3 rounded-lg transition duration-300 text-sm md:text-base font-medium">
+                <button id="clear-filters"
+                    class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 md:py-3 rounded-lg transition duration-300 text-sm md:text-base font-medium">
                     Clear Filters
                 </button>
             </div>
@@ -109,13 +125,27 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-32">Product</th>
-                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-20">Barcode</th>
-                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">Price</th>
-                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">GST Rate</th>
-                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">Stock</th>
-                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-20">HSN Code</th>
-                        <th class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">Actions</th>
+                        <th
+                            class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-32">
+                            Product</th>
+                        <th
+                            class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-20">
+                            Barcode</th>
+                        <th
+                            class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">
+                            Price</th>
+                        <th
+                            class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">
+                            GST Rate</th>
+                        <th
+                            class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-16">
+                            Stock</th>
+                        <th
+                            class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-20">
+                            HSN Code</th>
+                        <th
+                            class="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">
+                            Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200" id="products-table-body">
@@ -123,8 +153,7 @@
                     <tr class="product-row hover:bg-gray-50 transition duration-200"
                         data-name="{{ product.product_name|lower }}"
                         data-barcode="{{ product.barcode|lower if product.barcode else '' }}"
-                        data-stock="{{ product.stock_qty }}"
-                        data-threshold="{{ product.low_stock_threshold }}">
+                        data-stock="{{ product.stock_qty }}" data-threshold="{{ product.low_stock_threshold }}">
                         <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
                             <div class="text-xs md:text-sm font-medium text-gray-900">{{ product.product_name }}</div>
                         </td>
@@ -132,7 +161,8 @@
                             <div class="text-xs md:text-sm text-gray-900">{{ product.barcode or '-' }}</div>
                         </td>
                         <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                            <div class="text-xs md:text-sm font-medium text-gray-900">₹{{ "{:,.2f}".format(product.price) }}</div>
+                            <div class="text-xs md:text-sm font-medium text-gray-900">₹{{
+                                "{:,.2f}".format(product.price) }}</div>
                         </td>
                         <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
                             <div class="text-xs md:text-sm text-gray-900">{{ product.gst_rate }}%</div>
@@ -145,9 +175,9 @@
                                     {% else %}text-green-600{% endif %}">
                                     {{ product.stock_qty }}
                                 </span>
-                                {% if product.stock_qty <= product.low_stock_threshold %}
-                                <i data-feather="alert-triangle" class="w-4 h-4 ml-2 text-yellow-500"></i>
-                                {% endif %}
+                                {% if product.stock_qty <= product.low_stock_threshold %} <i
+                                    data-feather="alert-triangle" class="w-4 h-4 ml-2 text-yellow-500"></i>
+                                    {% endif %}
                             </div>
                             <div class="text-xs text-gray-500">Threshold: {{ product.low_stock_threshold }}</div>
                         </td>
@@ -156,21 +186,17 @@
                         </td>
                         <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium">
                             <div class="flex space-x-2">
-                                <button class="edit-product-btn text-blue-600 hover:text-blue-900 transition duration-200"
-                                        title="Edit Product"
-                                        data-product-id="{{ product.product_id }}"
-                                        data-name="{{ product.product_name }}"
-                                        data-barcode="{{ product.barcode or '' }}"
-                                        data-price="{{ product.price }}"
-                                        data-gst="{{ product.gst_rate }}"
-                                        data-hsn="{{ product.hsn_code or '' }}"
-                                        data-stock="{{ product.stock_qty }}"
-                                        data-threshold="{{ product.low_stock_threshold }}">
+                                <button
+                                    class="edit-product-btn text-blue-600 hover:text-blue-900 transition duration-200"
+                                    title="Edit Product" data-product-id="{{ product.product_id }}"
+                                    data-name="{{ product.product_name }}" data-barcode="{{ product.barcode or '' }}"
+                                    data-price="{{ product.price }}" data-gst="{{ product.gst_rate }}"
+                                    data-hsn="{{ product.hsn_code or '' }}" data-stock="{{ product.stock_qty }}"
+                                    data-threshold="{{ product.low_stock_threshold }}">
                                     <i data-feather="edit" class="w-4 h-4"></i>
                                 </button>
                                 <button class="text-red-600 hover:text-red-900 transition duration-200"
-                                        title="Delete Product"
-                                        onclick="deleteProduct('{{ product.product_id }}')">
+                                    title="Delete Product" onclick="deleteProduct('{{ product.product_id }}')">
                                     <i data-feather="trash-2" class="w-4 h-4"></i>
                                 </button>
                             </div>
@@ -187,8 +213,8 @@
             <i data-feather="package" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
             <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
             <p class="text-gray-500 mb-6">Start building your inventory by adding your first product.</p>
-            <button id="add-first-product-btn" 
-                    class="inline-flex items-center px-4 py-2 bg-[#ed6a3e] text-white rounded-lg hover:bg-orange-700 transition duration-300">
+            <button id="add-first-product-btn"
+                class="inline-flex items-center px-4 py-2 bg-[#ed6a3e] text-white rounded-lg hover:bg-orange-700 transition duration-300">
                 <i data-feather="plus" class="w-4 h-4 mr-2"></i>
                 Add Product
             </button>
@@ -206,69 +232,72 @@
                 <i data-feather="x" class="w-5 h-5"></i>
             </button>
         </div>
-        
+
         <form id="product-form" method="POST">
             <div class="grid grid-cols-1 gap-4">
                 <div>
-                    <label for="product_name" class="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
+                    <label for="product_name" class="block text-sm font-medium text-gray-700 mb-2">Product Name
+                        *</label>
                     <input type="text" id="product_name" name="product_name" required
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
                 </div>
-                
+
                 <div>
                     <label for="barcode" class="block text-sm font-medium text-gray-700 mb-2">Barcode</label>
                     <input type="text" id="barcode" name="barcode"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
                 </div>
-                
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price *</label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
                             <input type="number" id="price" name="price" step="0.01" min="0" required
-                                   class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                                class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
                         </div>
                     </div>
-                    
+
                     <div>
                         <label for="gst_rate" class="block text-sm font-medium text-gray-700 mb-2">GST Rate</label>
                         <div class="relative">
                             <input type="number" id="gst_rate" name="gst_rate" step="0.01" min="0" max="100"
-                                   class="w-full px-4 pr-8 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                                class="w-full px-4 pr-8 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
                             <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
                         </div>
                     </div>
                 </div>
-                
+
                 <div>
                     <label for="hsn_code" class="block text-sm font-medium text-gray-700 mb-2">HSN Code</label>
                     <input type="text" id="hsn_code" name="hsn_code"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
                 </div>
-                
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label for="stock_qty" class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
+                        <label for="stock_qty" class="block text-sm font-medium text-gray-700 mb-2">Stock
+                            Quantity</label>
                         <input type="number" id="stock_qty" name="stock_qty" min="0"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
                     </div>
-                    
+
                     <div>
-                        <label for="low_stock_threshold" class="block text-sm font-medium text-gray-700 mb-2">Low Stock Alert</label>
+                        <label for="low_stock_threshold" class="block text-sm font-medium text-gray-700 mb-2">Low Stock
+                            Alert</label>
                         <input type="number" id="low_stock_threshold" name="low_stock_threshold" min="0"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200">
                     </div>
                 </div>
             </div>
-            
+
             <div class="flex space-x-3 mt-6">
-                <button type="button" id="cancel-modal" 
-                        class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-300 font-medium">
+                <button type="button" id="cancel-modal"
+                    class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-300 font-medium">
                     Cancel
                 </button>
-                <button type="submit" 
-                        class="flex-1 px-4 py-3 bg-[#ed6a3e] text-white rounded-lg hover:bg-orange-700 transition duration-300 font-medium">
+                <button type="submit"
+                    class="flex-1 px-4 py-3 bg-[#ed6a3e] text-white rounded-lg hover:bg-orange-700 transition duration-300 font-medium">
                     <span id="submit-text">Add Product</span>
                 </button>
             </div>
@@ -277,473 +306,507 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    feather.replace();
-    
-    // Search and Filter functionality
-    const searchInput = document.getElementById('product-search');
-    const stockFilter = document.getElementById('stock-filter');
-    const clearFiltersBtn = document.getElementById('clear-filters');
-    
-    function filterProducts() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const stockValue = stockFilter.value;
-        
-        const rows = document.querySelectorAll('.product-row');
-        
-        rows.forEach(row => {
-            const name = row.dataset.name || '';
-            const barcode = row.dataset.barcode || '';
-            const stock = parseInt(row.dataset.stock) || 0;
-            const threshold = parseInt(row.dataset.threshold) || 0;
-            
-            let showRow = true;
-            
-            // Search filter
-            if (searchTerm && !name.includes(searchTerm) && !barcode.includes(searchTerm)) {
-                showRow = false;
-            }
-            
-            // Stock level filter
-            if (stockValue) {
-                if (stockValue === 'out' && stock > 0) showRow = false;
-                if (stockValue === 'low' && (stock > threshold || stock === 0)) showRow = false;
-                if (stockValue === 'good' && stock <= threshold) showRow = false;
-            }
-            
-            row.style.display = showRow ? '' : 'none';
-        });
-    }
-    
-    searchInput.addEventListener('input', filterProducts);
-    stockFilter.addEventListener('change', filterProducts);
-    
-    clearFiltersBtn.addEventListener('click', function() {
-        searchInput.value = '';
-        stockFilter.value = '';
-        filterProducts();
-    });
-    
-    // Modal functionality
-    const modal = document.getElementById('product-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const submitText = document.getElementById('submit-text');
-    const productForm = document.getElementById('product-form');
-    
-    function openModal(isEdit = false, productData = {}) {
-        modal.classList.remove('hidden');
-        modalTitle.textContent = isEdit ? 'Edit Product' : 'Add Product';
-        submitText.textContent = isEdit ? 'Update Product' : 'Add Product';
-        
-        if (isEdit) {
-            productForm.action = `/shopkeeper/products/edit/${productData.id}`;
-            document.getElementById('product_name').value = productData.name || '';
-            document.getElementById('barcode').value = productData.barcode || '';
-            document.getElementById('price').value = productData.price || '';
-            document.getElementById('gst_rate').value = productData.gst || '';
-            document.getElementById('hsn_code').value = productData.hsn || '';
-            document.getElementById('stock_qty').value = productData.stock || '';
-            document.getElementById('low_stock_threshold').value = productData.threshold || '';
-        } else {
-            productForm.action = '/shopkeeper/products/add';
-            productForm.reset();
-        }
-    }
-    
-    function closeModal() {
-        modal.classList.add('hidden');
-        productForm.reset();
-    }
-    
-    // Add product button
-    document.getElementById('add-product-btn').addEventListener('click', () => openModal(false));
-    document.getElementById('add-first-product-btn')?.addEventListener('click', () => openModal(false));
-    
-    // Scan purchase bill functionality
-    initializeScanBillModal();
-    
-    // Edit product buttons
-    document.querySelectorAll('.edit-product-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const productData = {
-                id: this.dataset.productId,
-                name: this.dataset.name,
-                barcode: this.dataset.barcode,
-                price: this.dataset.price,
-                gst: this.dataset.gst,
-                hsn: this.dataset.hsn,
-                stock: this.dataset.stock,
-                threshold: this.dataset.threshold
-            };
-            openModal(true, productData);
-        });
-    });
-    
-    // Close modal
-    document.getElementById('close-modal').addEventListener('click', closeModal);
-    document.getElementById('cancel-modal').addEventListener('click', closeModal);
-    
-    // Click outside modal to close
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeModal();
-        }
-    });
-});
+    document.addEventListener('DOMContentLoaded', function () {
+        feather.replace();
 
-let currentProductId = null;
+        // Search and Filter functionality
+        const searchInput = document.getElementById('product-search');
+        const stockFilter = document.getElementById('stock-filter');
+        const clearFiltersBtn = document.getElementById('clear-filters');
 
-// Wait for DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', function() {
-    feather.replace();
-});
+        function filterProducts() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const stockValue = stockFilter.value;
 
-function deleteProduct(productId) {
-    currentProductId = productId;
-    const modal = document.getElementById('delete-confirmation-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-    } else {
-        console.error('Delete product modal not found!');
-        showError('Modal not found. Please refresh the page and try again.');
-    }
-}
+            const rows = document.querySelectorAll('.product-row');
 
-function closeDeleteModal() {
-    const modal = document.getElementById('delete-confirmation-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-    currentProductId = null;
-}
+            rows.forEach(row => {
+                const name = row.dataset.name || '';
+                const barcode = row.dataset.barcode || '';
+                const stock = parseInt(row.dataset.stock) || 0;
+                const threshold = parseInt(row.dataset.threshold) || 0;
 
-function confirmDelete() {
-    if (!currentProductId) {
-        showError('No product selected for deletion.');
-        return;
-    }
-    
-    fetch(`/shopkeeper/products/delete/${currentProductId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => {
-        closeDeleteModal();
-        if (response.ok) {
-            showSuccess('Product deleted successfully!');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            return response.json().then(data => {
-                throw new Error(data.message || 'Failed to delete product');
+                let showRow = true;
+
+                // Search filter
+                if (searchTerm && !name.includes(searchTerm) && !barcode.includes(searchTerm)) {
+                    showRow = false;
+                }
+
+                // Stock level filter
+                if (stockValue) {
+                    if (stockValue === 'out' && stock > 0) showRow = false;
+                    if (stockValue === 'low' && (stock > threshold || stock === 0)) showRow = false;
+                    if (stockValue === 'good' && stock <= threshold) showRow = false;
+                }
+
+                row.style.display = showRow ? '' : 'none';
             });
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        closeDeleteModal();
-        showError('Error deleting product: ' + error.message);
+
+        searchInput.addEventListener('input', filterProducts);
+        stockFilter.addEventListener('change', filterProducts);
+
+        clearFiltersBtn.addEventListener('click', function () {
+            searchInput.value = '';
+            stockFilter.value = '';
+            filterProducts();
+        });
+
+        // Modal functionality
+        const modal = document.getElementById('product-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const submitText = document.getElementById('submit-text');
+        const productForm = document.getElementById('product-form');
+
+        function openModal(isEdit = false, productData = {}) {
+            modal.classList.remove('hidden');
+            modalTitle.textContent = isEdit ? 'Edit Product' : 'Add Product';
+            submitText.textContent = isEdit ? 'Update Product' : 'Add Product';
+
+            if (isEdit) {
+                productForm.action = `/shopkeeper/products/edit/${productData.id}`;
+                document.getElementById('product_name').value = productData.name || '';
+                document.getElementById('barcode').value = productData.barcode || '';
+                document.getElementById('price').value = productData.price || '';
+                document.getElementById('gst_rate').value = productData.gst || '';
+                document.getElementById('hsn_code').value = productData.hsn || '';
+                document.getElementById('stock_qty').value = productData.stock || '';
+                document.getElementById('low_stock_threshold').value = productData.threshold || '';
+            } else {
+                productForm.action = '/shopkeeper/products/add';
+                productForm.reset();
+            }
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            productForm.reset();
+        }
+
+        // Add product button
+        document.getElementById('add-product-btn').addEventListener('click', () => openModal(false));
+        document.getElementById('add-first-product-btn')?.addEventListener('click', () => openModal(false));
+
+        // Scan purchase bill functionality
+        initializeScanBillModal();
+
+        // Edit product buttons
+        document.querySelectorAll('.edit-product-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const productData = {
+                    id: this.dataset.productId,
+                    name: this.dataset.name,
+                    barcode: this.dataset.barcode,
+                    price: this.dataset.price,
+                    gst: this.dataset.gst,
+                    hsn: this.dataset.hsn,
+                    stock: this.dataset.stock,
+                    threshold: this.dataset.threshold
+                };
+                openModal(true, productData);
+            });
+        });
+
+        // Close modal
+        document.getElementById('close-modal').addEventListener('click', closeModal);
+        document.getElementById('cancel-modal').addEventListener('click', closeModal);
+
+        // Click outside modal to close
+        modal.addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
     });
-}
 
-// Custom notification functions
-function showSuccess(message) {
-    showNotification(message, 'success');
-}
+    let currentProductId = null;
 
-function showError(message) {
-    showNotification(message, 'error');
-}
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function () {
+        feather.replace();
+    });
 
-function showNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
-    
-    if (type === 'success') {
-        notification.className += ' bg-green-500 text-white';
-        notification.innerHTML = `
+    function deleteProduct(productId) {
+        currentProductId = productId;
+        const modal = document.getElementById('delete-confirmation-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        } else {
+            console.error('Delete product modal not found!');
+            showError('Modal not found. Please refresh the page and try again.');
+        }
+    }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('delete-confirmation-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        currentProductId = null;
+    }
+
+    function confirmDelete() {
+        if (!currentProductId) {
+            showError('No product selected for deletion.');
+            return;
+        }
+
+        fetch(`/shopkeeper/products/delete/${currentProductId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(response => {
+                closeDeleteModal();
+                if (response.ok) {
+                    showSuccess('Product deleted successfully!');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to delete product');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                closeDeleteModal();
+                showError('Error deleting product: ' + error.message);
+            });
+    }
+
+    // Custom notification functions
+    function showSuccess(message) {
+        showNotification(message, 'success');
+    }
+
+    function showError(message) {
+        showNotification(message, 'error');
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+
+        if (type === 'success') {
+            notification.className += ' bg-green-500 text-white';
+            notification.innerHTML = `
             <div class="flex items-center">
                 <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                 </svg>
                 <span>${message}</span>
             </div>`;
-    } else {
-        notification.className += ' bg-red-500 text-white';
-        notification.innerHTML = `
+        } else {
+            notification.className += ' bg-red-500 text-white';
+            notification.innerHTML = `
             <div class="flex items-center">
                 <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
                 </svg>
                 <span>${message}</span>
             </div>`;
-    }
-    
-    document.body.appendChild(notification);
-    
-    // Animate in
-    setTimeout(() => {
-        notification.classList.remove('translate-x-full');
-    }, 100);
-    
-    // Auto remove after 4 seconds
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 4000);
-}
+        }
 
-// Scan Purchase Bill functionality
-function initializeScanBillModal() {
-    const scanModal = document.getElementById('scan-bill-modal');
-    const scanBtn = document.getElementById('scan-bill-btn');
-    const closeScanModal = document.getElementById('close-scan-modal');
-    const uploadBtn = document.getElementById('upload-from-device');
-    const cameraBtn = document.getElementById('scan-with-camera');
-    const fileInput = document.getElementById('bill-file-input');
-    const cameraSection = document.getElementById('camera-section');
-    const cameraPreview = document.getElementById('camera-preview');
-    const cameraCanvas = document.getElementById('camera-canvas');
-    const captureBtn = document.getElementById('capture-photo');
-    const cancelCameraBtn = document.getElementById('cancel-camera');
-    const processingOverlay = document.getElementById('processing-overlay');
-    
-    // Preview elements
-    const previewEmpty = document.getElementById('preview-empty');
-    const imagePreview = document.getElementById('image-preview');
-    const pdfPreview = document.getElementById('pdf-preview');
-    const previewImage = document.getElementById('preview-image');
-    const pdfName = document.getElementById('pdf-name');
-    const fileActions = document.getElementById('file-actions');
-    const fileName = document.getElementById('file-name');
-    const processFileBtn = document.getElementById('process-file');
-    const changeFileBtn = document.getElementById('change-file');
-    const controlSection = document.getElementById('control-section');
-    
-    let currentStream = null;
-    let selectedFile = null;
-    
-    // Open scan modal
-    scanBtn.addEventListener('click', () => {
-        scanModal.classList.remove('hidden');
-    });
-    
-    // Close scan modal
-    function closeScanModalFunc() {
-        scanModal.classList.add('hidden');
-        stopCamera();
-        resetModal();
+        document.body.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 4000);
     }
-    
-    closeScanModal.addEventListener('click', closeScanModalFunc);
-    
-    // Click outside modal to close
-    scanModal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeScanModalFunc();
-        }
-    });
-    
-    // Upload from device
-    uploadBtn.addEventListener('click', () => {
-        fileInput.click();
-    });
-    
-    // Handle file selection
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            handleFileSelection(file);
-        }
-    });
-    
-    // Scan with camera
-    cameraBtn.addEventListener('click', async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' } // Try to use back camera on mobile
-            });
-            currentStream = stream;
-            cameraPreview.srcObject = stream;
-            
-            // Hide options, show camera
-            document.querySelector('.space-y-4 > div').style.display = 'none';
-            cameraSection.classList.remove('hidden');
-            
-        } catch (error) {
-            console.error('Camera error:', error);
-            showError('Unable to access camera. Please use file upload instead.');
-        }
-    });
-    
-    // Capture photo
-    captureBtn.addEventListener('click', () => {
-        const canvas = cameraCanvas;
-        const video = cameraPreview;
-        
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
-        
-        // Convert to blob and handle as file
-        canvas.toBlob((blob) => {
-            if (blob) {
-                const file = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
-                handleFileSelection(file);
-                stopCamera();
-            }
-        }, 'image/jpeg', 0.8);
-    });
-    
-    // Cancel camera
-    cancelCameraBtn.addEventListener('click', () => {
-        stopCamera();
-        resetModal();
-    });
-    
-    function stopCamera() {
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => track.stop());
-            currentStream = null;
-        }
-    }
-    
-    function resetModal() {
-        cameraSection.classList.add('hidden');
-        showPreviewEmpty();
-        showControlSection();
-        hideFileActions();
-        selectedFile = null;
-        fileInput.value = '';
-    }
-    
-    // Process file button
-    processFileBtn.addEventListener('click', () => {
-        if (selectedFile) {
-            uploadAndProcessFile(selectedFile);
-        }
-    });
-    
-    // Change file button
-    changeFileBtn.addEventListener('click', () => {
-        fileInput.click();
-    });
-    
-    function handleFileSelection(file) {
-        selectedFile = file;
-        showFilePreview(file);
-        showFileActions();
-        fileName.textContent = file.name;
-    }
-    
-    function showFilePreview(file) {
-        hideAllPreviews();
-        
-        if (file.type.startsWith('image/')) {
-            // Show image preview
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImage.src = e.target.result;
-                imagePreview.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        } else if (file.type === 'application/pdf') {
-            // Show PDF preview
-            pdfName.textContent = file.name;
-            pdfPreview.classList.remove('hidden');
-        }
-    }
-    
-    function hideAllPreviews() {
-        previewEmpty.classList.add('hidden');
-        imagePreview.classList.add('hidden');
-        pdfPreview.classList.add('hidden');
-    }
-    
-    function showPreviewEmpty() {
-        hideAllPreviews();
-        previewEmpty.classList.remove('hidden');
-    }
-    
-    function showFileActions() {
-        fileActions.classList.remove('hidden');
-    }
-    
-    function hideFileActions() {
-        fileActions.classList.add('hidden');
-    }
-    
-    function showControlSection() {
-        controlSection.classList.remove('hidden');
-    }
-    
-    function uploadAndProcessFile(file) {
-        // Validate file type
-        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-        if (!allowedTypes.includes(file.type)) {
-            showError('Invalid file type. Please upload PDF, JPG, JPEG, or PNG files.');
-            return;
-        }
-        
-        // Validate file size (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            showError('File too large. Please upload files smaller than 10MB.');
-            return;
-        }
-        
-        // Show full-screen processing overlay
-        scanModal.classList.add('hidden');
-        processingOverlay.classList.remove('hidden');
-        
-        // Create form data
-        const formData = new FormData();
-        formData.append('bill_file', file);
-        
-        // Upload and process
-        fetch('/shopkeeper/scan-purchase-bill', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            processingOverlay.classList.add('hidden');
-            
-            if (data.success) {
-                showSuccess(data.message || 'Purchase bill processed successfully!');
-                // Reload page after a short delay to show new products
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-            } else {
-                showError(data.message || 'Failed to process purchase bill.');
-            }
-        })
-        .catch(error => {
-            console.error('Upload error:', error);
-            processingOverlay.classList.add('hidden');
-            showError('Network error. Please check your connection and try again.');
+
+    // Scan Purchase Bill functionality
+    function initializeScanBillModal() {
+        const scanModal = document.getElementById('scan-bill-modal');
+        const scanBtn = document.getElementById('scan-bill-btn');
+        const closeScanModal = document.getElementById('close-scan-modal');
+        const uploadBtn = document.getElementById('upload-from-device');
+        const cameraBtn = document.getElementById('scan-with-camera');
+        const fileInput = document.getElementById('bill-file-input');
+        const cameraSection = document.getElementById('camera-section');
+        const cameraPreview = document.getElementById('camera-preview');
+        const cameraCanvas = document.getElementById('camera-canvas');
+        const captureBtn = document.getElementById('capture-photo');
+        const cancelCameraBtn = document.getElementById('cancel-camera');
+        const processingOverlay = document.getElementById('processing-overlay');
+
+        // Preview elements
+        const previewEmpty = document.getElementById('preview-empty');
+        const imagePreview = document.getElementById('image-preview');
+        const pdfPreview = document.getElementById('pdf-preview');
+        const previewImage = document.getElementById('preview-image');
+        const pdfName = document.getElementById('pdf-name');
+        const fileActions = document.getElementById('file-actions');
+        const fileName = document.getElementById('file-name');
+        const processFileBtn = document.getElementById('process-file');
+        const changeFileBtn = document.getElementById('change-file');
+        const controlSection = document.getElementById('control-section');
+
+        let currentStream = null;
+        let selectedFile = null;
+
+        // Open scan modal
+        scanBtn.addEventListener('click', () => {
+            scanModal.classList.remove('hidden');
         });
+
+        // Close scan modal
+        function closeScanModalFunc() {
+            scanModal.classList.add('hidden');
+            stopCamera();
+            resetModal();
+        }
+
+        closeScanModal.addEventListener('click', closeScanModalFunc);
+
+        // Click outside modal to close
+        scanModal.addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeScanModalFunc();
+            }
+        });
+
+        // Upload from device
+        uploadBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Handle file selection
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileSelection(file);
+            }
+        });
+
+        // Scan with camera
+        cameraBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' } // Try to use back camera on mobile
+                });
+                currentStream = stream;
+                cameraPreview.srcObject = stream;
+
+                // Hide options, show camera
+                document.querySelector('.space-y-4 > div').style.display = 'none';
+                cameraSection.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Camera error:', error);
+                showError('Unable to access camera. Please use file upload instead.');
+            }
+        });
+
+        // Capture photo
+        captureBtn.addEventListener('click', () => {
+            const canvas = cameraCanvas;
+            const video = cameraPreview;
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            // Convert to blob and handle as file
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    const file = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+                    handleFileSelection(file);
+                    stopCamera();
+                }
+            }, 'image/jpeg', 0.8);
+        });
+
+        // Cancel camera
+        cancelCameraBtn.addEventListener('click', () => {
+            stopCamera();
+            resetModal();
+        });
+
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+        }
+
+        function resetModal() {
+            cameraSection.classList.add('hidden');
+            showPreviewEmpty();
+            showControlSection();
+            hideFileActions();
+            selectedFile = null;
+            fileInput.value = '';
+        }
+
+        // Process file button
+        processFileBtn.addEventListener('click', () => {
+            if (selectedFile) {
+                uploadAndProcessFile(selectedFile);
+            }
+        });
+
+        // Change file button
+        changeFileBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        function handleFileSelection(file) {
+            selectedFile = file;
+            showFilePreview(file);
+            showFileActions();
+            fileName.textContent = file.name;
+        }
+
+        function showFilePreview(file) {
+            hideAllPreviews();
+
+            if (file.type.startsWith('image/')) {
+                // Show image preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImage.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type === 'application/pdf') {
+                // Show PDF preview
+                pdfName.textContent = file.name;
+                pdfPreview.classList.remove('hidden');
+            }
+        }
+
+        function hideAllPreviews() {
+            previewEmpty.classList.add('hidden');
+            imagePreview.classList.add('hidden');
+            pdfPreview.classList.add('hidden');
+        }
+
+        function showPreviewEmpty() {
+            hideAllPreviews();
+            previewEmpty.classList.remove('hidden');
+        }
+
+        function showFileActions() {
+            fileActions.classList.remove('hidden');
+        }
+
+        function hideFileActions() {
+            fileActions.classList.add('hidden');
+        }
+
+        function showControlSection() {
+            controlSection.classList.remove('hidden');
+        }
+
+        function uploadAndProcessFile(file) {
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                showError('Invalid file type. Please upload PDF, JPG, JPEG, or PNG files.');
+                return;
+            }
+
+            // Validate file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showError('File too large. Please upload files smaller than 10MB.');
+                return;
+            }
+
+            // Show full-screen processing overlay
+            scanModal.classList.add('hidden');
+            processingOverlay.classList.remove('hidden');
+
+            // Create form data
+            const formData = new FormData();
+            formData.append('bill_file', file);
+
+            // Upload and process
+            fetch('/shopkeeper/scan-purchase-bill', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    processingOverlay.classList.add('hidden');
+
+                    if (data.success) {
+                        showSuccess(data.message || 'Purchase bill processed successfully!');
+                        // Reload page after a short delay to show new products
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        showError(data.message || 'Failed to process purchase bill.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Upload error:', error);
+                    processingOverlay.classList.add('hidden');
+                    showError('Network error. Please check your connection and try again.');
+                });
+        }
     }
-}
+
+    function showEditRestriction() {
+        // Create and show a temporary alert message
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'fixed top-4 right-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg z-50';
+        alertDiv.innerHTML = `
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">This feature coming soon.</p>
+                    </div>
+                    <div class="ml-auto pl-3">
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-yellow-500 hover:text-yellow-600">
+                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        document.body.appendChild(alertDiv);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentElement) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
 </script>
 
 <!-- Scan Purchase Bill Modal -->
 <div id="scan-bill-modal" class="fixed inset-0 modal-backdrop hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 transform transition-all duration-300 max-h-[90vh] overflow-hidden">
+    <div
+        class="bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 transform transition-all duration-300 max-h-[90vh] overflow-hidden">
         <div class="flex justify-between items-center p-6 border-b border-gray-200">
             <h3 class="text-lg font-bold text-gray-800">Scan Purchase Bill</h3>
             <button id="close-scan-modal" class="text-gray-400 hover:text-gray-600 transition duration-200">
                 <i class="fas fa-times w-5 h-5"></i>
             </button>
         </div>
-        
+
         <!-- Main Content Area -->
         <div class="flex flex-col lg:flex-row h-full max-h-[80vh]">
             <!-- Left Side - Controls -->
@@ -751,44 +814,48 @@ function initializeScanBillModal() {
                 <div id="control-section" class="space-y-4">
                     <div class="text-center">
                         <p class="text-gray-600 mb-6">Choose how you want to upload your purchase bill:</p>
-                        
+
                         <!-- Upload from Device -->
                         <div class="mb-4">
-                            <button id="upload-from-device" class="w-full flex items-center justify-center space-x-3 bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-lg transition duration-300">
+                            <button id="upload-from-device"
+                                class="w-full flex items-center justify-center space-x-3 bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-lg transition duration-300">
                                 <i class="fas fa-upload w-5 h-5"></i>
                                 <span>Upload from Device</span>
                             </button>
                             <p class="text-xs text-gray-500 mt-2">Supports PDF, JPG, JPEG, PNG files</p>
                         </div>
-                        
+
                         <!-- Scan with Camera -->
                         <div class="mb-6">
-                            <button id="scan-with-camera" class="w-full flex items-center justify-center space-x-3 bg-green-500 hover:bg-green-600 text-white px-6 py-4 rounded-lg transition duration-300">
+                            <button id="scan-with-camera"
+                                class="w-full flex items-center justify-center space-x-3 bg-green-500 hover:bg-green-600 text-white px-6 py-4 rounded-lg transition duration-300">
                                 <i class="fas fa-camera w-5 h-5"></i>
                                 <span>Scan with Camera</span>
                             </button>
                             <p class="text-xs text-gray-500 mt-2">Use your device camera to capture the bill</p>
                         </div>
                     </div>
-                    
+
                     <!-- Hidden file input -->
                     <input type="file" id="bill-file-input" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
-                    
+
                     <!-- Camera section (initially hidden) -->
                     <div id="camera-section" class="hidden">
                         <video id="camera-preview" class="w-full rounded-lg mb-4" autoplay playsinline></video>
                         <canvas id="camera-canvas" style="display: none;"></canvas>
                         <div class="flex space-x-3">
-                            <button id="capture-photo" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition duration-300">
+                            <button id="capture-photo"
+                                class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition duration-300">
                                 <i class="fas fa-camera w-4 h-4 inline mr-2"></i>
                                 Capture
                             </button>
-                            <button id="cancel-camera" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-300">
+                            <button id="cancel-camera"
+                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-300">
                                 Cancel
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- File Actions (when file is selected) -->
                     <div id="file-actions" class="hidden space-y-3">
                         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -801,30 +868,33 @@ function initializeScanBillModal() {
                             </div>
                         </div>
                         <div class="flex space-x-3">
-                            <button id="process-file" class="flex-1 bg-[#ed6a3e] hover:bg-orange-700 text-white px-4 py-3 rounded-lg transition duration-300 font-medium">
+                            <button id="process-file"
+                                class="flex-1 bg-[#ed6a3e] hover:bg-orange-700 text-white px-4 py-3 rounded-lg transition duration-300 font-medium">
                                 <i class="fas fa-robot w-4 h-4 inline mr-2"></i>
                                 Process with AI
                             </button>
-                            <button id="change-file" class="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-300">
+                            <button id="change-file"
+                                class="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-300">
                                 <i class="fas fa-sync-alt w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Right Side - Preview -->
             <div class="lg:w-1/2 p-6 bg-gray-50">
                 <div id="preview-section">
                     <!-- Empty State -->
-                    <div id="preview-empty" class="flex items-center justify-center h-full min-h-[300px] border-2 border-dashed border-gray-300 rounded-lg">
+                    <div id="preview-empty"
+                        class="flex items-center justify-center h-full min-h-[300px] border-2 border-dashed border-gray-300 rounded-lg">
                         <div class="text-center">
                             <i class="fas fa-file-alt text-gray-400 text-6xl mb-4"></i>
                             <p class="text-gray-500 text-lg font-medium">File Preview</p>
                             <p class="text-gray-400 text-sm">Select a file to see preview here</p>
                         </div>
                     </div>
-                    
+
                     <!-- Image Preview -->
                     <div id="image-preview" class="hidden">
                         <div class="text-center mb-3">
@@ -834,7 +904,7 @@ function initializeScanBillModal() {
                             <img id="preview-image" class="w-full h-auto max-h-96 object-contain" alt="Bill Preview">
                         </div>
                     </div>
-                    
+
                     <!-- PDF Preview -->
                     <div id="pdf-preview" class="hidden">
                         <div class="text-center mb-3">
@@ -853,7 +923,8 @@ function initializeScanBillModal() {
 </div>
 
 <!-- Full Screen Processing Overlay -->
-<div id="processing-overlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-[60]">
+<div id="processing-overlay"
+    class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-[60]">
     <div class="bg-white rounded-xl p-8 text-center shadow-2xl">
         <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-[#ed6a3e] mx-auto mb-6"></div>
         <h3 class="text-xl font-bold text-gray-800 mb-2">Processing with AI</h3>
@@ -868,8 +939,10 @@ function initializeScanBillModal() {
         <h3 class="text-lg font-semibold mb-4">Confirm Deletion</h3>
         <p class="text-gray-600 mb-6">Are you sure you want to delete this product? This action cannot be undone.</p>
         <div class="flex justify-end space-x-3">
-            <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors">Cancel</button>
-            <button onclick="confirmDelete()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">Delete</button>
+            <button onclick="closeDeleteModal()"
+                class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors">Cancel</button>
+            <button onclick="confirmDelete()"
+                class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">Delete</button>
         </div>
     </div>
 </div>
