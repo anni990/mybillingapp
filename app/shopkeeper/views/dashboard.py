@@ -34,6 +34,7 @@ def register_routes(bp):
             )
         
         shopkeeper_id = shopkeeper.shopkeeper_id
+        shop_name = shopkeeper.shop_name
 
         # Today's Sales summary
         today = datetime.date.today()
@@ -105,6 +106,7 @@ def register_routes(bp):
                           current_user.role == 'shopkeeper')
         
         return render_template('shopkeeper/dashboard.html',
+            shop_name=shop_name,
             total_amount=total_amount,
             paid=paid,
             unpaid=unpaid,

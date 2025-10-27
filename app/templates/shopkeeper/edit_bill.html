@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Bill - {{ bill.bill_number }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+        .editable-field {
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 2px 6px;
+            background-color: #f9fafb;
+            transition: all 0.2s ease;
+        }
+        .editable-field:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        .editable-field:focus {
+            outline: none;
+            background-color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .readonly-field {
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .calculated-field {
+            background-color: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="max-w-4xl mx-auto bg-white p-6 mt-10 rounded shadow-lg">
+        <!-- Header with action buttons -->
+        <div class="mb-4 flex justify-between items-center no-print">
+            <a href="{{ url_for('shopkeeper.view_bill', bill_id=bill.bill_id) }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+                ← Cancel
+            </a>
+            <div>
+                <button onclick="saveBill()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+
+        <form id="editBillForm" method="POST" action="{{ url_for('shopkeeper.update_bill', bill_id=bill.bill_id) }}">
+            <!-- Header Templates -->
+            {% if shopkeeper.template_choice == 'template1' %}
+            <!-- Template 1: Classic Left-Aligned -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center">
+                    {% if shopkeeper.logo_path %}
+                    <img src="{{ url_for('static', filename=shopkeeper.logo_path) }}" alt="Shop Logo" class="h-16 mr-4">
+                    {% endif %}
+                    <h1 class="text-3xl font-bold text-gray-900">{{ shopkeeper.shop_name }}</h1>
+                </div>
+                <div class="text-right">
+                    <p class="text-xl font-semibold text-gray-800">Invoice</p>
+                    <p class="text-gray-600">{{ bill.bill_number }}</p>
+                    <p class="text-gray-600">Date: {{ bill.bill_date }}</p>
+                </div>
+            </div>
+            {% elif shopkeeper.template_choice == 'template3' %}
+            <!-- Template 3: Compact & Minimalist -->
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    {% if shopkeeper.logo_path %}
+                    <img src="{{ url_for('static', filename=shopkeeper.logo_path) }}" alt="Shop Logo" class="h-12 mb-2">
+                    {% endif %}
+                    <h1 class="text-2xl font-bold text-gray-900">{{ shopkeeper.shop_name }}</h1>
+                </div>
+                <div class="flex gap-4 text-sm">
+                    <p><span class="font-semibold">Invoice #:</span> {{ bill.bill_number }}</p>
+                    <p><span class="font-semibold">Date:</span> {{ bill.bill_date }}</p>
+                </div>
+            </div>
+            {% else %}
+            <!-- Template 2: Modern Centered (Default) -->
+            <div class="text-center mb-6">
+                {% if shopkeeper.logo_path %}
+                <img src="{{ url_for('static', filename=shopkeeper.logo_path) }}" alt="Shop Logo" class="h-16 mx-auto mb-2">
+                {% endif %}
+                <h1 class="text-3xl font-bold text-gray-900">{{ shopkeeper.shop_name }}</h1>
+                <p class="text-gray-600">Invoice {{ bill.bill_number }}</p>
+                <p class="text-gray-600">Date: {{ bill.bill_date }}</p>
+            </div>
+            {% endif %}
+
+            <!-- From and To section -->
+            <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                <div class="border p-4 rounded">
+                    <h2 class="font-semibold mb-2">From:</h2>
+                    <p>Name: {{ shopkeeper.shop_name }}</p>
+                    <p>Contact: {{ shopkeeper.contact_number }}</p>
+                    <p>Address: {{ shopkeeper.address }}</p>
+                    <p>GSTIN: {{ shopkeeper.gst_number }}</p>
+                </div>
+                <div class="border p-4 rounded">
+                    <h2 class="font-semibold mb-2">To:</h2>
+                    <p>Name: <input type="text" name="customer_name" value="{{ bill.customer_name }}" 
+                                  class="editable-field inline-block min-w-48" onchange="updateBillTotals()"></p>
+                    <p>Contact: <input type="text" name="customer_contact" value="{{ bill.customer_contact }}" 
+                                      class="editable-field inline-block min-w-48" onchange="updateBillTotals()"></p>
+                    {% if bill.customer_address %}
+                    <p>Address: <input type="text" name="customer_address" value="{{ bill.customer_address }}" 
+                                      class="editable-field inline-block min-w-48" onchange="updateBillTotals()"></p>
+                    {% endif %}
+                    {% if bill.customer_gstin %}
+                    <p>GSTIN: <input type="text" name="customer_gstin" value="{{ bill.customer_gstin }}" 
+                                    class="editable-field inline-block min-w-48" onchange="updateBillTotals()"></p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Payment Status Section -->
+            <div class="mb-6 p-4 border rounded bg-blue-50">
+                <div class="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <label class="block font-semibold mb-1">Payment Status:</label>
+                        <select name="payment_status" class="editable-field w-full" onchange="updatePaymentFields()">
+                            <option value="Paid" {{ 'selected' if bill.payment_status == 'Paid' else '' }}>Paid</option>
+                            <option value="Partial" {{ 'selected' if bill.payment_status == 'Partial' else '' }}>Partial</option>
+                            <option value="Unpaid" {{ 'selected' if bill.payment_status == 'Unpaid' else '' }}>Unpaid</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Paid Amount:</label>
+                        <input type="number" name="paid_amount" value="{{ bill.paid_amount|round(2) }}" 
+                               step="0.01" min="0" class="editable-field w-full" onchange="updatePaymentFields()">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Due Amount:</label>
+                        <input type="number" name="due_amount" value="{{ bill.due_amount|round(2) }}" 
+                               step="0.01" min="0" class="readonly-field w-full" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GST Summary Table -->
+            <h2 class="text-lg font-semibold mb-2">GST Summary</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full border text-sm text-left" id="itemsTable">
+                    <thead class="bg-orange-100 text-orange-700">
+                        <tr>
+                            <th class="p-2 border">Item</th>
+                            <th class="p-2 border">HSN Code</th>
+                            <th class="p-2 border text-right">Quantity</th>
+                            <th class="p-2 border text-right">Unit Price</th>
+                            <th class="p-2 border text-right">Discount %</th>
+                            <th class="p-2 border text-right">Discounted Price</th>
+                            <th class="p-2 border text-center" colspan="2">SGST/UTGST</th>
+                            <th class="p-2 border text-center" colspan="2">CGST</th>
+                            <th class="p-2 border text-right">Sub Total</th>
+                            <th class="p-2 border text-center">Action</th>
+                        </tr>
+                        <tr>
+                            <th class="p-2 border"></th>
+                            <th class="p-2 border"></th>
+                            <th class="p-2 border text-right"></th>
+                            <th class="p-2 border text-right"></th>
+                            <th class="p-2 border text-right"></th>
+                            <th class="p-2 border text-right"></th>
+                            <th class="p-2 border text-right">Rate (%)</th>
+                            <th class="p-2 border text-right">Amt</th>
+                            <th class="p-2 border text-right">Rate (%)</th>
+                            <th class="p-2 border text-right">Amt</th>
+                            <th class="p-2 border text-right"></th>
+                            <th class="p-2 border text-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody">
+                        {% for item_data in bill_items_data %}
+                        <tr class="border-t item-row" data-index="{{ loop.index0 }}">
+                            <td class="p-2 border">
+                                <input type="text" name="product_name[]" value="{{ item_data.product.product_name }}" 
+                                       class="editable-field w-full" onchange="updateRowTotals(this)">
+                                <input type="hidden" name="product_id[]" value="{{ item_data.product.product_id if not item_data.is_custom else '' }}">
+                            </td>
+                            <td class="p-2 border">
+                                <input type="text" name="hsn_code[]" value="{{ item_data.hsn_code }}" 
+                                       class="editable-field w-full" onchange="updateRowTotals(this)">
+                            </td>
+                            <td class="p-2 border text-right">
+                                <input type="number" name="quantity[]" value="{{ item_data.quantity }}" 
+                                       min="1" class="editable-field w-20 text-right" onchange="updateRowTotals(this)">
+                            </td>
+                            <td class="p-2 border text-right">
+                                <input type="number" name="unit_price[]" value="{{ item_data.unit_price|round(2) }}" 
+                                       step="0.01" min="0.01" class="editable-field w-24 text-right" onchange="updateRowTotals(this)">
+                            </td>
+                            <td class="p-2 border text-right">
+                                <input type="number" name="discount_percent[]" value="{{ item_data.discount_percent }}" 
+                                       step="0.01" min="0" max="100" class="editable-field w-20 text-right" onchange="updateRowTotals(this)">
+                            </td>
+                            <td class="p-2 border text-right">
+                                <span class="calculated-field inline-block px-2 py-1 rounded taxable-amount">₹{{ item_data.taxable_amount|round(2) }}</span>
+                            </td>
+                            <td class="p-2 border text-right">
+                                <input type="number" name="gst_rate[]" value="{{ item_data.sgst_rate|round(2) }}" 
+                                       step="0.01" min="0" max="50" class="editable-field w-16 text-right" onchange="updateRowTotals(this)">
+                            </td>
+                            <td class="p-2 border text-right">
+                                <span class="calculated-field inline-block px-2 py-1 rounded sgst-amount">₹{{ item_data.sgst_amount|round(2) }}</span>
+                            </td>
+                            <td class="p-2 border text-right">
+                                <span class="calculated-field inline-block px-2 py-1 rounded cgst-rate">{{ item_data.cgst_rate|round(2) }}</span>
+                            </td>
+                            <td class="p-2 border text-right">
+                                <span class="calculated-field inline-block px-2 py-1 rounded cgst-amount">₹{{ item_data.cgst_amount|round(2) }}</span>
+                            </td>
+                            <td class="p-2 border text-right">
+                                <span class="calculated-field inline-block px-2 py-1 rounded font-bold final-total">₹{{ item_data.final_total|round(2) }}</span>
+                            </td>
+                            <td class="p-2 border text-center">
+                                <button type="button" onclick="removeRow(this)" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">
+                                    Remove
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Add Item Button -->
+            <div class="mt-2 mb-4">
+                <button type="button" onclick="addNewRow()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm">
+                    + Add Item
+                </button>
+            </div>
+
+            <!-- Summary Table (Totals) -->
+            <table class="w-full text-sm mt-4 border" id="summaryTable">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="p-2 border">Total Taxable Amount</th>
+                        <th class="p-2 border">GST Rate</th>
+                        <th class="p-2 border">CGST</th>
+                        <th class="p-2 border">SGST</th>
+                        <th class="p-2 border">Total GST</th>
+                        <th class="p-2 border">Grand Total</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryTableBody">
+                    {% for gst_rate, summary in gst_summary_by_rate.items() %}
+                    <tr data-gst-rate="{{ gst_rate }}">
+                        <td class="p-2 border summary-taxable">₹{{ summary.taxable_amount|round(2) }}</td>
+                        <td class="p-2 border">{{ gst_rate }}%</td>
+                        <td class="p-2 border summary-cgst">₹{{ summary.cgst_amount|round(2) }}</td>
+                        <td class="p-2 border summary-sgst">₹{{ summary.sgst_amount|round(2) }}</td>
+                        <td class="p-2 border summary-total-gst">₹{{ summary.total_gst_amount|round(2) }}</td>
+                        <td class="p-2 border"></td>
+                    </tr>
+                    {% endfor %}
+                    <!-- Grand Total Row -->
+                    <tr class="bg-gray-50 font-bold">
+                        <td class="p-2 border" id="grandTaxableAmount">₹{{ total_taxable_amount|round(2) }}</td>
+                        <td class="p-2 border"></td>
+                        <td class="p-2 border" id="grandCGSTAmount">₹{{ total_cgst_amount|round(2) }}</td>
+                        <td class="p-2 border" id="grandSGSTAmount">₹{{ total_sgst_amount|round(2) }}</td>
+                        <td class="p-2 border" id="grandGSTAmount">₹{{ total_gst_amount|round(2) }}</td>
+                        <td class="p-2 border font-bold text-right" id="grandTotalAmount">₹{{ overall_grand_total|round(2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Bank details -->
+            <div class="mt-6 text-sm">
+                <h2 class="font-semibold mb-2">Bank Details:</h2>
+                <p>Bank Name: {{ shopkeeper.bank_name or '' }}</p>
+                <p>Account Number: {{ shopkeeper.account_number or '' }}</p>
+                <p>IFSC Code: {{ shopkeeper.ifsc_code or '' }}</p>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center text-xs text-gray-400 mt-4">
+                Thank you for shopping with us!
+            </div>
+
+            <!-- Hidden inputs for totals -->
+            <input type="hidden" name="total_taxable_amount" id="hiddenTaxableAmount" value="{{ total_taxable_amount|round(2) }}">
+            <input type="hidden" name="total_cgst_amount" id="hiddenCGSTAmount" value="{{ total_cgst_amount|round(2) }}">
+            <input type="hidden" name="total_sgst_amount" id="hiddenSGSTAmount" value="{{ total_sgst_amount|round(2) }}">
+            <input type="hidden" name="total_gst_amount" id="hiddenGSTAmount" value="{{ total_gst_amount|round(2) }}">
+            <input type="hidden" name="grand_total" id="hiddenGrandTotal" value="{{ overall_grand_total|round(2) }}">
+        </form>
+    </div>
+
+    <script>
+        function updateRowTotals(element) {
+            const row = element.closest('.item-row');
+            const quantity = parseFloat(row.querySelector('input[name="quantity[]"]').value) || 0;
+            const unitPrice = parseFloat(row.querySelector('input[name="unit_price[]"]').value) || 0;
+            const discountPercent = parseFloat(row.querySelector('input[name="discount_percent[]"]').value) || 0;
+            const gstRate = parseFloat(row.querySelector('input[name="gst_rate[]"]').value) || 0;
+
+            // Calculate line totals
+            const lineTotal = quantity * unitPrice;
+            const discountAmount = (lineTotal * discountPercent) / 100;
+            const taxableAmount = lineTotal - discountAmount;
+            
+            // Calculate GST amounts (split between CGST and SGST)
+            const sgstRate = gstRate / 2;
+            const cgstRate = gstRate / 2;
+            const sgstAmount = (taxableAmount * sgstRate) / 100;
+            const cgstAmount = (taxableAmount * cgstRate) / 100;
+            const finalTotal = taxableAmount + sgstAmount + cgstAmount;
+
+            // Update displayed values
+            row.querySelector('.taxable-amount').textContent = '₹' + taxableAmount.toFixed(2);
+            row.querySelector('.sgst-amount').textContent = '₹' + sgstAmount.toFixed(2);
+            row.querySelector('.cgst-rate').textContent = cgstRate.toFixed(2);
+            row.querySelector('.cgst-amount').textContent = '₹' + cgstAmount.toFixed(2);
+            row.querySelector('.final-total').textContent = '₹' + finalTotal.toFixed(2);
+
+            // Update bill totals
+            updateBillTotals();
+        }
+
+        function updateBillTotals() {
+            let totalTaxable = 0;
+            let totalCGST = 0;
+            let totalSGST = 0;
+            let totalGST = 0;
+            let grandTotal = 0;
+
+            // Calculate totals from all rows
+            document.querySelectorAll('.item-row').forEach(row => {
+                const taxableText = row.querySelector('.taxable-amount').textContent.replace('₹', '');
+                const cgstText = row.querySelector('.cgst-amount').textContent.replace('₹', '');
+                const sgstText = row.querySelector('.sgst-amount').textContent.replace('₹', '');
+                const finalText = row.querySelector('.final-total').textContent.replace('₹', '');
+
+                totalTaxable += parseFloat(taxableText) || 0;
+                totalCGST += parseFloat(cgstText) || 0;
+                totalSGST += parseFloat(sgstText) || 0;
+                grandTotal += parseFloat(finalText) || 0;
+            });
+
+            totalGST = totalCGST + totalSGST;
+
+            // Update summary table
+            document.getElementById('grandTaxableAmount').textContent = '₹' + totalTaxable.toFixed(2);
+            document.getElementById('grandCGSTAmount').textContent = '₹' + totalCGST.toFixed(2);
+            document.getElementById('grandSGSTAmount').textContent = '₹' + totalSGST.toFixed(2);
+            document.getElementById('grandGSTAmount').textContent = '₹' + totalGST.toFixed(2);
+            document.getElementById('grandTotalAmount').textContent = '₹' + grandTotal.toFixed(2);
+
+            // Update hidden inputs
+            document.getElementById('hiddenTaxableAmount').value = totalTaxable.toFixed(2);
+            document.getElementById('hiddenCGSTAmount').value = totalCGST.toFixed(2);
+            document.getElementById('hiddenSGSTAmount').value = totalSGST.toFixed(2);
+            document.getElementById('hiddenGSTAmount').value = totalGST.toFixed(2);
+            document.getElementById('hiddenGrandTotal').value = grandTotal.toFixed(2);
+
+            // Update payment fields
+            updatePaymentFields();
+        }
+
+        function updatePaymentFields() {
+            const grandTotal = parseFloat(document.getElementById('hiddenGrandTotal').value) || 0;
+            const paidAmount = parseFloat(document.querySelector('input[name="paid_amount"]').value) || 0;
+            const dueAmount = grandTotal - paidAmount;
+
+            document.querySelector('input[name="due_amount"]').value = Math.max(0, dueAmount).toFixed(2);
+
+            // Update payment status automatically
+            const paymentStatusSelect = document.querySelector('select[name="payment_status"]');
+            if (paidAmount >= grandTotal) {
+                paymentStatusSelect.value = 'Paid';
+            } else if (paidAmount > 0) {
+                paymentStatusSelect.value = 'Partial';
+            } else {
+                paymentStatusSelect.value = 'Unpaid';
+            }
+        }
+
+        function removeRow(button) {
+            if (document.querySelectorAll('.item-row').length > 1) {
+                button.closest('.item-row').remove();
+                updateBillTotals();
+            } else {
+                alert('At least one item is required in the bill.');
+            }
+        }
+
+        function addNewRow() {
+            const tbody = document.getElementById('itemsTableBody');
+            const newIndex = tbody.children.length;
+            
+            const newRow = document.createElement('tr');
+            newRow.className = 'border-t item-row';
+            newRow.setAttribute('data-index', newIndex);
+            
+            newRow.innerHTML = `
+                <td class="p-2 border">
+                    <input type="text" name="product_name[]" value="" 
+                           class="editable-field w-full" onchange="updateRowTotals(this)" placeholder="Product Name">
+                    <input type="hidden" name="product_id[]" value="">
+                </td>
+                <td class="p-2 border">
+                    <input type="text" name="hsn_code[]" value="" 
+                           class="editable-field w-full" onchange="updateRowTotals(this)" placeholder="HSN Code">
+                </td>
+                <td class="p-2 border text-right">
+                    <input type="number" name="quantity[]" value="1" 
+                           min="1" class="editable-field w-20 text-right" onchange="updateRowTotals(this)">
+                </td>
+                <td class="p-2 border text-right">
+                    <input type="number" name="unit_price[]" value="0.00" 
+                           step="0.01" min="0.01" class="editable-field w-24 text-right" onchange="updateRowTotals(this)">
+                </td>
+                <td class="p-2 border text-right">
+                    <input type="number" name="discount_percent[]" value="0" 
+                           step="0.01" min="0" max="100" class="editable-field w-20 text-right" onchange="updateRowTotals(this)">
+                </td>
+                <td class="p-2 border text-right">
+                    <span class="calculated-field inline-block px-2 py-1 rounded taxable-amount">₹0.00</span>
+                </td>
+                <td class="p-2 border text-right">
+                    <input type="number" name="gst_rate[]" value="18" 
+                           step="0.01" min="0" max="50" class="editable-field w-16 text-right" onchange="updateRowTotals(this)">
+                </td>
+                <td class="p-2 border text-right">
+                    <span class="calculated-field inline-block px-2 py-1 rounded sgst-amount">₹0.00</span>
+                </td>
+                <td class="p-2 border text-right">
+                    <span class="calculated-field inline-block px-2 py-1 rounded cgst-rate">9.00</span>
+                </td>
+                <td class="p-2 border text-right">
+                    <span class="calculated-field inline-block px-2 py-1 rounded cgst-amount">₹0.00</span>
+                </td>
+                <td class="p-2 border text-right">
+                    <span class="calculated-field inline-block px-2 py-1 rounded font-bold final-total">₹0.00</span>
+                </td>
+                <td class="p-2 border text-center">
+                    <button type="button" onclick="removeRow(this)" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">
+                        Remove
+                    </button>
+                </td>
+            `;
+            
+            tbody.appendChild(newRow);
+            updateBillTotals();
+        }
+
+        function saveBill() {
+            // Validate form
+            let isValid = true;
+            const requiredFields = document.querySelectorAll('input[required], select[required]');
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.style.borderColor = '#ef4444';
+                    isValid = false;
+                } else {
+                    field.style.borderColor = '#d1d5db';
+                }
+            });
+
+            // Check if at least one item exists
+            if (document.querySelectorAll('.item-row').length === 0) {
+                alert('At least one item is required in the bill.');
+                return;
+            }
+
+            if (isValid) {
+                document.getElementById('editBillForm').submit();
+            } else {
+                alert('Please fill in all required fields.');
+            }
+        }
+
+        // Initialize calculations on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateBillTotals();
+        });
+    </script>
+</body>
+</html>

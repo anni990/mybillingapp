@@ -1,5 +1,6 @@
 {% extends 'shopkeeper/s_base.html' %}
 {% block title %}CA Marketplace | MyBillingApp{% endblock %}
+{% block shop_name %} {{ shop_name }} {% endblock %}
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
@@ -41,7 +42,7 @@
             <div class="p-4 md:p-8">
                 <!-- Header Section -->
                 <div
-                    class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
+                    class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0 lg:-mt-8">
                     <div>
                         <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
                             <i data-feather="users" class="w-6 h-6 md:w-8 md:h-8 mr-3 text-[#ed6a3e]"></i>
