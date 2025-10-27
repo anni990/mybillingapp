@@ -1,320 +1,564 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBillingApp - Modern Billing & Business Management</title>
+    <title>MyBillingApp - Free Billing Software for Effortless Business Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom Tailwind Configuration (for easy color reference and use) */
+        /* Custom Theme Configuration */
         :root {
             --primary-color: #ed6a3e;
             --primary-light: #f59e7e;
             --primary-dark: #b54f2a;
         }
+
         .theme-primary {
             color: var(--primary-color);
         }
+
         .bg-theme-primary {
             background-color: var(--primary-color);
         }
+
         .hover-bg-theme-primary:hover {
             background-color: var(--primary-color);
         }
+
         .border-theme-primary {
             border-color: var(--primary-color);
         }
+
         .ring-theme-primary:focus {
             --tw-ring-color: var(--primary-color);
         }
-        /* Custom animations */
+
+        /* Smooth Animations */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
+
         .animate-fadeInUp {
             animation: fadeInUp 0.8s ease-out;
         }
+
+        /* Gradient Background */
+        .hero-gradient {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        /* Card Hover Effects */
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Button Animations */
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(237, 106, 62, 0.3);
+        }
+
+        /* Gradient Backgrounds */
+        .cta-gradient {
+            background: linear-gradient(135deg, #ed6a3e 0%, #ce6945 50%, #cc6c46 100%);
+        }
+
+        /* Counter Animation */
+        .counter {
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
-<body class="font-sans text-gray-900 bg-gray-50">
 
-    <header class="bg-white shadow-lg sticky top-0 z-50">
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <a href="#" class="text-2xl sm:text-3xl font-bold theme-primary tracking-tight">
-                MyBillingApp
-            </a>
-            
-            <div class="md:hidden flex items-center">
-                <button id="mobile-menu-button" class="text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 rounded-md p-2">
-                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                    </svg>
-                </button>
+<body class="font-sans text-gray-900 bg-white">
+
+    <!-- Navigation Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <a href="{{ url_for('home.index') }}"
+                    class="text-2xl sm:text-3xl font-bold theme-primary tracking-tight">
+                    MyBillingApp
+                </a>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button"
+                        class="text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 rounded-md p-2">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <div class="flex space-x-8 text-gray-700 font-medium">
+                        <a href="{{ url_for('home.features') }}"
+                            class="hover:theme-primary transition duration-300">Features</a>
+                        <a href="{{ url_for('home.pricing') }}"
+                            class="hover:theme-primary transition duration-300">Pricing</a>
+                        <a href="{{ url_for('home.about') }}" class="hover:theme-primary transition duration-300">About
+                            Us</a>
+                        <a href="#contact" class="hover:theme-primary transition duration-300">Contact</a>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="{{ url_for('auth.login')}}"
+                            class="text-gray-700 hover:text-gray-900 font-medium transition duration-300">Login</a>
+                        <a href="{{ url_for('auth.register')}}"
+                            class="bg-theme-primary text-white px-6 py-2.5 rounded-lg font-semibold shadow-md hover:bg-theme-dark transition duration-300 btn-primary">Register</a>
+                    </div>
+                </div>
             </div>
 
-            <div class="hidden md:flex items-center space-x-6">
-                <div class="flex space-x-6 text-gray-700 font-medium">
-                    <a href="#features" class="hover:theme-primary transition duration-300">Features</a>
-                    <a href="#pricing" class="hover:theme-primary transition duration-300">Pricing</a>
-                    <a href="#about" class="hover:theme-primary transition duration-300">About Us</a>
-                    <a href="#contact" class="hover:theme-primary transition duration-300">Contact</a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('auth.login')}}" class="text-gray-700 hover:text-gray-900 font-medium transition duration-300">Login</a>
-                    <a href="{{ url_for('auth.register')}}" class="bg-theme-primary text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:bg-theme-dark transition duration-300">Register</a>
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4 border-t border-gray-100">
+                <div class="flex flex-col space-y-4 text-lg font-medium pt-4">
+                    <a href="{{ url_for('home.features') }}"
+                        class="block py-2 text-gray-700 hover:theme-primary transition duration-300">Features</a>
+                    <a href="{{ url_for('home.pricing') }}"
+                        class="block py-2 text-gray-700 hover:theme-primary transition duration-300">Pricing</a>
+                    <a href="{{ url_for('home.about') }}"
+                        class="block py-2 text-gray-700 hover:theme-primary transition duration-300">About Us</a>
+                    <a href="#contact"
+                        class="block py-2 text-gray-700 hover:theme-primary transition duration-300">Contact</a>
+                    <div class="flex flex-col space-y-3 pt-4 border-t border-gray-100">
+                        <a href="{{ url_for('auth.login')}}"
+                            class="block text-center py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition duration-300">Login</a>
+                        <a href="{{ url_for('auth.register')}}"
+                            class="block text-center bg-theme-primary text-white px-6 py-2.5 rounded-lg font-semibold shadow-md transition duration-300">Register</a>
+                    </div>
                 </div>
             </div>
         </nav>
-
-        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-inner pb-4">
-            <div class="flex flex-col items-center space-y-4 text-lg font-medium">
-                <a href="#features" class="block py-2 hover:bg-gray-100 w-full text-center">Features</a>
-                <a href="#pricing" class="block py-2 hover:bg-gray-100 w-full text-center">Pricing</a>
-                <a href="#about" class="block py-2 hover:bg-gray-100 w-full text-center">About Us</a>
-                <a href="#contact" class="block py-2 hover:bg-gray-100 w-full text-center">Contact</a>
-                <a href="{{ url_for('auth.login')}}" class="block w-full text-center py-2 text-gray-700 hover:bg-gray-100 transition duration-300">Login</a>
-                <a href="{{ url_for('auth.register')}}" class="block w-3/4 text-center bg-theme-primary text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:bg-theme-dark transition duration-300">Register</a>
-            </div>
-        </div>
     </header>
 
     <main>
-        <section class="bg-gray-100 py-16 md:py-32">
-            <div class="max-w-7xl mx-auto px-8 sm:px-6 lg:px-4 flex flex-col md:flex-row items-center justify-between gap-12 md:gap-16">
-                <div class="text-center md:text-left md:w-1/2 animate-fadeInUp">
-                    <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight text-gray-900 mb-4 md:mb-6">
-                        Empowering Your Business, Effortlessly
-                    </h1>
-                    <p class="text-lg sm:text-xl text-gray-600 mb-8 md:mb-10">
-                        MyBillingApp streamlines billing, inventory, and client management for shopkeepers and CAs. Experience a secure, cloud-based platform with real-time analytics and seamless collaboration.
+        <!-- Hero Section -->
+        <section class="hero-gradient py-12 sm:py-16 lg:py-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16">
+                    <!-- Hero Content -->
+                    <div class="text-center lg:text-left lg:w-1/2 animate-fadeInUp">
+                        <h1
+                            class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold leading-tight text-gray-900 mb-6">
+                            Free Billing Software for <span class="theme-primary">Effortless Business Management</span>
+                        </h1>
+                        <p class="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0">
+                            Welcome to MyBillingApp – your ultimate solution for hassle-free billing and invoicing.
+                            Whether you're a startup, small business, or established enterprise, our app offers
+                            everything you need to streamline billing processes and save time.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                            <a href="{{ url_for('auth.register')}}"
+                                class="bg-theme-primary text-white px-8 py-4 rounded-lg font-bold text-lg shadow-lg hover:opacity-90 transition duration-300 btn-primary">
+                                Generate Bills Now
+                            </a>
+                            <a href="#"
+                                class="border-2 border-theme-primary text-theme-primary px-8 py-4 rounded-lg font-bold text-lg transition duration-300 hover:bg-theme-primary hover:text-white btn-primary">
+                                Download Windows Software
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Hero Image -->
+                    <div class="lg:w-1/2 mt-8 lg:mt-0 animate-fadeInUp">
+                        <div class="relative">
+                            <img src="../../static/images/shop_dashboard.png" alt="MyBillingApp Dashboard"
+                                class="rounded-2xl shadow-2xl w-full max-w-lg mx-auto">
+                            <div
+                                class="absolute -top-4 -right-4 w-24 h-24 bg-theme-primary rounded-full opacity-20 animate-pulse">
+                            </div>
+                            <div
+                                class="absolute -bottom-4 -left-4 w-16 h-16 bg-blue-500 rounded-full opacity-20 animate-pulse">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Customer Logos Section -->
+        <!-- <section class="py-12 bg-white border-b border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-8">
+                    <h6 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-6">Our Valuable Customers
+                    </h6>
+                </div>
+                <div
+                    class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 items-center justify-items-center opacity-60">
+                    <div class="bg-gray-100 rounded-lg p-4 w-full h-20 flex items-center justify-center">
+                        <span class="text-gray-400 font-medium">Customer 1</span>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-4 w-full h-20 flex items-center justify-center">
+                        <span class="text-gray-400 font-medium">Customer 2</span>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-4 w-full h-20 flex items-center justify-center">
+                        <span class="text-gray-400 font-medium">Customer 3</span>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-4 w-full h-20 flex items-center justify-center">
+                        <span class="text-gray-400 font-medium">Customer 4</span>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-4 w-full h-20 flex items-center justify-center">
+                        <span class="text-gray-400 font-medium">Customer 5</span>
+                    </div>
+                </div>
+            </div>
+        </section> -->
+
+        <!-- Start Free Section -->
+        <section class="py-16 lg:py-24 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+                    <!-- Content -->
+                    <div class="lg:w-1/2 text-center lg:text-left animate-fadeInUp">
+                        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-6">
+                            Start Free, Bill Smarter - <span class="theme-primary">Your Perfect Business Partner</span>
+                        </h2>
+                        <p class="text-lg text-gray-600 mb-8">
+                            Start using our billing software for free! MyBillingApp is designed to make invoicing
+                            simple, fast, and accessible to everyone. Our free version lets you create unlimited bills,
+                            manage inventory, and track your payments without any upfront cost. Begin your journey
+                            towards efficient billing today and experience what our app can do for your business.
+                        </p>
+                        <a href="https://github.com/coderr24/tech/releases/download/techtech/MYBILLINGAPP.exe"
+                            class="inline-block bg-theme-primary text-white px-8 py-4 rounded-lg font-bold text-lg shadow-lg hover:opacity-90 transition duration-300 btn-primary">
+                            Download Windows Software
+                        </a>
+                    </div>
+
+                    <!-- Image -->
+                    <div class="lg:w-1/2 animate-fadeInUp">
+                        <img src="../../static/images/new_ca_dashboard.png" alt="Start Free Billing"
+                            class="rounded-2xl shadow-xl w-full">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Premium Features Section -->
+        <section class="py-16 lg:py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+                    <!-- Image -->
+                    <div class="lg:w-1/2 animate-fadeInUp flex justify-center">
+                        <img src="../../static/images/shopkeeper_market.png" alt="Premium Features"
+                            class="w-7/10 max-w-[55%] h-auto rounded-2xl shadow-xl object-contain">
+                    </div>
+
+
+                    <!-- Content -->
+                    <div class="lg:w-1/2 text-center lg:text-left animate-fadeInUp">
+                        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-6">
+                            Seamless Upgrade to <span class="theme-primary">Premium</span>
+                        </h2>
+                        <p class="text-lg text-gray-600 mb-8">
+                            When you're ready to take your billing experience to the next level, our premium version
+                            offers powerful features tailored to your growing needs. Unlock features like:
+                        </p>
+                        <div class="space-y-4 text-left mb-8">
+                            <div class="flex items-start space-x-3">
+                                <span class="text-theme-primary text-xl">✓</span>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">GST-Compliant Invoicing</h4>
+                                    <p class="text-gray-600">Ensure accurate tax calculations and generate GST-compliant
+                                        bills effortlessly.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <span class="text-theme-primary text-xl">✓</span>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Multi-User Access</h4>
+                                    <p class="text-gray-600">Manage billing with your team and assign roles for
+                                        streamlined processes.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <span class="text-theme-primary text-xl">✓</span>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Advanced Inventory Management</h4>
+                                    <p class="text-gray-600">Stay in control with robust inventory tracking and stock
+                                        alerts.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('home.pricing') }}"
+                            class="inline-block bg-theme-primary text-white px-8 py-4 rounded-lg font-bold text-lg shadow-lg hover:opacity-90 transition duration-300 btn-primary">
+                            GO PRO NOW
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mobile Billing Companion Section -->
+        <section class="py-16 lg:py-24 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-6">
+                        Your Ultimate <span class="theme-primary">Mobile Billing Companion</span>
+                    </h2>
+                    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                        Experience the freedom to manage your billing anytime, anywhere with our comprehensive mobile
+                        solution.
                     </p>
-                    <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 justify-center md:justify-start">
-                        <a href="{{ url_for('auth.register' )}}" class="bg-theme-primary text-white px-8 py-3 rounded-lg font-bold text-lg shadow-xl hover:opacity-90 transition duration-300 transform hover:scale-105">
-                            Get Started Free
-                        </a>
-                        <a href="#" class="border-2 border-theme-primary text-theme-primary px-8 py-3 rounded-lg font-bold text-lg transition duration-300 hover:bg-theme-primary hover:text-white transform hover:scale-105">
-                            Watch Demo
-                        </a>
-                    </div>
                 </div>
-                <div class="md:w-1/2 mt-8 md:mt-0 animate-fadeInUp delay-200">
-                    <img src="../../static/images/ca_dashboard.png" alt="MyBillingApp Dashboard" class="rounded-xl shadow-2xl border-4 border-white w-full transition duration-500 hover:shadow-3xl transform hover:scale-105">
-                </div>
-            </div>
-        </section>
 
-        <section id="features" class="py-16 md:py-24 bg-white">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-8 md:mb-16 theme-primary">Key Features Designed for You</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
-                    
-                    <div class="p-6 md:p-8 bg-white rounded-xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-2 border-t-8 border-theme-primary animate-fadeInUp">
-                        <div class="text-4xl sm:text-5xl theme-primary mb-4 md:mb-6">🛒</div>
-                        <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 md:mb-6">Shopkeeper Tools</h3>
-                        <ul class="text-gray-600 space-y-3 sm:space-y-4 text-base sm:text-lg text-left">
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Instant bill creation & printing (GST compliant)</li>
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Automated inventory & product management</li>
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Real-time sales analytics dashboard</li>
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Customizable profiles & settings</li>
-                        </ul>
-                    </div>
-
-                    <div class="p-6 md:p-8 bg-white rounded-xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-2 border-t-8 border-theme-primary animate-fadeInUp delay-100">
-                        <div class="text-4xl sm:text-5xl theme-primary mb-4 md:mb-6">📊</div>
-                        <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 md:mb-6">CA Dashboard</h3>
-                        <ul class="text-gray-600 space-y-3 sm:space-y-4 text-base sm:text-lg text-left">
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Comprehensive client & employee management</li>
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Secure access to client bills & reports</li>
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Integrated marketplace for CA services</li>
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Secure document sharing and collaboration</li>
-                        </ul>
-                    </div>
-
-                    <div class="p-6 md:p-8 bg-white rounded-xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-2 border-t-8 border-theme-primary animate-fadeInUp delay-200">
-                        <div class="text-4xl sm:text-5xl theme-primary mb-4 md:mb-6">🚀</div>
-                        <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 md:mb-6">Why MyBillingApp?</h3>
-                        <ul class="text-gray-600 space-y-3 sm:space-y-4 text-base sm:text-lg text-left">
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Fully cloud-based & military-grade secure</li>
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Modern, intuitive user interface (UI/UX)</li>
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Lightning-fast onboarding in minutes</li>
-                            <li class="flex items-center"><span class="text-theme-primary mr-2">✔</span> Dedicated 24/7 customer support</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="pricing" class="py-16 md:py-24 bg-gray-50">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-8 md:mb-16 theme-primary">Simple & Transparent Pricing</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 items-end">
-                    
-                    <div class="bg-white p-8 md:p-10 rounded-2xl shadow-xl border-t-8 border-gray-300 transition duration-300 hover:shadow-2xl transform hover:scale-105 animate-fadeInUp">
-                        <h3 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-3 md:mb-4">Starter (Free)</h3>
-                        <p class="text-base sm:text-lg text-gray-600 mb-6 md:mb-8">Ideal for small businesses just starting out.</p>
-                        <div class="text-4xl sm:text-5xl font-extrabold mb-6 md:mb-8 theme-primary">₹0<span class="text-xl text-gray-500 font-normal">/month</span></div>
-                        <ul class="text-left text-gray-700 space-y-3 sm:space-y-4 mb-8 md:mb-10">
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> 50 Bills/month</li>
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> Basic Inventory Management</li>
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> Standard Reporting</li>
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> Email Support</li>
-                        </ul>
-                        <a href="#" class="block bg-gray-200 text-gray-800 px-6 py-3 rounded-xl font-bold transition duration-300 hover:bg-gray-300">
-                            Start for Free
-                        </a>
-                    </div>
-                    
-                    <div class="bg-white p-8 md:p-10 rounded-2xl shadow-2xl border-t-8 border-theme-primary transform scale-105 animate-fadeInUp delay-100">
-                        <div class="text-sm font-bold text-white bg-theme-primary px-3 py-1 rounded-full inline-block mb-3">Most Popular</div>
-                        <h3 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-3 md:mb-4">Professional</h3>
-                        <p class="text-base sm:text-lg text-gray-600 mb-6 md:mb-8">Full access for growing businesses and CAs.</p>
-                        <div class="text-4xl sm:text-5xl font-extrabold mb-6 md:mb-8 theme-primary">₹999<span class="text-xl text-gray-500 font-normal">/month</span></div>
-                        <ul class="text-left text-gray-700 space-y-3 sm:space-y-4 mb-8 md:mb-10">
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> Unlimited Bills</li>
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> Advanced Inventory & Analytics</li>
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> Multi-user & Client Management</li>
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> Priority 24/7 Support</li>
-                        </ul>
-                        <a href="#" class="block bg-theme-primary text-white px-6 py-3 rounded-xl font-bold transition duration-300 hover:opacity-90 shadow-lg">
-                            Choose Professional
-                        </a>
-                    </div>
-
-                    <div class="bg-white p-8 md:p-10 rounded-2xl shadow-xl border-t-8 border-gray-300 transition duration-300 hover:shadow-2xl transform hover:scale-105 animate-fadeInUp delay-200">
-                        <h3 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-3 md:mb-4">Enterprise</h3>
-                        <p class="text-base sm:text-lg text-gray-600 mb-6 md:mb-8">Custom solutions for large organizations.</p>
-                        <div class="text-4xl sm:text-5xl font-extrabold mb-6 md:mb-8 theme-primary">Custom</div>
-                        <ul class="text-left text-gray-700 space-y-3 sm:space-y-4 mb-8 md:mb-10">
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> All Professional features</li>
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> Dedicated Account Manager</li>
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> On-premise setup options</li>
-                            <li class="flex items-center"><span class="text-green-500 mr-2">✔</span> Custom Integrations</li>
-                        </ul>
-                        <a href="#" class="block bg-gray-200 text-gray-800 px-6 py-3 rounded-xl font-bold transition duration-300 hover:bg-gray-300">
-                            Contact Sales
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="about" class="py-16 md:py-24 bg-white">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-8 md:mb-16 theme-primary">About MyBillingApp</h2>
-                <div class="flex flex-col md:flex-row items-center gap-8 md:gap-16 text-left">
-                    <div class="md:w-1/2 text-base sm:text-lg text-gray-700 space-y-6 md:space-y-8 animate-fadeInUp">
-                        <p>
-                            MyBillingApp was founded with a simple mission: to simplify business management for the backbone of the economy—small shopkeepers and chartered accountants. We understand the complexities of traditional billing and accounting processes and built a platform that is intuitive, fast, and reliable.
-                        </p>
-                        <p>
-                            Our cloud-based solution ensures that your data is secure, accessible from anywhere, and always up-to-date. We are committed to providing tools that not only save you time but also offer valuable insights through real-time analytics, helping you make informed business decisions.
-                        </p>
-                        <p>
-                            We continuously innovate to bring the best technology to your fingertips, ensuring MyBillingApp remains your trusted partner in growth.
-                        </p>
-                    </div>
-                    <div class="md:w-1/2 mt-8 md:mt-0 animate-fadeInUp delay-200">
-                        <img src="../../static/images/about.png" alt="About MyBillingApp" class="rounded-xl shadow-2xl w-full">
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="py-16 md:py-24 bg-gray-100">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-8 md:mb-16 theme-primary">What Our Users Say</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-                    
-                    <div class="bg-white p-6 rounded-xl shadow-xl transition duration-300 hover:shadow-2xl transform hover:-translate-y-1 animate-fadeInUp">
-                        <p class="text-lg italic text-gray-800 mb-6">“MyBillingApp made billing and inventory so easy. The dashboard is beautiful and intuitive!”</p>
-                        <div class="text-left">
-                            <p class="font-bold theme-primary text-lg">Amit S.</p>
-                            <p class="text-gray-600 text-sm">Shopkeeper, Mumbai</p>
+                <!-- Mobile Features Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+                    <!-- Billing on the Go -->
+                    <div class="text-center animate-fadeInUp feature-card bg-white p-6 rounded-xl shadow-lg">
+                        <div
+                            class="w-16 h-16 bg-theme-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-white text-2xl">📱</span>
                         </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">Billing on the Go</h3>
+                        <p class="text-gray-600">Experience the freedom to manage your billing anytime, anywhere. Our
+                            mobile app ensures you can create and send invoices while on the move.</p>
                     </div>
 
-                    <div class="bg-white p-6 rounded-xl shadow-xl transition duration-300 hover:shadow-2xl transform hover:-translate-y-1 animate-fadeInUp delay-100">
-                        <p class="text-lg italic text-gray-800 mb-6">“Managing my clients and employees is a breeze. Highly recommend for CAs!”</p>
-                        <div class="text-left">
-                            <p class="font-bold theme-primary text-lg">Priya M.</p>
-                            <p class="text-gray-600 text-sm">Chartered Accountant, Delhi</p>
+                    <!-- Instant Invoicing -->
+                    <div class="text-center animate-fadeInUp feature-card bg-white p-6 rounded-xl shadow-lg">
+                        <div
+                            class="w-16 h-16 bg-theme-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-white text-2xl">⚡</span>
                         </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">Instant Invoicing</h3>
+                        <p class="text-gray-600">Generate invoices in seconds with our intuitive mobile interface. No
+                            more waiting—send bills to clients as soon as the service is complete.</p>
                     </div>
 
-                    <div class="bg-white p-6 rounded-xl shadow-xl transition duration-300 hover:shadow-2xl transform hover:-translate-y-1 animate-fadeInUp delay-200">
-                        <p class="text-lg italic text-gray-800 mb-6">“The support team is fantastic and the app keeps getting better!”</p>
-                        <div class="text-left">
-                            <p class="font-bold theme-primary text-lg">Rahul D.</p>
-                            <p class="text-gray-600 text-sm">Business Owner, Bangalore</p>
+                    <!-- Real-Time Updates -->
+                    <div class="text-center animate-fadeInUp feature-card bg-white p-6 rounded-xl shadow-lg">
+                        <div
+                            class="w-16 h-16 bg-theme-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-white text-2xl">🔄</span>
                         </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">Real-Time Updates</h3>
+                        <p class="text-gray-600">Stay updated with instant notifications for payment confirmations,
+                            invoice views, and reminders for due invoices, keeping your cash flow on track.</p>
                     </div>
 
+                    <!-- Access Bills Anywhere -->
+                    <div class="text-center animate-fadeInUp feature-card bg-white p-6 rounded-xl shadow-lg">
+                        <div
+                            class="w-16 h-16 bg-theme-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-white text-2xl">☁️</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3">Access Bills Anywhere</h3>
+                        <p class="text-gray-600">Generate invoices and manage data seamlessly from any device. With
+                            real-time syncing, your data stays updated and secure.</p>
+                    </div>
+                </div>
+
+                <!-- Core Features Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Unlimited Billing -->
+                    <div class="feature-card bg-white p-8 rounded-xl shadow-lg animate-fadeInUp">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                            <span class="text-blue-600 text-2xl">📄</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-900 mb-4">Unlimited Billing & Invoicing</h4>
+                        <p class="text-gray-600">Generate as many bills as your business needs with no restrictions.
+                            Ideal for small businesses and growing enterprises that require frequent invoicing without
+                            limitations.</p>
+                    </div>
+
+                    <!-- GST Compliant -->
+                    <div class="feature-card bg-white p-8 rounded-xl shadow-lg animate-fadeInUp">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                            <span class="text-green-600 text-2xl">📊</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-900 mb-4">Seamless GST-Compliant Invoices</h4>
+                        <p class="text-gray-600">Ensure compliance and streamline tax processes with automated GST
+                            calculations and integrated GST-compliant invoicing features.</p>
+                    </div>
+
+                    <!-- Payment Tracking -->
+                    <div class="feature-card bg-white p-8 rounded-xl shadow-lg animate-fadeInUp">
+                        <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
+                            <span class="text-yellow-600 text-2xl">💰</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-900 mb-4">Real-Time Payment Tracking</h4>
+                        <p class="text-gray-600">Easily monitor outstanding payments and get real-time updates when
+                            clients settle invoices. Never miss a due payment with automatic alerts and reminders.</p>
+                    </div>
+
+                    <!-- Inventory Management -->
+                    <div class="feature-card bg-white p-8 rounded-xl shadow-lg animate-fadeInUp">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+                            <span class="text-purple-600 text-2xl">📦</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-900 mb-4">Advanced Inventory Management</h4>
+                        <p class="text-gray-600">Manage and track inventory with built-in tools that adjust stock levels
+                            with each sale. Stay informed with low-stock alerts, making it easy to keep supplies
+                            optimized.</p>
+                    </div>
+
+                    <!-- Reports -->
+                    <div class="feature-card bg-white p-8 rounded-xl shadow-lg animate-fadeInUp">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                            <span class="text-red-600 text-2xl">📈</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-900 mb-4">Detailed Sales & Financial Reports</h4>
+                        <p class="text-gray-600">Get in-depth insights with comprehensive sales and financial reports.
+                            Make data-driven decisions based on accurate analysis of profits, sales patterns, and
+                            customer trends.</p>
+                    </div>
+
+                    <!-- Client Communication -->
+                    <div class="feature-card bg-white p-8 rounded-xl shadow-lg animate-fadeInUp relative">
+                        <div
+                            class="absolute top-4 right-4 bg-theme-primary text-white px-3 py-1 rounded-full text-xs font-bold">
+                            Launching Soon
+                        </div>
+                        <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-6">
+                            <span class="text-indigo-600 text-2xl">💬</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-900 mb-4">Client Communication</h4>
+                        <p class="text-gray-600">Communicate with clients effortlessly through the app, allowing for
+                            quick inquiries and confirmations directly from your mobile device.</p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="bg-theme-primary py-16 md:py-24">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-                <h2 class="text-4xl sm:text-5xl font-extrabold mb-6">Ready to simplify your business?</h2>
-                <p class="text-lg sm:text-xl mb-10 opacity-90">Join thousands of businesses already growing with MyBillingApp. Create your free account today!</p>
-                <a href="#" class="bg-white text-[#ed6a3e] px-12 py-4 rounded-xl font-bold text-lg shadow-2xl transition duration-300 hover:bg-gray-100 transform hover:scale-105">
-                    Create Your Free Account
+        <!-- Statistics Section -->
+        <section class="py-16 lg:py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                    <div class="animate-fadeInUp">
+                        <div class="text-4xl sm:text-5xl font-extrabold theme-primary mb-2 counter" data-target="10000" data-suffix="K+">0</div>
+                        <div class="text-gray-600 font-medium uppercase tracking-wide">Registered Users</div>
+                    </div>
+                    <div class="animate-fadeInUp">
+                        <div class="text-4xl sm:text-5xl font-extrabold theme-primary mb-2 counter" data-target="100000" data-suffix="K+">0</div>
+                        <div class="text-gray-600 font-medium uppercase tracking-wide">Invoices Generated</div>
+                    </div>
+                    <div class="animate-fadeInUp">
+                        <div class="text-4xl sm:text-5xl font-extrabold theme-primary mb-2 counter" data-target="5000" data-suffix="K+">0</div>
+                        <div class="text-gray-600 font-medium uppercase tracking-wide">Active Users</div>
+                    </div>
+                    <div class="animate-fadeInUp">
+                        <div class="text-4xl sm:text-5xl font-extrabold theme-primary mb-2 counter" data-target="98" data-suffix="%">0</div>
+                        <div class="text-gray-600 font-medium uppercase tracking-wide">Retention Rate</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA Section -->
+        <section class="cta-gradient py-16 lg:py-24">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-6">
+                    Get Started with MyBillingApp Today!
+                </h2>
+                <p class="text-lg sm:text-xl mb-10 opacity-90 max-w-3xl mx-auto">
+                    With MyBillingApp, you can focus on growing your business while we handle your billing needs.
+                    Download now and take advantage of the free version to experience the simplicity and efficiency of
+                    smart billing.
+                </p>
+                <a href="{{ url_for('auth.register')}}"
+                    class="inline-block bg-white text-[#ed6a3e] px-12 py-4 rounded-lg font-bold text-lg shadow-2xl transition duration-300 hover:bg-gray-100 btn-primary">
+                    Join Now For Free
                 </a>
             </div>
         </section>
 
-        <section id="contact" class="py-16 md:py-24 bg-white">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-8 md:mb-16 theme-primary">Get in Touch</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 text-left">
-                    
-                    <div class="space-y-6 text-gray-700 text-base sm:text-lg animate-fadeInUp">
-                        <p>We’d love to hear from you. Whether you have questions about our features, pricing, or need technical support, our team is here to help.</p>
+        <!-- Contact Section -->
+        <section id="contact" class="py-16 lg:py-24 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-6 theme-primary">Get in
+                        Touch</h2>
+                    <p class="text-xl text-gray-600 max-w-3xl mx-auto">We'd love to hear from you. Whether you have
+                        questions about our features, pricing, or need technical support, our team is here to help.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <!-- Contact Info -->
+                    <div class="space-y-8 animate-fadeInUp">
                         <div class="flex items-start space-x-4">
-                            <span class="theme-primary text-xl">📞</span>
+                            <div
+                                class="w-12 h-12 bg-theme-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-xl">📍</span>
+                            </div>
                             <div>
-                                <p class="font-bold">Phone Support:</p>
-                                <p>+91-1234567890 (Mon-Sat, 9 AM - 6 PM IST)</p>
+                                <h4 class="text-lg font-bold text-gray-900 mb-2">Address</h4>
+                                <p class="text-gray-600">L–28, E-2/21, Arera Colony, Bhopal</p>
                             </div>
                         </div>
+
                         <div class="flex items-start space-x-4">
-                            <span class="theme-primary text-xl">📧</span>
+                            <div
+                                class="w-12 h-12 bg-theme-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-xl">📧</span>
+                            </div>
                             <div>
-                                <p class="font-bold">Email:</p>
-                                <p><a href="mailto:support@mybillingapp.com" class="text-blue-600 hover:underline">support@mybillingapp.com</a></p>
+                                <h4 class="text-lg font-bold text-gray-900 mb-2">Email</h4>
+                                <p class="text-gray-600">
+                                    <a href="mailto:support@mybillingapp.com"
+                                        class="text-blue-600 hover:underline">support@mybillingapp.com</a>
+                                </p>
                             </div>
                         </div>
+
                         <div class="flex items-start space-x-4">
-                            <span class="theme-primary text-xl">📍</span>
+                            <div
+                                class="w-12 h-12 bg-theme-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-xl">🌐</span>
+                            </div>
                             <div>
-                                <p class="font-bold">Address:</p>
-                                <p>MyBillingApp Headquarters, Bhopal, India</p>
+                                <h4 class="text-lg font-bold text-gray-900 mb-2">Follow Us</h4>
+                                <p class="text-gray-600">
+                                    <a href="#" class="text-blue-600 hover:underline">Instagram</a> |
+                                    <a href="#" class="text-blue-600 hover:underline">LinkedIn</a>
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-gray-50 p-6 sm:p-8 rounded-xl shadow-lg animate-fadeInUp delay-100">
+                    <!-- Contact Form -->
+                    <div class="bg-white p-8 rounded-2xl shadow-lg animate-fadeInUp">
                         <form class="space-y-6">
                             <div>
                                 <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                                <input type="text" id="name" name="name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ring-theme-primary">
+                                <input type="text" id="name" name="name"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                             </div>
                             <div>
                                 <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                <input type="email" id="email" name="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ring-theme-primary">
+                                <input type="email" id="email" name="email"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                             </div>
                             <div>
-                                <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                                <textarea id="message" name="message" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 ring-theme-primary"></textarea>
+                                <label for="message"
+                                    class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                                <textarea id="message" name="message" rows="4"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"></textarea>
                             </div>
-                            <button type="submit" class="w-full bg-theme-primary text-white px-8 py-3 rounded-lg font-bold text-lg hover:opacity-90 transition duration-300 shadow-md">
+                            <button type="submit"
+                                class="w-full bg-theme-primary text-white px-8 py-3 rounded-lg font-bold text-lg hover:opacity-90 transition duration-300 shadow-md btn-primary">
                                 Send Message
                             </button>
                         </form>
@@ -324,54 +568,151 @@
         </section>
     </main>
 
-    <footer class="bg-gray-900 text-white py-12 md:py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center md:text-left grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
-            
-            <div class="col-span-1 md:col-span-2 space-y-4">
-                <div class="text-3xl font-bold text-white tracking-tight">MyBillingApp</div>
-                <p class="text-gray-400 text-sm sm:text-base">Modern Billing & Business Management for Shopkeepers and CAs. Secure, fast, and effortless.</p>
-                <div class="flex space-x-4 justify-center md:justify-start text-gray-400">
-                    <a href="#" class="hover:text-theme-primary transition duration-300">Twitter</a>
-                    <a href="#" class="hover:text-theme-primary transition duration-300">LinkedIn</a>
-                    <a href="#" class="hover:text-theme-primary transition duration-300">Facebook</a>
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 lg:py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                <!-- Company Info -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="text-3xl font-bold text-white tracking-tight">MyBillingApp</div>
+                    <p class="text-gray-400 text-base max-w-md">Free Billing Software for Effortless Business
+                        Management. Trusted by thousands of businesses worldwide.</p>
+                    <div class="flex space-x-4 text-gray-400">
+                        <a href="#" class="hover:text-orange-400 transition duration-300">Instagram</a>
+                        <a href="#" class="hover:text-orange-400 transition duration-300">LinkedIn</a>
+                        <a href="#" class="hover:text-orange-400 transition duration-300">Facebook</a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="space-y-4">
+                    <h4 class="text-lg font-semibold text-white">Quick Links</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{{ url_for('home.index') }}"
+                                class="hover:text-orange-400 transition duration-300">Home</a></li>
+                        <li><a href="{{ url_for('home.features') }}"
+                                class="hover:text-orange-400 transition duration-300">Features</a></li>
+                        <li><a href="{{ url_for('home.pricing') }}"
+                                class="hover:text-orange-400 transition duration-300">Pricing</a></li>
+                        <li><a href="{{ url_for('home.about') }}"
+                                class="hover:text-orange-400 transition duration-300">About Us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Company -->
+                <div class="space-y-4">
+                    <h4 class="text-lg font-semibold text-white">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="https://inventohack.com/career/"
+                                class="hover:text-orange-400 transition duration-300">Careers</a></li>
+                        <li><a href="https://inventohack.com/blog/"
+                                class="hover:text-orange-400 transition duration-300">Blog</a></li>
+                        <li><a href="https://inventohack.com/"
+                                class="hover:text-orange-400 transition duration-300">Parent Company</a></li>
+                        <li><a href="#" class="hover:text-orange-400 transition duration-300">Privacy Policy</a></li>
+                    </ul>
                 </div>
             </div>
 
-            <div class="space-y-4">
-                <h4 class="text-lg font-semibold text-white mb-2">Quick Links</h4>
-                <ul class="space-y-2 text-gray-400">
-                    <li><a href="#features" class="hover:text-theme-primary transition duration-300">Features</a></li>
-                    <li><a href="#pricing" class="hover:text-theme-primary transition duration-300">Pricing</a></li>
-                    <li><a href="#about" class="hover:text-theme-primary transition duration-300">About Us</a></li>
-                    <li><a href="#contact" class="hover:text-theme-primary transition duration-300">Contact Us</a></li>
-                </ul>
+            <div class="border-t border-gray-700 pt-8 text-center text-gray-400 text-sm">
+                Copyright © 2025 MyBillingApp. mybillingapp by <a href="https://www.inventohack.com/"
+                    class="hover:text-orange-400">inventohack</a>
             </div>
-
-            <div class="space-y-4">
-                <h4 class="text-lg font-semibold text-white mb-2">Support & Legal</h4>
-                <ul class="space-y-2 text-gray-400">
-                    <li><a href="#" class="hover:text-theme-primary transition duration-300">Support Center</a></li>
-                    <li><a href="#" class="hover:text-theme-primary transition duration-300">Privacy Policy</a></li>
-                    <li><a href="#" class="hover:text-theme-primary transition duration-300">Terms of Service</a></li>
-                    <li><a href="#" class="hover:text-theme-primary transition duration-300">FAQ</a></li>
-                </ul>
-            </div>
-
-        </div>
-        
-        <div class="border-t border-gray-700 mt-12 pt-6 text-center text-gray-500 text-sm">
-            © 2024 MyBillingApp. All rights reserved.
         </div>
     </footer>
 
+    <!-- JavaScript -->
     <script>
+        // Mobile Menu Toggle
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
 
         mobileMenuButton.addEventListener('click', () => {
             mobileMenu.classList.toggle('hidden');
         });
+
+        // Smooth Scrolling for Anchor Links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll-based animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all animated elements
+        document.querySelectorAll('.animate-fadeInUp').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+            observer.observe(el);
+        });
+
+        // Counter Animation Function
+        function animateCounter(counter) {
+            const target = parseInt(counter.getAttribute('data-target'));
+            const suffix = counter.getAttribute('data-suffix') || '';
+            const duration = 2000; // 2 seconds
+            const increment = target / (duration / 16); // 60fps
+            let current = 0;
+
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+
+                // Format the number based on suffix
+                let displayValue;
+                if (suffix === 'K+') {
+                    displayValue = Math.floor(current / 1000) + 'K+';
+                } else if (suffix === '%') {
+                    displayValue = Math.floor(current) + '%';
+                } else {
+                    displayValue = Math.floor(current) + suffix;
+                }
+
+                counter.textContent = displayValue;
+            }, 16);
+        }
+
+        // Counter observer for statistics
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !entry.target.classList.contains('counted')) {
+                    entry.target.classList.add('counted');
+                    animateCounter(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        // Observe all counters
+        document.querySelectorAll('.counter').forEach(counter => {
+            counterObserver.observe(counter);
+        });
     </script>
 
 </body>
+
 </html>
