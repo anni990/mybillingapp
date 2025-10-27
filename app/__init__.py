@@ -21,6 +21,7 @@ def create_app():
     from .api.routes import api_bp
     from .api.walkthrough_routes import walkthrough_bp
     from .api.gst_preview import preview_bp
+    from .home_routes import home_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(shopkeeper_bp)
@@ -28,11 +29,6 @@ def create_app():
     app.register_blueprint(api_bp)
     app.register_blueprint(walkthrough_bp)
     app.register_blueprint(preview_bp)
-
-    # Blank route renders the homepage
-    @app.route('/')
-    def index():
-        from flask import render_template
-        return render_template('home/index.html')
+    app.register_blueprint(home_bp)
 
     return app
