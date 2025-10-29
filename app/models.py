@@ -245,3 +245,57 @@ class CustomerLedger(db.Model):
     # Relationships
     shopkeeper = db.relationship('User')
     reference_bill = db.relationship('Bill')
+
+class PurchaseBill(db.Model):
+    """Scanned purchase bills from vendors/suppliers."""
+    __tablename__ = 'purchase_bills'
+    
+    purchase_bill_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    shopkeeper_id = db.Column(db.Integer, db.ForeignKey('shopkeepers.shopkeeper_id', ondelete='CASCADE'), nullable=False)
+    
+    # Vendor Information
+    vendor_name = db.Column(db.String(200), nullable=True)
+    vendor_address = db.Column(db.Text, nullable=True)
+    vendor_gst_number = db.Column(db.String(20), nullable=True)
+    vendor_phone = db.Column(db.String(20), nullable=True)
+    vendor_email = db.Column(db.String(100), nullable=True)
+    
+    # Bill Information
+    invoice_number = db.Column(db.String(100), nullable=True)
+    bill_date = db.Column(db.Date, nullable=True)
+    total_amount = db.Column(db.Numeric(12, 2), nullable=True)
+    tax_amount = db.Column(db.Numeric(10, 2), nullable=True)
+    discount_amount = db.Column(db.Numeric(10, 2), nullable=True)
+    
+    # Processing Information
+    scanned_at = db.Column(db.DateTime, default=datetime.utcnow)
+    file_path = db.Column(db.String(255), nullable=True)  # Path to uploaded file
+    raw_llm_response = db.Column(db.Text, nullable=True)  # Store raw LLM response for debugging
+    processing_status = db.Column(db.Enum('processing', 'completed', 'failed'), default='processing')
+    error_message = db.Column(db.Text, nullable=True)
+    
+    # Relationships
+    shopkeeper = db.relationship('Shopkeeper', backref='purchase_bills')
+    items = db.relationship('PurchaseBillItem', backref='purchase_bill', cascade='all, delete-orphan')
+
+class PurchaseBillItem(db.Model):
+    """Items from scanned purchase bills."""
+    __tablename__ = 'purchase_bill_items'
+    
+    item_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    purchase_bill_id = db.Column(db.Integer, db.ForeignKey('purchase_bills.purchase_bill_id', ondelete='CASCADE'), nullable=False)
+    
+    # Item Information from LLM
+    item_name = db.Column(db.String(200), nullable=False)
+    quantity = db.Column(db.Numeric(10, 3), nullable=True)  # Allow decimal quantities
+    unit_price = db.Column(db.Numeric(10, 2), nullable=True)
+    total_price = db.Column(db.Numeric(12, 2), nullable=True)
+    gst_rate = db.Column(db.Numeric(5, 2), nullable=True)
+    hsn_code = db.Column(db.String(20), nullable=True)
+    
+    # Product Matching
+    matched_product_id = db.Column(db.Integer, db.ForeignKey('products.product_id'), nullable=True)
+    is_new_product = db.Column(db.Boolean, default=True)  # Whether this created a new product
+    
+    # Relationships
+    matched_product = db.relationship('Product', backref='purchase_items')

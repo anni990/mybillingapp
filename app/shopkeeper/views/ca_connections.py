@@ -24,6 +24,8 @@ def register_routes(bp):
         """CA marketplace view - preserves original logic."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         
+        shop_name = shopkeeper.shop_name
+
         # First check if shopkeeper has any approved CA connection
         approved_connection = ShopConnection.query.filter_by(
             shopkeeper_id=shopkeeper.shopkeeper_id,
@@ -51,6 +53,7 @@ def register_routes(bp):
         connections = {c.ca_id: c for c in ShopConnection.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()}
         
         return render_template('shopkeeper/ca_marketplace.html', 
+                             shop_name=shop_name,
                              cas=cas, 
                              connections=connections,
                              has_approved_connection=bool(approved_connection))

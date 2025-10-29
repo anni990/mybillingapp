@@ -20,7 +20,7 @@ def register_routes(bp):
     def sales_reports():
         """Sales reports with date filtering - preserves original logic."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-        
+        shop_name = shopkeeper.shop_name
         # Original verification check commented out
         # if not shopkeeper.is_verified:
         #     flash('Please upload all required documents to use this service.', 'danger')
@@ -60,6 +60,7 @@ def register_routes(bp):
         chart_values = list(chart_data.values())
         
         return render_template('shopkeeper/sales_reports.html', 
+                             shop_name=shop_name,
                              bills=bills, 
                              chart_labels=chart_labels, 
                              chart_values=chart_values, 

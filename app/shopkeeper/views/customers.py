@@ -23,6 +23,7 @@ def register_routes(bp):
     @shopkeeper_required
     def customer_management():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name = shopkeeper.shop_name
         if not shopkeeper:
             flash('Shopkeeper profile not found.', 'error')
             return redirect(url_for('shopkeeper.dashboard'))
@@ -47,6 +48,7 @@ def register_routes(bp):
             customer.total_spent = sum(float(b.total_amount) for b in customer_bills)
         
         return render_template('shopkeeper/customer_management.html', 
+                            shop_name=shop_name,
                             customers=customers,
                             active_customers_count=active_customers_count,
                             total_sales=total_sales,
@@ -212,6 +214,7 @@ def register_routes(bp):
     @shopkeeper_required
     def customer_ledger(customer_id):
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name = shopkeeper.shop_name
         customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
         
         if not customer:
@@ -222,6 +225,7 @@ def register_routes(bp):
         ledger_entries = CustomerLedger.query.filter_by(customer_id=customer_id).order_by(desc(CustomerLedger.transaction_date)).all()
         
         return render_template('shopkeeper/customer_ledger.html', 
+                            shop_name=shop_name,
                             customer=customer, 
                             ledger_entries=ledger_entries)
 
@@ -343,6 +347,7 @@ def register_routes(bp):
     def customer_ledger_overview():
         """Customer ledger overview page showing all customers with ledger access"""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name = shopkeeper.shop_name
         if not shopkeeper:
             flash('Shopkeeper profile not found.', 'error')
             return redirect(url_for('shopkeeper.dashboard'))
@@ -356,6 +361,7 @@ def register_routes(bp):
         total_advance = sum(abs(customer.total_balance) for customer in customers if customer.total_balance < 0)
         
         return render_template('shopkeeper/customer_ledger_overview.html', 
+                            shop_name=shop_name,
                             customers=customers,
                             total_customers=total_customers,
                             total_outstanding=total_outstanding,
