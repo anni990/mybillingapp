@@ -1,0 +1,325 @@
+{% extends 'mobile/base.html' %}
+
+{% block title %}MyBillingApp - Mobile Experience{% endblock %}
+
+{% block extra_head %}
+<!-- User authentication and role meta tags for JavaScript -->
+<meta name="is_authenticated" content="{{ is_authenticated|lower }}">
+{% if is_authenticated %}
+<meta name="user_role" content="{{ current_user.role }}">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Home Section -->
+<section id="home-section" class="mobile-content-fit bg-gradient-to-br from-white to-gray-50 page-transition">
+    <div class="h-full flex flex-col px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
+        <!-- Hero Content -->
+        <div class="text-center mb-4 sm:mb-6 md:mb-8 fade-in">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 mx-auto mb-3 sm:mb-4 gradient-primary rounded-2xl sm:rounded-3xl flex items-center justify-center float-animation">
+                <i data-feather="smartphone" class="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white"></i>
+            </div>
+            <h2 class="text-xl sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 leading-tight">
+                Free Billing Software<br class="sm:hidden">
+                <!-- <span class="hidden sm:inline"> </span>for Effortless Business Management -->
+            </h2>
+            <p class="text-sm sm:text-base md:text-lg text-gray-600 max-w-xs sm:max-w-sm md:max-w-md mx-auto leading-relaxed">
+                Complete billing solution for modern businesses in India
+            </p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+            <div class="glass rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 text-center">
+                <div class="text-sm sm:text-base md:text-lg font-bold text-gray-900">1000+</div>
+                <div class="text-xs sm:text-sm text-gray-600">Businesses</div>
+            </div>
+            <div class="glass rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 text-center">
+                <div class="text-sm sm:text-base md:text-lg font-bold text-gray-900">50K+</div>
+                <div class="text-xs sm:text-sm text-gray-600">Bills Created</div>
+            </div>
+            <div class="glass rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 text-center">
+                <div class="text-sm sm:text-base md:text-lg font-bold text-gray-900">GST</div>
+                <div class="text-xs sm:text-sm text-gray-600">Compliant</div>
+            </div>
+        </div>
+
+        <!-- Main Features Grid -->
+        <div class="mobile-features-grid grid gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 flex-1 mt-5">
+            <div class="feature-card glass rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5 text-center touch-feedback" onclick="MobileFeatures.showFeatureDetail('billing')">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 gradient-primary rounded-lg mx-auto mb-2 sm:mb-3 flex items-center justify-center">
+                    <i data-feather="file-text" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white"></i>
+                </div>
+                <h3 class="text-xs sm:text-sm md:text-base font-semibold text-gray-900 mb-1">Smart Bills</h3>
+                <p class="text-xs sm:text-xs md:text-sm text-gray-600">GST bills instantly</p>
+            </div>
+            
+            <div class="feature-card glass rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5 text-center touch-feedback" onclick="MobileFeatures.showFeatureDetail('inventory')">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 gradient-secondary rounded-lg mx-auto mb-2 sm:mb-3 flex items-center justify-center">
+                    <i data-feather="package" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white"></i>
+                </div>
+                <h3 class="text-xs sm:text-sm md:text-base font-semibold text-gray-900 mb-1">Inventory</h3>
+                <p class="text-xs sm:text-xs md:text-sm text-gray-600">Track stock levels</p>
+            </div>
+            
+            <div class="feature-card glass rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5 text-center touch-feedback" onclick="MobileFeatures.showFeatureDetail('customers')">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 gradient-success rounded-lg mx-auto mb-2 sm:mb-3 flex items-center justify-center">
+                    <i data-feather="users" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white"></i>
+                </div>
+                <h3 class="text-xs sm:text-sm md:text-base font-semibold text-gray-900 mb-1">Customers</h3>
+                <p class="text-xs sm:text-xs md:text-sm text-gray-600">Manage ledger</p>
+            </div>
+            
+            <div class="feature-card glass rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5 text-center touch-feedback" onclick="MobileFeatures.showFeatureDetail('reports')">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 gradient-purple rounded-lg mx-auto mb-2 sm:mb-3 flex items-center justify-center">
+                    <i data-feather="bar-chart-2" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white"></i>
+                </div>
+                <h3 class="text-xs sm:text-sm md:text-base font-semibold text-gray-900 mb-1">Analytics</h3>
+                <p class="text-xs sm:text-xs md:text-sm text-gray-600">Business insights</p>
+            </div>
+        </div>
+
+        <!-- CTA Button -->
+        <div class="mt-auto">
+            {% if is_authenticated %}
+                <button onclick="MobileApp.goToDashboard()" class="w-full btn-primary touch-feedback pulse-animation text-sm sm:text-base md:text-lg py-3 sm:py-4">
+                    <i data-feather="layout" class="w-4 h-4 sm:w-5 sm:h-5 inline mr-2"></i>
+                    Open Dashboard
+                </button>
+            {% else %}
+                <button onclick="MobileApp.showLoginModal()" class="w-full btn-primary touch-feedback pulse-animation text-sm sm:text-base md:text-lg py-3 sm:py-4">
+                    <i data-feather="zap" class="w-4 h-4 sm:w-5 sm:h-5 inline mr-2"></i>
+                    Get Started Free
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features-section" class="mobile-section bg-white page-transition hidden pb-10">
+    <!-- Section Header -->
+    <div class="mobile-section-header text-center">
+        <div class="w-16 h-16 gradient-secondary rounded-2xl mx-auto mb-4 flex items-center justify-center float-animation">
+            <i data-feather="layers" class="w-8 h-8 text-white"></i>
+        </div>
+        <h2 class="mobile-title text-gray-900 mb-2">All Features</h2>
+        <p class="mobile-text text-gray-600">Everything you need to run your business</p>
+    </div>
+
+    <!-- Features Categories -->
+    <div class="mobile-section-content custom-scroll">
+        <!-- Shopkeeper Features -->
+        <div class="mb-6">
+            <div class="flex items-center space-x-2 mb-4">
+                <div class="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
+                    <i data-feather="shopping-cart" class="w-4 h-4 text-white"></i>
+                </div>
+                <h3 class="mobile-subtitle text-gray-900">For Shopkeepers</h3>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="glass rounded-2xl p-4 touch-feedback" onclick="MobileFeatures.showFeatureList('shopkeeper')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
+                                <i data-feather="file-text" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="mobile-label text-gray-900">Billing & Invoicing</h4>
+                                <p class="mobile-small text-gray-600">Professional bills, templates, GST</p>
+                            </div>
+                        </div>
+                        <i data-feather="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                </div>
+                
+                <div class="glass rounded-2xl p-4 touch-feedback" onclick="MobileFeatures.showFeatureList('inventory')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 gradient-secondary rounded-lg flex items-center justify-center">
+                                <i data-feather="package" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="mobile-label text-gray-900">Inventory Management</h4>
+                                <p class="mobile-small text-gray-600">Stock tracking, alerts, reports</p>
+                            </div>
+                        </div>
+                        <i data-feather="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                </div>
+                
+                <div class="glass rounded-2xl p-4 touch-feedback" onclick="MobileFeatures.showFeatureList('customers')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 gradient-success rounded-lg flex items-center justify-center">
+                                <i data-feather="users" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="mobile-label text-gray-900">Customer Management</h4>
+                                <p class="mobile-small text-gray-600">Ledger, payments, history</p>
+                            </div>
+                        </div>
+                        <i data-feather="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CA Features -->
+        <div class="mb-6">
+            <div class="flex items-center space-x-2 mb-4">
+                <div class="w-8 h-8 gradient-blue rounded-lg flex items-center justify-center">
+                    <i data-feather="briefcase" class="w-4 h-4 text-white"></i>
+                </div>
+                <h3 class="mobile-subtitle text-gray-900">For CAs</h3>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="glass rounded-2xl p-4 touch-feedback" onclick="MobileFeatures.showFeatureList('ca-management')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 gradient-blue rounded-lg flex items-center justify-center">
+                                <i data-feather="users" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="mobile-label text-gray-900">Client Management</h4>
+                                <p class="mobile-small text-gray-600">Multiple clients, dashboard</p>
+                            </div>
+                        </div>
+                        <i data-feather="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                </div>
+                
+                <div class="glass rounded-2xl p-4 touch-feedback" onclick="MobileFeatures.showFeatureList('gst-filing')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 gradient-warning rounded-lg flex items-center justify-center">
+                                <i data-feather="percent" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="mobile-label text-gray-900">GST Filing</h4>
+                                <p class="mobile-small text-gray-600">GSTR reports, compliance</p>
+                            </div>
+                        </div>
+                        <i data-feather="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                </div>
+                
+                <div class="glass rounded-2xl p-4 touch-feedback" onclick="MobileFeatures.showFeatureList('team-management')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 gradient-teal rounded-lg flex items-center justify-center">
+                                <i data-feather="user-plus" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="mobile-label text-gray-900">Team Management</h4>
+                                <p class="mobile-small text-gray-600">Employees, delegation</p>
+                            </div>
+                        </div>
+                        <i data-feather="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section id="about-section" class="mobile-section bg-gradient-to-br from-gray-50 to-white page-transition hidden pb-16">
+    <!-- Section Header -->
+    <div class="mobile-section-header text-center">
+        <div class="w-16 h-16 gradient-pink rounded-2xl mx-auto mb-4 flex items-center justify-center float-animation">
+            <i data-feather="heart" class="w-8 h-8 text-white"></i>
+        </div>
+        <h2 class="mobile-title text-gray-900 mb-2">About MyBillingApp</h2>
+        <p class="mobile-text text-gray-600">Built for Indian businesses</p>
+    </div>
+
+    <!-- About Content -->
+    <div class="mobile-section-content custom-scroll space-y-4">
+        <div class="glass rounded-2xl p-4">
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-8 h-8 gradient-blue rounded-lg flex items-center justify-center">
+                    <i data-feather="target" class="w-4 h-4 text-white"></i>
+                </div>
+                <h3 class="mobile-subtitle text-gray-900">Our Mission</h3>
+            </div>
+            <p class="mobile-text text-gray-600 leading-relaxed">
+                To democratize business management by providing free, powerful, and easy-to-use billing solutions for every Indian business, regardless of size.
+            </p>
+        </div>
+
+        <div class="glass rounded-2xl p-4">
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-8 h-8 gradient-success rounded-lg flex items-center justify-center">
+                    <i data-feather="award" class="w-4 h-4 text-white"></i>
+                </div>
+                <h3 class="mobile-subtitle text-gray-900">Why Choose Us</h3>
+            </div>
+            <ul class="space-y-2 mobile-text text-gray-600">
+                <li class="flex items-center space-x-2">
+                    <i data-feather="check-circle" class="w-4 h-4 text-green-500"></i>
+                    <span>100% Free - No hidden charges</span>
+                </li>
+                <li class="flex items-center space-x-2">
+                    <i data-feather="check-circle" class="w-4 h-4 text-green-500"></i>
+                    <span>GST Compliant for Indian businesses</span>
+                </li>
+                <li class="flex items-center space-x-2">
+                    <i data-feather="check-circle" class="w-4 h-4 text-green-500"></i>
+                    <span>Secure cloud-based solution</span>
+                </li>
+                <li class="flex items-center space-x-2">
+                    <i data-feather="check-circle" class="w-4 h-4 text-green-500"></i>
+                    <span>CA integration for tax filing</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="glass rounded-2xl p-4">
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-8 h-8 gradient-purple rounded-lg flex items-center justify-center">
+                    <i data-feather="users" class="w-4 h-4 text-white"></i>
+                </div>
+                <h3 class="mobile-subtitle text-gray-900">Our Community</h3>
+            </div>
+            <p class="mobile-text text-gray-600 leading-relaxed mb-4">
+                Join thousands of businesses already using MyBillingApp to streamline their operations and grow their revenue.
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-gray-50 rounded-lg p-3 text-center">
+                    <div class="mobile-subtitle font-bold text-gray-900">1000+</div>
+                    <div class="mobile-small text-gray-600">Active Users</div>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3 text-center">
+                    <div class="mobile-subtitle font-bold text-gray-900">50K+</div>
+                    <div class="mobile-small text-gray-600">Bills Generated</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass rounded-2xl p-4">
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-8 h-8 gradient-teal rounded-lg flex items-center justify-center">
+                    <i data-feather="mail" class="w-4 h-4 text-white"></i>
+                </div>
+                <h3 class="mobile-subtitle text-gray-900">Get in Touch</h3>
+            </div>
+            <p class="mobile-text text-gray-600 mb-4">
+                Have questions or need support? We're here to help!
+            </p>
+            <div class="space-y-2">
+                <a href="mailto:support@mybillingapp.com" class="flex items-center space-x-2 text-blue-600 touch-feedback">
+                    <i data-feather="mail" class="w-4 h-4"></i>
+                    <span class="mobile-text">support@mybillingapp.com</span>
+                </a>
+                <a href="tel:+919876543210" class="flex items-center space-x-2 text-blue-600 touch-feedback">
+                    <i data-feather="phone" class="w-4 h-4"></i>
+                    <span class="mobile-text">+91 98765 43210</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

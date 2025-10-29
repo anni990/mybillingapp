@@ -65,10 +65,15 @@
                 </div>
             </form>
 
-            <p class="mt-6 text-center text-sm text-gray-600">
-                Don't have an account? 
-                <a href="{{ url_for('auth.register') }}" class="font-medium text-[#ed6a3e] hover:text-orange-700">Register here</a>
-            </p>
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-600">
+                    Don't have an account? 
+                    <a href="{{ url_for('auth.register') }}" class="font-medium text-[#ed6a3e] hover:text-orange-700">Register here</a>
+                </p>
+                <p class="text-xs text-gray-500 mt-2">
+                    You'll be automatically redirected to your dashboard after login
+                </p>
+            </div>
         </div>
     </div>
 </div>

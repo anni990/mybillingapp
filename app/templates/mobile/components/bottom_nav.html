@@ -1,0 +1,38 @@
+<!-- Bottom Navigation Component -->
+<nav class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 px-4 py-2 z-50" style="box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);">
+    <div class="flex items-center justify-around">
+        <!-- Home -->
+        <button onclick="MobileNav.showSection('home')" id="nav-home" class="flex flex-col items-center space-y-1 p-2 touch-feedback nav-item active">
+            <i data-feather="home" class="w-5 h-5"></i>
+            <span class="mobile-small font-medium">Home</span>
+        </button>
+        
+        <!-- Features -->
+        <button onclick="MobileNav.showSection('features')" id="nav-features" class="flex flex-col items-center space-y-1 p-2 touch-feedback nav-item">
+            <i data-feather="grid" class="w-5 h-5"></i>
+            <span class="mobile-small font-medium">Features</span>
+        </button>
+        
+        <!-- About -->
+        <button onclick="MobileNav.showSection('about')" id="nav-about" class="flex flex-col items-center space-y-1 p-2 touch-feedback nav-item">
+            <i data-feather="info" class="w-5 h-5"></i>
+            <span class="mobile-small font-medium">About</span>
+        </button>
+        
+        <!-- Dashboard/Login -->
+        {% if is_authenticated %}
+            <button onclick="MobileApp.goToDashboard()" class="flex flex-col items-center space-y-1 p-2 touch-feedback nav-item">
+                <div class="relative">
+                    <i data-feather="layout" class="w-5 h-5"></i>
+                    <div class="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"></div>
+                </div>
+                <span class="mobile-small font-medium">Dashboard</span>
+            </button>
+        {% else %}
+            <button onclick="MobileApp.showLoginModal()" class="flex flex-col items-center space-y-1 p-2 touch-feedback nav-item">
+                <i data-feather="log-in" class="w-5 h-5"></i>
+                <span class="mobile-small font-medium">Login</span>
+            </button>
+        {% endif %}
+    </div>
+</nav>
