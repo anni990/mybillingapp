@@ -7,7 +7,7 @@ const MobileFeatures = {
             icon: 'file-text',
             gradient: 'gradient-primary',
             content: `
-                <div class="space-y-4">
+                <div class="space-y-4 custom-scroll">
                     <div class="text-center mb-4">
                         <p class="text-body text-gray-600">Create professional GST-compliant bills in seconds</p>
                     </div>
@@ -62,7 +62,7 @@ const MobileFeatures = {
             icon: 'package',
             gradient: 'gradient-secondary',
             content: `
-                <div class="space-y-4">
+                <div class="space-y-4 custom-scroll">
                     <div class="text-center mb-4">
                         <p class="text-body text-gray-600">Complete stock management solution</p>
                     </div>
@@ -117,7 +117,7 @@ const MobileFeatures = {
             icon: 'users',
             gradient: 'gradient-success',
             content: `
-                <div class="space-y-4">
+                <div class="space-y-4 custom-scroll">
                     <div class="text-center mb-4">
                         <p class="text-body text-gray-600">Digital khata system for customer relationships</p>
                     </div>
@@ -172,7 +172,7 @@ const MobileFeatures = {
             icon: 'bar-chart-2',
             gradient: 'gradient-purple',
             content: `
-                <div class="space-y-4">
+                <div class="space-y-4 custom-scroll">
                     <div class="text-center mb-4">
                         <p class="text-body text-gray-600">Data-driven insights for business growth</p>
                     </div>
@@ -227,7 +227,7 @@ const MobileFeatures = {
     featureLists: {
         shopkeeper: {
             title: 'Shopkeeper Features',
-            icon: 'store',
+            icon: 'shopping-cart',
             gradient: 'gradient-primary',
             features: [
                 { icon: 'file-text', title: 'Quick Bill Creation', desc: 'Generate bills in seconds' },
@@ -370,7 +370,7 @@ const MobileFeatures = {
                 </div>
 
                 <!-- Content -->
-                <div class="flex-1 overflow-y-auto mobile-scroll">
+                <div class="flex-1 overflow-y-auto mobile-scroll custom-scroll">
                     <div class="section-padding">
                         ${content}
                     </div>
