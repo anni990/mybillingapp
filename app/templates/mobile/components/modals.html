@@ -1,0 +1,102 @@
+<!-- Modals Component -->
+
+<!-- Login Modal (for unauthenticated users) -->
+{% if not is_authenticated %}
+<div id="loginModal" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
+    <div class="bg-white modal-content p-6 w-full max-w-sm slide-up">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 gradient-primary rounded-2xl mx-auto mb-4 flex items-center justify-center float-animation">
+                <i data-feather="log-in" class="w-8 h-8 text-white"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Welcome Back!</h3>
+            <p class="text-gray-600">Sign in to access your dashboard</p>
+        </div>
+        
+        <div class="space-y-4">
+            <button onclick="MobileApp.goToLogin()" class="w-full btn-primary touch-feedback">
+                <i data-feather="log-in" class="w-4 h-4 inline mr-2"></i>
+                Sign In
+            </button>
+            <button onclick="MobileApp.goToRegister()" class="w-full border-2 border-gray-200 text-gray-700 py-3 rounded-2xl font-semibold touch-feedback hover:bg-gray-50">
+                <i data-feather="user-plus" class="w-4 h-4 inline mr-2"></i>
+                Create Account
+            </button>
+        </div>
+        
+        <button onclick="MobileApp.hideLoginModal()" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center touch-feedback">
+            <i data-feather="x" class="w-4 h-4 text-gray-600"></i>
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<!-- Feature Detail Modal -->
+<div id="featureModal" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
+    <div class="bg-white modal-content p-6 w-full max-w-sm max-h-[80vh] flex flex-col slide-up">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+                <div id="feature-modal-icon" class="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
+                    <i data-feather="star" class="w-5 h-5 text-white"></i>
+                </div>
+                <h3 id="feature-modal-title" class="text-lg font-bold text-gray-900">Feature</h3>
+            </div>
+            <button onclick="MobileApp.hideFeatureModal()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center touch-feedback">
+                <i data-feather="x" class="w-4 h-4 text-gray-600"></i>
+            </button>
+        </div>
+        
+        <!-- Modal Content -->
+        <div id="feature-modal-content" class="flex-1 custom-scroll overflow-y-auto">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="mt-6 pt-4 border-t border-gray-100">
+            {% if is_authenticated %}
+                <button onclick="MobileApp.goToDashboard()" class="w-full btn-primary touch-feedback">
+                    <i data-feather="arrow-right" class="w-4 h-4 inline mr-2"></i>
+                    Go to Dashboard
+                </button>
+            {% else %}
+                <button onclick="MobileApp.showLoginModal(); MobileApp.hideFeatureModal();" class="w-full btn-primary touch-feedback">
+                    <i data-feather="log-in" class="w-4 h-4 inline mr-2"></i>
+                    Get Started
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Feature List Modal (for features page) -->
+<div id="featureListModal" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
+    <div class="bg-white modal-content p-6 w-full max-w-md max-h-[85vh] flex flex-col slide-up">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+                <div id="feature-list-icon" class="w-10 h-10 gradient-secondary rounded-xl flex items-center justify-center">
+                    <i data-feather="layers" class="w-5 h-5 text-white"></i>
+                </div>
+                <h3 id="feature-list-title" class="text-lg font-bold text-gray-900">All Features</h3>
+            </div>
+            <button onclick="MobileApp.hideFeatureListModal()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center touch-feedback">
+                <i data-feather="x" class="w-4 h-4 text-gray-600"></i>
+            </button>
+        </div>
+        
+        <!-- Modal Content -->
+        <div id="feature-list-content" class="flex-1 custom-scroll overflow-y-auto">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div id="loadingModal" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50">
+    <div class="bg-white rounded-3xl p-8 flex flex-col items-center space-y-4 fade-in">
+        <div class="w-12 h-12 gradient-primary rounded-full flex items-center justify-center pulse-animation">
+            <i data-feather="loader" class="w-6 h-6 text-white animate-spin"></i>
+        </div>
+        <p class="text-gray-600 font-medium">Loading...</p>
+    </div>
+</div>

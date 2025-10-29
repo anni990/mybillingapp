@@ -13,6 +13,33 @@ def create_app():
     session.init_app(app)
 
     login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Please log in to access this page.'
+    login_manager.login_message_category = 'info'
+    
+    # Set up automatic redirection for authenticated users trying to access auth pages
+    @app.before_request
+    def handle_authentication_redirection():
+        from flask import request
+        from flask_login import current_user
+        from .auth.utils import redirect_to_dashboard
+        
+        # Skip API endpoints and static files
+        if (request.endpoint and 
+            (request.endpoint.startswith('api.') or 
+             request.endpoint.startswith('walkthrough.') or
+             request.endpoint.startswith('preview.') or
+             request.endpoint == 'static')):
+            return None
+        
+        # Only redirect authenticated users away from auth-specific pages
+        # Allow them to visit home page, features, pricing, etc.
+        auth_only_endpoints = ['auth.login', 'auth.register', 'auth.auth_root']
+        
+        if (current_user.is_authenticated and 
+            request.endpoint in auth_only_endpoints):
+            return redirect_to_dashboard()
+        
+        return None
     
     # Import and register blueprints
     from .auth.routes import auth_bp
@@ -30,5 +57,43 @@ def create_app():
     app.register_blueprint(walkthrough_bp)
     app.register_blueprint(preview_bp)
     app.register_blueprint(home_bp)
+
+    # Context processor to make user info available in templates
+    @app.context_processor
+    def inject_user_info():
+        from flask_login import current_user
+        from .auth.utils import get_dashboard_url_for_role
+        
+        user_info = {
+            'current_user': current_user,
+            'is_authenticated': current_user.is_authenticated,
+            'user_role': getattr(current_user, 'role', None) if current_user.is_authenticated else None,
+        }
+        
+        # Add dashboard URL for the user's role
+        if current_user.is_authenticated:
+            user_info['dashboard_url'] = get_dashboard_url_for_role(current_user.role)
+        
+        return user_info
+
+    # Error handlers
+    @app.errorhandler(401)
+    def unauthorized_access(error):
+        from flask import flash, redirect, url_for
+        flash('Please log in to access this page.', 'warning')
+        return redirect(url_for('auth.login'))
+
+    @app.errorhandler(403)
+    def forbidden_access(error):
+        from flask import flash
+        from flask_login import current_user
+        from .auth.utils import redirect_to_dashboard
+        
+        if current_user.is_authenticated:
+            flash('Access denied. You do not have permission to access this page.', 'danger')
+            return redirect_to_dashboard()
+        else:
+            flash('Please log in to access this page.', 'warning')
+            return redirect(url_for('auth.login'))
 
     return app

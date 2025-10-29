@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="light-content">
+    <meta name="theme-color" content="#ed6a3e">
+    <title>MyBillingApp - Mobile Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile/styles.css') }}">
+    <style>
+        /* Mobile App Theme */
+        :root {
+            --primary: #ed6a3e;
+            --primary-dark: #b54f2a;
+            --primary-light: #f59e7e;
+            --secondary: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-900: #111827;
+        }
+
+        /* Remove default mobile styles */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            overscroll-behavior: contain;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* App-like animations */
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .slide-up { animation: slideUp 0.5s ease-out; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        .pulse-animation { animation: pulse 2s infinite; }
+        .float-animation { animation: float 3s ease-in-out infinite; }
+
+        /* Custom scrollbar for feature sections */
+        .custom-scroll::-webkit-scrollbar { width: 2px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(237, 106, 62, 0.3); border-radius: 1px; }
+
+        /* Gradient backgrounds */
+        .gradient-primary { background: linear-gradient(135deg, #ed6a3e 0%, #b54f2a 100%); }
+        .gradient-secondary { background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); }
+        .gradient-card { background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%); }
+
+        /* Glass effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Bottom navigation shadow */
+        .bottom-nav-shadow {
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Touch feedback */
+        .touch-feedback:active {
+            transform: scale(0.95);
+            transition: transform 0.1s ease;
+        }
+
+        /* Safe area for mobile devices */
+        .safe-area-top { padding-top: env(safe-area-inset-top); }
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Main App Container -->
+    <div class="h-screen flex flex-col relative overflow-hidden">
+        
+        <!-- Status Bar Placeholder -->
+        <div class="safe-area-top bg-white"></div>
+        
+        <!-- Header -->
+        <header class="bg-white shadow-sm px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
+                    <i data-feather="zap" class="w-5 h-5 text-white"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-900">MyBillingApp</h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                {% if is_authenticated %}
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <i data-feather="user" class="w-4 h-4 text-green-600"></i>
+                    </div>
+                {% else %}
+                    <button onclick="showLoginModal()" class="touch-feedback px-3 py-1 gradient-primary text-white text-sm rounded-full font-medium">
+                        Login
+                    </button>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-hidden relative">
+            <!-- Hero Section -->
+            <section id="home" class="h-full flex flex-col justify-center px-4 py-8 bg-gradient-to-br from-white to-gray-50">
+                <div class="text-center mb-8 fade-in">
+                    <div class="w-24 h-24 mx-auto mb-6 gradient-primary rounded-3xl flex items-center justify-center float-animation">
+                        <i data-feather="smartphone" class="w-12 h-12 text-white"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-3">Smart Billing<br>Made Simple</h2>
+                    <p class="text-gray-600 text-lg leading-relaxed">
+                        Complete billing solution for<br>modern businesses
+                    </p>
+                </div>
+
+                <!-- Feature Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="glass rounded-2xl p-4 text-center touch-feedback" onclick="MobileFeatures.showFeatureDetail('billing')">
+                        <div class="w-12 h-12 gradient-primary rounded-xl mx-auto mb-3 flex items-center justify-center">
+                            <i data-feather="file-text" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 text-sm">Smart Bills</h3>
+                        <p class="text-xs text-gray-600 mt-1">Create GST bills instantly</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4 text-center touch-feedback" onclick="MobileFeatures.showFeatureDetail('inventory')">
+                        <div class="w-12 h-12 gradient-secondary rounded-xl mx-auto mb-3 flex items-center justify-center">
+                            <i data-feather="package" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 text-sm">Inventory</h3>
+                        <p class="text-xs text-gray-600 mt-1">Track stock levels</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4 text-center touch-feedback" onclick="MobileFeatures.showFeatureDetail('customers')">
+                        <div class="w-12 h-12 gradient-success rounded-xl mx-auto mb-3 flex items-center justify-center">
+                            <i data-feather="users" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 text-sm">Customers</h3>
+                        <p class="text-xs text-gray-600 mt-1">Manage customer ledger</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4 text-center touch-feedback" onclick="MobileFeatures.showFeatureDetail('reports')">
+                        <div class="w-12 h-12 gradient-purple rounded-xl mx-auto mb-3 flex items-center justify-center">
+                            <i data-feather="bar-chart-2" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 text-sm">Analytics</h3>
+                        <p class="text-xs text-gray-600 mt-1">Business insights</p>
+                    </div>
+                </div>
+
+                <!-- CTA Button -->
+                <div class="text-center">
+                    {% if is_authenticated %}
+                        <button onclick="goToDashboard()" class="w-full gradient-primary text-white py-4 rounded-2xl font-semibold text-lg touch-feedback pulse-animation">
+                            Open Dashboard
+                        </button>
+                    {% else %}
+                        <button onclick="showLoginModal()" class="w-full gradient-primary text-white py-4 rounded-2xl font-semibold text-lg touch-feedback pulse-animation">
+                            Get Started Free
+                        </button>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Features Detail Section (Hidden by default) -->
+            <section id="features" class="h-full bg-white p-4 absolute inset-0 translate-x-full transition-transform duration-300 ease-in-out">
+                <div class="flex items-center justify-between mb-6">
+                    <button onclick="showHome()" class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center touch-feedback">
+                        <i data-feather="arrow-left" class="w-5 h-5 text-gray-600"></i>
+                    </button>
+                    <h2 id="feature-title" class="text-xl font-bold text-gray-900">Features</h2>
+                    <div class="w-10"></div>
+                </div>
+                
+                <div id="feature-content" class="custom-scroll overflow-y-auto h-full pb-20">
+                    <!-- Dynamic content will be loaded here -->
+                </div>
+            </section>
+
+            <!-- About Section -->
+            <section id="about" class="h-full bg-white p-4 absolute inset-0 translate-x-full transition-transform duration-300 ease-in-out">
+                <div class="flex items-center justify-between mb-6">
+                    <button onclick="showHome()" class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center touch-feedback">
+                        <i data-feather="arrow-left" class="w-5 h-5 text-gray-600"></i>
+                    </button>
+                    <h2 class="text-xl font-bold text-gray-900">About Us</h2>
+                    <div class="w-10"></div>
+                </div>
+                
+                <div class="custom-scroll overflow-y-auto h-full pb-20">
+                    <div class="text-center mb-6">
+                        <div class="w-20 h-20 gradient-primary rounded-3xl mx-auto mb-4 flex items-center justify-center">
+                            <i data-feather="heart" class="w-10 h-10 text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Built for Success</h3>
+                        <p class="text-gray-600">Empowering businesses with smart billing solutions</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="glass rounded-2xl p-4">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i data-feather="target" class="w-4 h-4 text-blue-600"></i>
+                                </div>
+                                <h4 class="font-semibold text-gray-900">Our Mission</h4>
+                            </div>
+                            <p class="text-gray-600 text-sm">To simplify business operations with intuitive billing and inventory management tools.</p>
+                        </div>
+
+                        <div class="glass rounded-2xl p-4">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i data-feather="award" class="w-4 h-4 text-green-600"></i>
+                                </div>
+                                <h4 class="font-semibold text-gray-900">Why Choose Us</h4>
+                            </div>
+                            <p class="text-gray-600 text-sm">Free, secure, GST-compliant, and designed for Indian businesses.</p>
+                        </div>
+
+                        <div class="glass rounded-2xl p-4">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i data-feather="users" class="w-4 h-4 text-purple-600"></i>
+                                </div>
+                                <h4 class="font-semibold text-gray-900">Community</h4>
+                            </div>
+                            <p class="text-gray-600 text-sm">Join thousands of businesses already using MyBillingApp to grow their operations.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bg-white bottom-nav-shadow px-4 py-2 safe-area-bottom">
+            <div class="flex items-center justify-around">
+                <button onclick="showHome()" id="nav-home" class="flex flex-col items-center space-y-1 p-2 touch-feedback nav-item active">
+                    <i data-feather="home" class="w-5 h-5"></i>
+                    <span class="text-xs font-medium">Home</span>
+                </button>
+                
+                <button onclick="showFeatures()" id="nav-features" class="flex flex-col items-center space-y-1 p-2 touch-feedback nav-item">
+                    <i data-feather="grid" class="w-5 h-5"></i>
+                    <span class="text-xs font-medium">Features</span>
+                </button>
+                
+                <button onclick="showAbout()" id="nav-about" class="flex flex-col items-center space-y-1 p-2 touch-feedback nav-item">
+                    <i data-feather="info" class="w-5 h-5"></i>
+                    <span class="text-xs font-medium">About</span>
+                </button>
+                
+                {% if is_authenticated %}
+                    <button onclick="goToDashboard()" class="flex flex-col items-center space-y-1 p-2 touch-feedback nav-item">
+                        <i data-feather="grid" class="w-5 h-5"></i>
+                        <span class="text-xs font-medium">Dashboard</span>
+                    </button>
+                {% else %}
+                    <button onclick="showLoginModal()" class="flex flex-col items-center space-y-1 p-2 touch-feedback nav-item">
+                        <i data-feather="log-in" class="w-5 h-5"></i>
+                        <span class="text-xs font-medium">Login</span>
+                    </button>
+                {% endif %}
+            </div>
+        </nav>
+    </div>
+
+    <!-- Login Modal (for unauthenticated users) -->
+    {% if not is_authenticated %}
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm slide-up">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 gradient-primary rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                    <i data-feather="log-in" class="w-8 h-8 text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Welcome Back!</h3>
+                <p class="text-gray-600">Sign in to access your dashboard</p>
+            </div>
+            
+            <div class="space-y-4">
+                <button onclick="goToLogin()" class="w-full gradient-primary text-white py-3 rounded-2xl font-semibold touch-feedback">
+                    Sign In
+                </button>
+                <button onclick="goToRegister()" class="w-full border-2 border-gray-200 text-gray-700 py-3 rounded-2xl font-semibold touch-feedback">
+                    Create Account
+                </button>
+            </div>
+            
+            <button onclick="hideLoginModal()" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center touch-feedback">
+                <i data-feather="x" class="w-4 h-4 text-gray-600"></i>
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Mobile JavaScript -->
+    <script src="{{ url_for('static', filename='js/mobile/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mobile/navigation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mobile/features.js') }}"></script>
+    
+    <script>
+        // Set user data for JavaScript
+        document.body.dataset.authenticated = '{{ is_authenticated|lower }}';
+        {% if is_authenticated and dashboard_url %}
+        document.body.dataset.dashboardUrl = '{{ url_for(dashboard_url) }}';
+        {% endif %}
+        
+        // Initialize Feather icons
+        feather.replace();
+
+        // Navigation state (keeping for backward compatibility)
+        let currentSection = 'home';
+
+        // Feature content templates
+        const featureContents = {
+            billing: `
+                <div class="space-y-4">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 gradient-primary rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                            <i data-feather="file-text" class="w-8 h-8 text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Smart Billing</h3>
+                        <p class="text-gray-600">Create professional bills in seconds</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">✨ Quick Bill Creation</h4>
+                        <p class="text-gray-600 text-sm">Generate GST-compliant bills with product search and auto-calculations</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">📱 Multiple Templates</h4>
+                        <p class="text-gray-600 text-sm">Choose from professional bill formats that suit your business</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">💳 Payment Tracking</h4>
+                        <p class="text-gray-600 text-sm">Track paid, unpaid, and partially paid bills effortlessly</p>
+                    </div>
+                </div>
+            `,
+            inventory: `
+                <div class="space-y-4">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 gradient-secondary rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                            <i data-feather="package" class="w-8 h-8 text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Inventory Management</h3>
+                        <p class="text-gray-600">Keep track of your stock levels</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">📦 Product Catalog</h4>
+                        <p class="text-gray-600 text-sm">Organize products with categories, pricing, and stock levels</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">⚠️ Low Stock Alerts</h4>
+                        <p class="text-gray-600 text-sm">Get notified when products are running low</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">📊 Stock Reports</h4>
+                        <p class="text-gray-600 text-sm">Analyze inventory trends and optimize stock levels</p>
+                    </div>
+                </div>
+            `,
+            gst: `
+                <div class="space-y-4">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                            <i data-feather="percent" class="w-8 h-8 text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">GST Compliance</h3>
+                        <p class="text-gray-600">Stay compliant with Indian tax laws</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">🧮 Auto Calculations</h4>
+                        <p class="text-gray-600 text-sm">Automatic GST calculations for all tax slabs</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">📑 GST Reports</h4>
+                        <p class="text-gray-600 text-sm">Generate GSTR-1 and GSTR-3B ready reports</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">🔗 CA Integration</h4>
+                        <p class="text-gray-600 text-sm">Connect with Chartered Accountants for seamless filing</p>
+                    </div>
+                </div>
+            `,
+            reports: `
+                <div class="space-y-4">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                            <i data-feather="bar-chart-2" class="w-8 h-8 text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Analytics & Reports</h3>
+                        <p class="text-gray-600">Make data-driven decisions</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">📈 Sales Analytics</h4>
+                        <p class="text-gray-600 text-sm">Track daily, monthly, and yearly sales performance</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">🎯 Customer Insights</h4>
+                        <p class="text-gray-600 text-sm">Understand customer behavior and purchase patterns</p>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">💰 Profit Analysis</h4>
+                        <p class="text-gray-600 text-sm">Monitor profit margins and business growth</p>
+                    </div>
+                </div>
+            `
+        };
+
+        // Navigation functions
+        function showHome() {
+            currentSection = 'home';
+            document.getElementById('home').style.transform = 'translateX(0)';
+            document.getElementById('features').style.transform = 'translateX(100%)';
+            document.getElementById('about').style.transform = 'translateX(100%)';
+            updateNavigation();
+        }
+
+        function showFeatures() {
+            currentSection = 'features';
+            document.getElementById('home').style.transform = 'translateX(-100%)';
+            document.getElementById('features').style.transform = 'translateX(0)';
+            document.getElementById('about').style.transform = 'translateX(100%)';
+            document.getElementById('feature-title').textContent = 'All Features';
+            document.getElementById('feature-content').innerHTML = `
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="glass rounded-2xl p-4 touch-feedback" onclick="showFeature('billing')">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center">
+                                <i data-feather="file-text" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Smart Billing</h3>
+                                <p class="text-sm text-gray-600">Create professional bills</p>
+                            </div>
+                            <i data-feather="chevron-right" class="w-5 h-5 text-gray-400 ml-auto"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4 touch-feedback" onclick="showFeature('inventory')">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 gradient-secondary rounded-xl flex items-center justify-center">
+                                <i data-feather="package" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Inventory</h3>
+                                <p class="text-sm text-gray-600">Manage your stock</p>
+                            </div>
+                            <i data-feather="chevron-right" class="w-5 h-5 text-gray-400 ml-auto"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4 touch-feedback" onclick="showFeature('gst')">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
+                                <i data-feather="percent" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">GST Compliance</h3>
+                                <p class="text-sm text-gray-600">Tax ready reports</p>
+                            </div>
+                            <i data-feather="chevron-right" class="w-5 h-5 text-gray-400 ml-auto"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-4 touch-feedback" onclick="showFeature('reports')">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center">
+                                <i data-feather="bar-chart-2" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Analytics</h3>
+                                <p class="text-sm text-gray-600">Business insights</p>
+                            </div>
+                            <i data-feather="chevron-right" class="w-5 h-5 text-gray-400 ml-auto"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+            feather.replace();
+            updateNavigation();
+        }
+
+        function showAbout() {
+            currentSection = 'about';
+            document.getElementById('home').style.transform = 'translateX(-100%)';
+            document.getElementById('features').style.transform = 'translateX(-100%)';
+            document.getElementById('about').style.transform = 'translateX(0)';
+            updateNavigation();
+        }
+
+        function showFeature(featureType) {
+            document.getElementById('feature-title').textContent = featureContents[featureType].match(/<h3[^>]*>(.*?)<\/h3>/)[1];
+            document.getElementById('feature-content').innerHTML = featureContents[featureType];
+            feather.replace();
+        }
+
+        function updateNavigation() {
+            // Reset all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                item.classList.remove('text-orange-500');
+                item.classList.add('text-gray-500');
+            });
+            
+            // Activate current nav item
+            const activeNav = document.getElementById(`nav-${currentSection}`);
+            if (activeNav) {
+                activeNav.classList.add('active');
+                activeNav.classList.remove('text-gray-500');
+                activeNav.classList.add('text-orange-500');
+            }
+        }
+
+        // Modal functions
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginModal').classList.add('flex');
+        }
+
+        function hideLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('flex');
+        }
+
+        // Navigation functions
+        function goToLogin() {
+            window.location.href = '/auth/login';
+        }
+
+        function goToRegister() {
+            window.location.href = '/auth/register';
+        }
+
+        function goToDashboard() {
+            {% if is_authenticated %}
+                window.location.href = '{{ url_for(dashboard_url) }}';
+            {% else %}
+                showLoginModal();
+            {% endif %}
+        }
+
+        // Initialize navigation
+        updateNavigation();
+
+        // Prevent scrolling on body
+        document.body.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        // Close modal on outside click
+        document.getElementById('loginModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideLoginModal();
+            }
+        });
+    </script>
+</body>
+</html>

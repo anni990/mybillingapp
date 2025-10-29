@@ -120,13 +120,25 @@
                             class="hover:theme-primary transition duration-300">Pricing</a>
                         <a href="{{ url_for('home.about') }}" class="hover:theme-primary transition duration-300">About
                             Us</a>
+                        <!-- <a href="{{ url_for('home.mobile_view') }}" class="hover:theme-primary transition duration-300 bg-orange-100 px-3 py-1 rounded-lg flex items-center space-x-1">
+                            <span>📱</span>
+                            <span>Mobile</span>
+                        </a> -->
                         <a href="#contact" class="hover:theme-primary transition duration-300">Contact</a>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <a href="{{ url_for('auth.login')}}"
-                            class="text-gray-700 hover:text-gray-900 font-medium transition duration-300">Login</a>
-                        <a href="{{ url_for('auth.register')}}"
-                            class="bg-theme-primary text-white px-6 py-2.5 rounded-lg font-semibold shadow-md hover:bg-theme-dark transition duration-300 btn-primary">Register</a>
+                        {% if is_authenticated %}
+                            <!-- <span class="text-gray-700 font-medium">Welcome, {{ current_user.username }}!</span> -->
+                            <a href="{{ url_for(dashboard_url) }}"
+                                class="bg-theme-primary text-white px-6 py-2.5 rounded-lg font-semibold shadow-md hover:bg-theme-dark transition duration-300 btn-primary">Welcome, {{ current_user.username }}!</a>
+                            <a href="{{ url_for('auth.logout') }}"
+                                class="text-gray-700 hover:text-gray-900 font-medium transition duration-300">Logout</a>
+                        {% else %}
+                            <a href="{{ url_for('auth.login')}}"
+                                class="text-gray-700 hover:text-gray-900 font-medium transition duration-300">Login</a>
+                            <a href="{{ url_for('auth.register')}}"
+                                class="bg-theme-primary text-white px-6 py-2.5 rounded-lg font-semibold shadow-md hover:bg-theme-dark transition duration-300 btn-primary">Register</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -140,13 +152,23 @@
                         class="block py-2 text-gray-700 hover:theme-primary transition duration-300">Pricing</a>
                     <a href="{{ url_for('home.about') }}"
                         class="block py-2 text-gray-700 hover:theme-primary transition duration-300">About Us</a>
+                    <!-- <a href="{{ url_for('home.mobile_view') }}"
+                        class="block py-2 text-white bg-theme-primary rounded-lg text-center hover:bg-theme-dark transition duration-300">📱 Mobile App View</a> -->
                     <a href="#contact"
                         class="block py-2 text-gray-700 hover:theme-primary transition duration-300">Contact</a>
                     <div class="flex flex-col space-y-3 pt-4 border-t border-gray-100">
-                        <a href="{{ url_for('auth.login')}}"
-                            class="block text-center py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition duration-300">Login</a>
-                        <a href="{{ url_for('auth.register')}}"
-                            class="block text-center bg-theme-primary text-white px-6 py-2.5 rounded-lg font-semibold shadow-md transition duration-300">Register</a>
+                        {% if is_authenticated %}
+                            <span class="block text-center text-gray-700 font-medium py-2">Welcome, {{ current_user.username }}!</span>
+                            <a href="{{ url_for(dashboard_url) }}"
+                                class="block text-center bg-theme-primary text-white px-6 py-2.5 rounded-lg font-semibold shadow-md transition duration-300">Dashboard</a>
+                            <a href="{{ url_for('auth.logout') }}"
+                                class="block text-center py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition duration-300">Logout</a>
+                        {% else %}
+                            <a href="{{ url_for('auth.login')}}"
+                                class="block text-center py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition duration-300">Login</a>
+                            <a href="{{ url_for('auth.register')}}"
+                                class="block text-center bg-theme-primary text-white px-6 py-2.5 rounded-lg font-semibold shadow-md transition duration-300">Register</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
