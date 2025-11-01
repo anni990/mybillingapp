@@ -111,7 +111,7 @@ def register_routes(bp):
             paid=paid,
             unpaid=unpaid,
             partial=partial,
-            monthly_total=monthly_total,
+            monthly_total=round(monthly_total,2),
             monthly_bills_count=monthly_bills_count,
             monthly_growth=round(monthly_growth, 1),
             low_stock=low_stock,

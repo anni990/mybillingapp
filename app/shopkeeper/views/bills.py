@@ -18,6 +18,9 @@ from app.models import (Bill, BillItem, Product, Customer, CustomerLedger,
 from app.extensions import db
 from app.utils.gst import calc_line, generate_gst_summary, calculate_bill_totals
 from .profile import generate_next_invoice_number, is_custom_numbering_enabled
+from ..services.ledger_service import CustomerLedgerService
+import datetime
+import io
 
 
 def register_routes(bp):
@@ -48,55 +51,136 @@ def register_routes(bp):
             } for p in products
         ]
         if request.method == 'POST':
-            customer_name = request.form.get('customer_name')
-            customer_contact = request.form.get('customer_contact')
-            customer_address = request.form.get('customer_address')
-            customer_gstin=request.form.get('customer_gstin')
-            gst_type = request.form.get('gst_type')
-            bill_date = datetime.datetime.now()
-            items = request.form.getlist('product_id')
-            quantities = request.form.getlist('quantity')
-            prices = request.form.getlist('price_per_unit')
-            total_amount = sum(float(q)*float(p) for q, p in zip(quantities, prices))
-            
-            # Generate invoice number - use custom format if enabled, otherwise use timestamp
-            if is_custom_numbering_enabled(shopkeeper):
-                invoice_number = generate_next_invoice_number(shopkeeper)
-            else:
-                invoice_number = f"BILL{int(datetime.datetime.now().timestamp())}"
-            
-            bill = Bill(
-                shopkeeper_id=shopkeeper.shopkeeper_id,
-                bill_number=invoice_number,
-                customer_name=customer_name,
-                customer_contact=customer_contact,
-                customer_address=customer_address,
-                customer_gstin=customer_gstin,
-                bill_date=bill_date,
-                gst_type=gst_type,
-                total_amount=total_amount,
-                payment_status='Paid',
-                paid_amount=total_amount,  # Set payment amounts for paid bills
-                due_amount=0
-            )
-            db.session.add(bill)
-            db.session.flush()  # get bill_id
-            for pid, qty, price in zip(items, quantities, prices):
-                bill_item = BillItem(
-                    bill_id=bill.bill_id,
-                    product_id=pid,
-                    quantity=qty,
-                    price_per_unit=price,
-                    total_price=float(qty)*float(price)
+            try:
+                # Extract form data with new fields
+                customer_name = request.form.get('customer_name')
+                customer_contact = request.form.get('customer_contact')
+                customer_address = request.form.get('customer_address', '')
+                customer_gstin = request.form.get('customer_gstin', '')
+                
+                # Bill configuration
+                gst_type = request.form.get('bill_gst_type', 'GST')  # Updated field name
+                gst_mode = request.form.get('gst_mode', 'EXCLUSIVE').upper()  # New field
+                payment_status = request.form.get('payment_status', 'Paid')
+                paid_amount = Decimal(request.form.get('paid_amount', '0') or '0')
+                
+                # Product items - Updated to handle new fields
+                product_ids = request.form.getlist('product_id')
+                product_names = request.form.getlist('product_name')
+                quantities = request.form.getlist('quantity')
+                prices = request.form.getlist('price_per_unit')
+                discounts = request.form.getlist('discount')  # New field
+                gst_rates = request.form.getlist('gst_rate')  # New field
+                hsn_codes = request.form.getlist('hsn_code')  # New field
+
+                if not product_names or not quantities:
+                    flash('Please add at least one product to create a bill.', 'error')
+                    return redirect(url_for('shopkeeper.create_bill'))
+
+                # Generate invoice number - use custom format if enabled, otherwise use timestamp
+                if is_custom_numbering_enabled(shopkeeper):
+                    invoice_number = generate_next_invoice_number(shopkeeper)
+                else:
+                    invoice_number = f"BILL{int(datetime.datetime.now().timestamp())}"
+                
+                # Create bill with new fields
+                bill = Bill(
+                    shopkeeper_id=shopkeeper.shopkeeper_id,
+                    bill_number=invoice_number,
+                    customer_name=customer_name,
+                    customer_contact=customer_contact,
+                    customer_address=customer_address,
+                    customer_gstin=customer_gstin,
+                    bill_date=datetime.datetime.now(),
+                    gst_type=gst_type,
+                    gst_mode=gst_mode,  # New field
+                    payment_status=payment_status,
+                    paid_amount=paid_amount,
+                    total_amount=Decimal('0')  # Will be updated after calculating items
                 )
-                db.session.add(bill_item)
-                # Update product stock
-                product = Product.query.get(pid)
-                if product:
-                    product.stock_qty = product.stock_qty - int(qty)
-            db.session.commit()
-            flash('Bill created successfully.', 'success')
-            return redirect(url_for('shopkeeper.manage_bills'))
+                
+                db.session.add(bill)
+                db.session.flush()  # Get bill_id
+                
+                # Process bill items with GST calculations
+                from app.utils.gst import calc_line
+                calculated_items = []
+                total_amount = Decimal('0')
+                
+                for i in range(len(product_names)):
+                    if not product_names[i].strip():
+                        continue
+                        
+                    # Get product data
+                    product_id = product_ids[i] if i < len(product_ids) and product_ids[i] else None
+                    quantity = int(quantities[i])
+                    unit_price = Decimal(prices[i])
+                    discount_percent = Decimal(discounts[i] if i < len(discounts) and discounts[i] else '0')
+                    gst_rate = Decimal(gst_rates[i] if i < len(gst_rates) and gst_rates[i] else '0')
+                    hsn_code = hsn_codes[i] if i < len(hsn_codes) else ''
+                    
+                    # Calculate GST using utility function
+                    calc_result = calc_line(
+                        price=unit_price,
+                        qty=quantity,
+                        gst_rate=gst_rate,
+                        discount_percent=discount_percent,
+                        mode=gst_mode
+                    )
+                    
+                    # Create bill item with all calculated fields
+                    bill_item = BillItem(
+                        bill_id=bill.bill_id,
+                        product_id=product_id,
+                        custom_product_name=product_names[i] if not product_id else None,
+                        custom_gst_rate=gst_rate if not product_id else None,
+                        custom_hsn_code=hsn_code if not product_id else None,
+                        quantity=quantity,
+                        price_per_unit=unit_price,
+                        discount_percent=discount_percent,
+                        discount_amount=calc_result['discount_amount'],
+                        taxable_amount=calc_result['taxable_amount'],
+                        cgst_rate=calc_result['cgst_rate'],
+                        sgst_rate=calc_result['sgst_rate'],
+                        cgst_amount=calc_result['cgst_amount'],
+                        sgst_amount=calc_result['sgst_amount'],
+                        total_gst_amount=calc_result['total_gst'],
+                        total_price=calc_result['final_total']
+                    )
+                    
+                    db.session.add(bill_item)
+                    calculated_items.append(calc_result)
+                    total_amount += calc_result['final_total']
+                    
+                    # Update product stock if it's an existing product
+                    if product_id:
+                        product = Product.query.get(product_id)
+                        if product and product.stock_qty >= quantity:
+                            product.stock_qty = product.stock_qty - quantity
+                
+                # Update bill total and due amount
+                bill.total_amount = total_amount
+                bill.due_amount = total_amount - paid_amount
+                
+                # Create customer ledger entries for existing customers
+                if bill.customer_id:  # Customer is linked to bill
+                    try:
+                        CustomerLedgerService.create_ledger_entries_for_bill(bill, shopkeeper)
+                        current_app.logger.debug(f"Created ledger entries for customer {bill.customer_id} on bill {bill.bill_number}")
+                    except Exception as e:
+                        current_app.logger.error(f"Failed to create ledger entries: {str(e)}")
+                        # Don't fail bill creation if ledger fails
+                        flash('Bill created but ledger entry failed. Please check customer balance manually.', 'warning')
+                
+                db.session.commit()
+                
+                flash(f'Bill {invoice_number} created successfully!', 'success')
+                return redirect(url_for('shopkeeper.view_bill', bill_id=bill.bill_id))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error creating bill: {str(e)}', 'error')
+                return redirect(url_for('shopkeeper.create_bill'))
         return render_template(
             'shopkeeper/create_bill.html',
             shop_name=shop_name,
@@ -147,6 +231,7 @@ def register_routes(bp):
                              purchase_bills=purchase_bills,
                              selected_statuses=selected_statuses)
 
+        
     @bp.route('/bill/<int:bill_id>')
     @login_required
     @shopkeeper_required
@@ -161,7 +246,7 @@ def register_routes(bp):
         products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
         products_dict = {str(p.product_id): p for p in products}
         
-        # Check if user can edit (you can customize this based on roles)
+        # Check if user can edit
         is_editable = False
         if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id == current_user.user_id:
             is_editable = True
@@ -172,7 +257,7 @@ def register_routes(bp):
             emp_client = EmployeeClient.query.filter_by(shopkeeper_id=bill.shopkeeper_id, employee_id=current_user.ca_employee.employee_id).first()
             is_editable = bool(emp_client)
         
-        # Calculate GST summary using new engine
+        # Calculate GST summary using stored data or calculation engine
         bill_items_data = []
         calculated_items = []
         
@@ -207,82 +292,128 @@ def register_routes(bp):
             base_price = float(item.price_per_unit)
             quantity = int(item.quantity)
             
-            # For viewing existing bills, assume discount = 0 unless stored elsewhere
-            discount_percent = 0  # You can extend this if discount is stored
-            
-            # Use new GST calculation engine
-            try:
-                gst_calc = calc_line(
-                    price=base_price,
-                    qty=quantity,
-                    gst_rate=gst_rate,
-                    discount_percent=discount_percent,
-                    mode=gst_mode
-                )
+            # Check if we have stored discount and GST data (new bills) or need to calculate (old bills)
+            if hasattr(item, 'discount_percent') and item.discount_percent is not None:
+                # Use stored calculations from new bills
+                discount_percent = float(item.discount_percent or 0)
+                discount_amount = float(item.discount_amount or 0)
+                taxable_amount = float(item.taxable_amount or 0)
+                cgst_amount = float(item.cgst_amount or 0)
+                sgst_amount = float(item.sgst_amount or 0)
+                total_gst = float(item.total_gst_amount or 0)
+                final_total = float(item.total_price)
                 
-                # Prepare item data for template with all GST details
+                # Prepare item data using stored values
                 item_data = {
                     'product': product,
                     'is_custom': is_custom,
                     'quantity': quantity,
                     'unit_price': base_price,
-                    'unit_price_base': float(gst_calc['unit_price_base']),
-                    'line_base_total': float(gst_calc['line_base_total']),
                     'discount_percent': discount_percent,
-                    'discount_amount': float(gst_calc['discount_amount']),
-                    'taxable_amount': float(gst_calc['taxable_amount']),
-                    'gst_rate': float(gst_calc['gst_rate']),
-                    'cgst_rate': float(gst_calc['cgst_rate']),
-                    'sgst_rate': float(gst_calc['sgst_rate']),
-                    'cgst_amount': float(gst_calc['cgst_amount']),
-                    'sgst_amount': float(gst_calc['sgst_amount']),
-                    'total_gst': float(gst_calc['total_gst']),
-                    'final_total': float(gst_calc['final_total']),
-                    'mode': gst_calc['mode'],
+                    'discount_amount': discount_amount,
+                    'taxable_amount': taxable_amount,
+                    'gst_rate': gst_rate,
+                    'cgst_rate': gst_rate / 2,
+                    'sgst_rate': gst_rate / 2,
+                    'cgst_amount': cgst_amount,
+                    'sgst_amount': sgst_amount,
+                    'total_gst': total_gst,
+                    'final_total': final_total,
+                    'mode': gst_mode,
                     'hsn_code': hsn_code
+                }
+                
+                # Create gst_calc for summary generation
+                gst_calc = {
+                    'taxable_amount': taxable_amount,
+                    'cgst_amount': cgst_amount,
+                    'sgst_amount': sgst_amount,
+                    'total_gst': total_gst,
+                    'final_total': final_total,
+                    'gst_rate': gst_rate
                 }
                 
                 bill_items_data.append(item_data)
                 calculated_items.append(gst_calc)
                 
-            except Exception as e:
-                current_app.logger.error(f"Error calculating GST for bill item {item.bill_item_id}: {str(e)}")
-                # Fallback to simple display
-                item_data = {
-                    'product': product,
-                    'is_custom': is_custom,
-                    'quantity': quantity,
-                    'unit_price': base_price,
-                    'line_base_total': base_price * quantity,
-                    'discount_percent': 0,
-                    'discount_amount': 0,
-                    'taxable_amount': base_price * quantity,
-                    'gst_rate': gst_rate,
-                    'cgst_rate': gst_rate / 2,
-                    'sgst_rate': gst_rate / 2,
-                    'cgst_amount': 0,
-                    'sgst_amount': 0,
-                    'total_gst': 0,
-                    'final_total': float(item.total_price),
-                    'mode': gst_mode,
-                    'hsn_code': hsn_code
-                }
-                bill_items_data.append(item_data)
+            else:
+                # Calculate for old bills (backward compatibility)
+                discount_percent = 0  # Old bills don't have discount data
+                
+                try:
+                    from app.utils.gst import calc_line
+                    gst_calc = calc_line(
+                        price=base_price,
+                        qty=quantity,
+                        gst_rate=gst_rate,
+                        discount_percent=discount_percent,
+                        mode=gst_mode
+                    )
+                    
+                    # Prepare item data for template with all GST details
+                    item_data = {
+                        'product': product,
+                        'is_custom': is_custom,
+                        'quantity': quantity,
+                        'unit_price': base_price,
+                        'unit_price_base': float(gst_calc['unit_price_base']),
+                        'line_base_total': float(gst_calc['line_base_total']),
+                        'discount_percent': discount_percent,
+                        'discount_amount': float(gst_calc['discount_amount']),
+                        'taxable_amount': float(gst_calc['taxable_amount']),
+                        'gst_rate': float(gst_calc['gst_rate']),
+                        'cgst_rate': float(gst_calc['cgst_rate']),
+                        'sgst_rate': float(gst_calc['sgst_rate']),
+                        'cgst_amount': float(gst_calc['cgst_amount']),
+                        'sgst_amount': float(gst_calc['sgst_amount']),
+                        'total_gst': float(gst_calc['total_gst']),
+                        'final_total': float(gst_calc['final_total']),
+                        'mode': gst_calc['mode'],
+                        'hsn_code': hsn_code
+                    }
+                    
+                    bill_items_data.append(item_data)
+                    calculated_items.append(gst_calc)
+                    
+                except Exception as e:
+                    current_app.logger.error(f"Error calculating GST for bill item {item.bill_item_id}: {str(e)}")
+                    # Fallback to simple display
+                    item_data = {
+                        'product': product,
+                        'is_custom': is_custom,
+                        'quantity': quantity,
+                        'unit_price': base_price,
+                        'line_base_total': base_price * quantity,
+                        'discount_percent': 0,
+                        'discount_amount': 0,
+                        'taxable_amount': base_price * quantity,
+                        'gst_rate': gst_rate,
+                        'cgst_rate': gst_rate / 2,
+                        'sgst_rate': gst_rate / 2,
+                        'cgst_amount': 0,
+                        'sgst_amount': 0,
+                        'total_gst': 0,
+                        'final_total': float(item.total_price),
+                        'mode': gst_mode,
+                        'hsn_code': hsn_code
+                    }
+                    bill_items_data.append(item_data)
         
         # Generate GST summary and totals using new engine
         if calculated_items:
+            from app.utils.gst import generate_gst_summary, calculate_bill_totals
             gst_summary = generate_gst_summary(calculated_items)
             bill_totals = calculate_bill_totals(calculated_items)
             
             # Convert summary for template (maintain backward compatibility)
             gst_summary_by_rate = {}
             for rate_str, summary_data in gst_summary.items():
-                rate_float = float(rate_str)
-                gst_summary_by_rate[rate_float] = {
+                gst_summary_by_rate[rate_str] = {
                     'taxable_amount': float(summary_data['taxable_amount']),
                     'cgst_amount': float(summary_data['cgst_amount']),
                     'sgst_amount': float(summary_data['sgst_amount']),
-                    'total_gst_amount': float(summary_data['total_gst'])
+                    'total_gst_amount': float(summary_data['total_gst']),
+                    'final_total': float(summary_data['final_total'])
                 }
             
             # Set totals
@@ -366,46 +497,143 @@ def register_routes(bp):
             base_price = float(item.price_per_unit)
             quantity = int(item.quantity)
             
-            # For viewing existing bills, assume discount = 0 unless stored elsewhere
-            discount_percent = 0  # You can extend this if discount is stored
+            # Check if we have stored discount data (new bills) or use default (old bills)
+            discount_percent = float(item.discount_percent or 0) if hasattr(item, 'discount_percent') and item.discount_percent is not None else 0
             
-            # Use new GST calculation engine
-            try:
-                gst_calc = calc_line(
-                    price=base_price,
-                    qty=quantity,
-                    gst_rate=gst_rate,
-                    discount_percent=discount_percent,
-                    mode=gst_mode
-                )
+            # Check if we have stored GST data (new bills) or need to calculate (old bills)
+            if hasattr(item, 'discount_percent') and item.discount_percent is not None and hasattr(item, 'taxable_amount') and item.taxable_amount is not None:
+                # Use stored calculations from new bills
+                discount_amount = float(item.discount_amount or 0)
+                taxable_amount = float(item.taxable_amount or 0)
+                cgst_amount = float(item.cgst_amount or 0)
+                sgst_amount = float(item.sgst_amount or 0)
+                total_gst = float(item.total_gst_amount or 0)
+                final_total = float(item.total_price)
                 
-                # Prepare item data for template with all GST details
-                item_data = {
-                    'product': product,
-                    'is_custom': is_custom,
-                    'quantity': quantity,
-                    'unit_price': base_price,
-                    'unit_price_base': float(gst_calc['unit_price_base']),
-                    'line_base_total': float(gst_calc['line_base_total']),
-                    'discount_percent': discount_percent,
-                    'discount_amount': float(gst_calc['discount_amount']),
-                    'taxable_amount': float(gst_calc['taxable_amount']),
-                    'gst_rate': float(gst_calc['gst_rate']),
-                    'cgst_rate': float(gst_calc['cgst_rate']),
-                    'sgst_rate': float(gst_calc['sgst_rate']),
-                    'cgst_amount': float(gst_calc['cgst_amount']),
-                    'sgst_amount': float(gst_calc['sgst_amount']),
-                    'total_gst': float(gst_calc['total_gst']),
-                    'final_total': float(gst_calc['final_total']),
-                    'mode': gst_calc['mode'],
-                    'hsn_code': hsn_code
-                }
+                # Prepare item data using stored values - handle Non-GST bills
+                if getattr(bill, 'gst_type', 'GST') == 'Non-GST':
+                    item_data = {
+                        'product': product,
+                        'is_custom': is_custom,
+                        'quantity': quantity,
+                        'unit_price': base_price,
+                        'discount_percent': discount_percent,
+                        'discount_amount': discount_amount,
+                        'taxable_amount': taxable_amount,
+                        'gst_rate': 0,
+                        'cgst_rate': 0,
+                        'sgst_rate': 0,
+                        'cgst_amount': 0,
+                        'sgst_amount': 0,
+                        'total_gst': 0,
+                        'final_total': final_total,
+                        'mode': 'Non-GST',
+                        'hsn_code': hsn_code
+                    }
+                else:
+                    item_data = {
+                        'product': product,
+                        'is_custom': is_custom,
+                        'quantity': quantity,
+                        'unit_price': base_price,
+                        'discount_percent': discount_percent,
+                        'discount_amount': discount_amount,
+                        'taxable_amount': taxable_amount,
+                        'gst_rate': gst_rate,
+                        'cgst_rate': gst_rate / 2,
+                        'sgst_rate': gst_rate / 2,
+                        'cgst_amount': cgst_amount,
+                        'sgst_amount': sgst_amount,
+                        'total_gst': total_gst,
+                        'final_total': final_total,
+                        'mode': gst_mode,
+                        'hsn_code': hsn_code
+                    }
+                
+                # Create gst_calc for summary generation - handle Non-GST bills
+                if getattr(bill, 'gst_type', 'GST') == 'Non-GST':
+                    gst_calc = {
+                        'taxable_amount': taxable_amount,
+                        'cgst_amount': 0,
+                        'sgst_amount': 0,
+                        'total_gst': 0,
+                        'final_total': final_total,
+                        'gst_rate': 0
+                    }
+                else:
+                    gst_calc = {
+                        'taxable_amount': taxable_amount,
+                        'cgst_amount': cgst_amount,
+                        'sgst_amount': sgst_amount,
+                        'total_gst': total_gst,
+                        'final_total': final_total,
+                        'gst_rate': gst_rate
+                    }
                 
                 bill_items_data.append(item_data)
                 calculated_items.append(gst_calc)
                 
-            except Exception as e:
-                current_app.logger.error(f"Error calculating GST for bill item {item.bill_item_id}: {str(e)}")
+            else:
+                # Calculate for old bills - check if Non-GST bill
+                try:
+                    if getattr(bill, 'gst_type', 'GST') == 'Non-GST':
+                        # Non-GST calculation: No GST, only quantity × price with discount
+                        line_total = base_price * quantity
+                        discount_amount = (line_total * discount_percent) / 100
+                        final_amount = line_total - discount_amount
+                        
+                        # Create Non-GST calculation result
+                        gst_calc = {
+                            'unit_price_base': base_price,
+                            'line_base_total': line_total,
+                            'discount_amount': discount_amount,
+                            'taxable_amount': final_amount,
+                            'gst_rate': 0,
+                            'cgst_rate': 0,
+                            'sgst_rate': 0,
+                            'cgst_amount': 0,
+                            'sgst_amount': 0,
+                            'total_gst': 0,
+                            'final_total': final_amount,
+                            'mode': 'Non-GST'
+                        }
+                    else:
+                        # Use GST calculation engine for GST bills
+                        gst_calc = calc_line(
+                            price=base_price,
+                            qty=quantity,
+                            gst_rate=gst_rate,
+                            discount_percent=discount_percent,
+                            mode=gst_mode
+                        )
+                    
+                    # Prepare item data for template with all GST details
+                    item_data = {
+                        'product': product,
+                        'is_custom': is_custom,
+                        'quantity': quantity,
+                        'unit_price': base_price,
+                        'unit_price_base': float(gst_calc['unit_price_base']),
+                        'line_base_total': float(gst_calc['line_base_total']),
+                        'discount_percent': discount_percent,
+                        'discount_amount': float(gst_calc['discount_amount']),
+                        'taxable_amount': float(gst_calc['taxable_amount']),
+                        'gst_rate': float(gst_calc['gst_rate']),
+                        'cgst_rate': float(gst_calc['cgst_rate']),
+                        'sgst_rate': float(gst_calc['sgst_rate']),
+                        'cgst_amount': float(gst_calc['cgst_amount']),
+                        'sgst_amount': float(gst_calc['sgst_amount']),
+                        'total_gst': float(gst_calc['total_gst']),
+                        'final_total': float(gst_calc['final_total']),
+                        'mode': gst_calc['mode'],
+                        'hsn_code': hsn_code
+                    }
+                    
+                    bill_items_data.append(item_data)
+                    calculated_items.append(gst_calc)
+                
+                except Exception as e:
+                    current_app.logger.error(f"Error calculating GST for bill item {item.bill_item_id}: {str(e)}")
                 # Fallback to simple display
                 item_data = {
                     'product': product,
@@ -525,15 +753,38 @@ def register_routes(bp):
             # For existing bills, assume discount = 0 unless stored elsewhere
             discount_percent = 0
             
-            # Use new GST calculation engine
+            # Check if this is a Non-GST bill
             try:
-                gst_calc = calc_line(
-                    price=base_price,
-                    qty=quantity,
-                    gst_rate=gst_rate,
-                    discount_percent=discount_percent,
-                    mode=gst_mode
-                )
+                if getattr(bill, 'gst_type', 'GST') == 'Non-GST':
+                    # Non-GST calculation: No GST, only quantity × price with discount
+                    line_total = base_price * quantity
+                    discount_amount = (line_total * discount_percent) / 100
+                    final_amount = line_total - discount_amount
+                    
+                    # Create Non-GST calculation result
+                    gst_calc = {
+                        'unit_price_base': base_price,
+                        'line_base_total': line_total,
+                        'discount_amount': discount_amount,
+                        'taxable_amount': final_amount,
+                        'gst_rate': 0,
+                        'cgst_rate': 0,
+                        'sgst_rate': 0,
+                        'cgst_amount': 0,
+                        'sgst_amount': 0,
+                        'total_gst': 0,
+                        'final_total': final_amount,
+                        'mode': 'Non-GST'
+                    }
+                else:
+                    # Use GST calculation engine for GST bills
+                    gst_calc = calc_line(
+                        price=base_price,
+                        qty=quantity,
+                        gst_rate=gst_rate,
+                        discount_percent=discount_percent,
+                        mode=gst_mode
+                    )
                 
                 # Prepare item data for template with all GST details
                 item_data = {
@@ -670,8 +921,20 @@ def register_routes(bp):
 
             # Get bill items data from dynamic form arrays
             product_ids = request.form.getlist('product_id[]')
+            product_names = request.form.getlist('product_name[]')  # For custom products
             quantities = request.form.getlist('quantity[]')
             unit_prices = request.form.getlist('unit_price[]')
+            discounts = request.form.getlist('discount_percent[]')  # New discount field
+            gst_rates_custom = request.form.getlist('gst_rate[]')  # Custom GST rates
+            hsn_codes = request.form.getlist('hsn_code[]')  # HSN codes
+            
+            # Get GST mode and bill type
+            gst_mode = request.form.get('gst_mode', getattr(bill, 'gst_mode', 'EXCLUSIVE')).upper()
+            bill_gst_type = request.form.get('bill_gst_type', getattr(bill, 'gst_type', 'GST'))
+            
+            # Update bill GST settings
+            bill.gst_mode = gst_mode
+            bill.gst_type = bill_gst_type
             
             # Validate form data
             if not product_ids or len(product_ids) != len(quantities) or len(quantities) != len(unit_prices):
@@ -691,20 +954,27 @@ def register_routes(bp):
 
             # Process new/updated items and calculate totals using GST engine
             calculated_items = []
-            gst_mode = getattr(bill, 'gst_mode', 'EXCLUSIVE') or 'EXCLUSIVE'
             
-            for i, (product_id, qty_str, price_str) in enumerate(zip(product_ids, quantities, unit_prices)):
+            for i in range(len(product_ids)):
                 try:
-                    quantity = int(qty_str)
-                    unit_price = float(price_str)
+                    product_id = product_ids[i] if i < len(product_ids) and product_ids[i] else None
+                    product_name = product_names[i] if i < len(product_names) else ''
+                    quantity = int(quantities[i])
+                    unit_price = float(unit_prices[i])
+                    discount_percent = float(discounts[i]) if i < len(discounts) and discounts[i] else 0
+                    custom_gst_rate = float(gst_rates_custom[i]) if i < len(gst_rates_custom) and gst_rates_custom[i] else 0
+                    hsn_code = hsn_codes[i] if i < len(hsn_codes) else ''
                     
                     if quantity <= 0 or unit_price < 0:
                         continue
                     
-                    # Get product details
-                    product = Product.query.get(product_id) if product_id else None
-                    
-                    if product:
+                    # Check if this is an existing product or custom product
+                    if product_id and product_id.strip():  # Existing product
+                        product = Product.query.get(product_id)
+                        if not product:
+                            flash(f'Product not found for item {i+1}', 'warning')
+                            continue
+                            
                         # Check stock availability
                         if product.stock_qty < quantity:
                             flash(f'Insufficient stock for {product.product_name}. Available: {product.stock_qty}', 'warning')
@@ -715,33 +985,91 @@ def register_routes(bp):
                         
                         # Use product GST rate
                         gst_rate = float(product.gst_rate or 0)
+                        hsn_code = getattr(product, 'hsn_code', '') or hsn_code
+                        is_custom_product = False
                         
-                        # Calculate using GST engine
+                    else:  # Custom product
+                        product = None
+                        gst_rate = custom_gst_rate
+                        is_custom_product = True
+                        
+                        # Skip if no product name for custom product
+                        if not product_name.strip():
+                            continue
+                    
+                    # Calculate using GST engine - check if Non-GST bill
+                    if bill_gst_type == 'Non-GST':
+                        # Non-GST calculation: No GST calculations needed
+                        line_total = unit_price * quantity
+                        discount_amount = (line_total * discount_percent) / 100
+                        final_amount = line_total - discount_amount
+                        
+                        gst_calc = {
+                            'unit_price_base': unit_price,
+                            'line_base_total': line_total,
+                            'discount_amount': discount_amount,
+                            'taxable_amount': final_amount,
+                            'gst_rate': 0,
+                            'cgst_rate': 0,
+                            'sgst_rate': 0,
+                            'cgst_amount': 0,
+                            'sgst_amount': 0,
+                            'total_gst': 0,
+                            'final_total': final_amount,
+                            'mode': 'Non-GST'
+                        }
+                    else:
+                        # GST calculation using GST engine
                         gst_calc = calc_line(
                             price=unit_price,
                             qty=quantity,
                             gst_rate=gst_rate,
-                            discount_percent=0,  # No discount in edit form
+                            discount_percent=discount_percent,
                             mode=gst_mode
                         )
-                        
-                        # Create new bill item
+                    
+                    # Create new bill item with all calculated values
+                    if is_custom_product:
+                        bill_item = BillItem(
+                            bill_id=bill.bill_id,
+                            product_id=None,
+                            custom_product_name=product_name.strip(),
+                            custom_gst_rate=gst_rate,
+                            custom_hsn_code=hsn_code,
+                            quantity=quantity,
+                            price_per_unit=unit_price,
+                            discount_percent=discount_percent,
+                            discount_amount=float(gst_calc['discount_amount']),
+                            taxable_amount=float(gst_calc['taxable_amount']),
+                            cgst_rate=float(gst_calc['cgst_rate']),
+                            sgst_rate=float(gst_calc['sgst_rate']),
+                            cgst_amount=float(gst_calc['cgst_amount']),
+                            sgst_amount=float(gst_calc['sgst_amount']),
+                            total_gst_amount=float(gst_calc['total_gst']),
+                            total_price=float(gst_calc['final_total'])
+                        )
+                    else:
                         bill_item = BillItem(
                             bill_id=bill.bill_id,
                             product_id=product_id,
-                            quantity=quantity,
-                            price_per_unit=unit_price,
-                            total_price=float(gst_calc['final_total']),
                             custom_product_name=None,
                             custom_gst_rate=None,
-                            custom_hsn_code=None
+                            custom_hsn_code=None,
+                            quantity=quantity,
+                            price_per_unit=unit_price,
+                            discount_percent=discount_percent,
+                            discount_amount=float(gst_calc['discount_amount']),
+                            taxable_amount=float(gst_calc['taxable_amount']),
+                            cgst_rate=float(gst_calc['cgst_rate']),
+                            sgst_rate=float(gst_calc['sgst_rate']),
+                            cgst_amount=float(gst_calc['cgst_amount']),
+                            sgst_amount=float(gst_calc['sgst_amount']),
+                            total_gst_amount=float(gst_calc['total_gst']),
+                            total_price=float(gst_calc['final_total'])
                         )
-                        db.session.add(bill_item)
-                        calculated_items.append(gst_calc)
-                        
-                    else:
-                        flash(f'Product not found for item {i+1}', 'warning')
-                        continue
+                    
+                    db.session.add(bill_item)
+                    calculated_items.append(gst_calc)
                         
                 except (ValueError, TypeError) as e:
                     flash(f'Invalid data for item {i+1}: {str(e)}', 'error')
@@ -757,6 +1085,16 @@ def register_routes(bp):
             else:
                 bill.total_amount = 0
                 bill.due_amount = 0
+            
+            # Update customer ledger entries if customer is linked
+            if bill.customer_id:
+                try:
+                    shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+                    CustomerLedgerService.update_ledger_entries_for_bill(bill, shopkeeper)
+                    current_app.logger.debug(f"Updated ledger entries for customer {bill.customer_id} on bill {bill.bill_number}")
+                except Exception as e:
+                    current_app.logger.error(f"Failed to update ledger entries: {str(e)}")
+                    flash('Bill updated but ledger update failed. Please check customer balance manually.', 'warning')
             
             # Commit all changes
             db.session.commit()
@@ -781,13 +1119,14 @@ def register_routes(bp):
             if bill.shopkeeper.user_id != current_user.user_id:
                 return jsonify({'success': False, 'message': 'Access denied.'}), 403
             
-            # Handle related CustomerLedger entries - set reference_bill_id to NULL
-            # This preserves the financial history while removing the bill reference
-            from app.models import CustomerLedger
-            related_ledger_entries = CustomerLedger.query.filter_by(reference_bill_id=bill_id).all()
-            for entry in related_ledger_entries:
-                entry.reference_bill_id = None
-                entry.particulars = f"{entry.particulars} (Bill #{bill.bill_number} - Deleted)"
+            # Clean up customer ledger entries if customer is linked
+            if bill.customer_id:
+                try:
+                    CustomerLedgerService.delete_ledger_entries_for_bill(bill_id, bill.customer_id)
+                    current_app.logger.debug(f"Cleaned up ledger entries for deleted bill {bill.bill_number}")
+                except Exception as e:
+                    current_app.logger.error(f"Failed to clean up ledger entries: {str(e)}")
+                    # Continue with deletion even if ledger cleanup fails
             
             # Delete the bill (BillItems will be deleted automatically due to cascade)
             db.session.delete(bill)
@@ -821,15 +1160,15 @@ def register_routes(bp):
         payment_status_form = request.form.get('payment_status', 'Paid')
         paid_amount_form = request.form.get('paid_amount', '0')
         
-        gst_mode = request.form.get('gst_mode', 'exclusive')
+        gst_mode = request.form.get('gst_mode', 'EXCLUSIVE').upper()
         bill_gst_type = request.form.get('bill_gst_type', 'GST')
-        bill_gst_rate = float(request.form.get('bill_gst_rate', 0))
         items = request.form.getlist('product_id')
         product_names = request.form.getlist('product_name')  # Get custom product names
         quantities = request.form.getlist('quantity')
         prices = request.form.getlist('price_per_unit')
-        discounts = request.form.getlist('discount')
+        discounts = request.form.getlist('discount')  # New discount field
         gst_rates_custom = request.form.getlist('gst_rate')  # Get custom GST rates
+        hsn_codes = request.form.getlist('hsn_code')  # HSN codes
         
         # Debug: Log the form data to identify duplication source
         current_app.logger.debug(f"Form data lengths - items:{len(items)}, names:{len(product_names)}, qty:{len(quantities)}, prices:{len(prices)}")
@@ -932,6 +1271,7 @@ def register_routes(bp):
             customer_gstin=customer_gstin,
             bill_date=bill_date,
             gst_type=bill_gst_type,
+            gst_mode=gst_mode,  # Add GST mode field
             total_amount=0,
             payment_status=payment_status,
             paid_amount=paid_amount,
@@ -977,18 +1317,41 @@ def register_routes(bp):
                     if not product_display_name:
                         continue
                 
-                # Use new GST calculation engine
-                # Determine GST mode (default to EXCLUSIVE for backward compatibility)
-                item_gst_mode = gst_mode.upper() if gst_mode else 'EXCLUSIVE'
-                
-                # Calculate using new GST engine
-                gst_calc = calc_line(
-                    price=price,
-                    qty=qty,
-                    gst_rate=gst_rate,
-                    discount_percent=discount,
-                    mode=item_gst_mode
-                )
+                # Check if this is a Non-GST bill
+                if bill_gst_type == 'Non-GST':
+                    # Non-GST calculation: No GST, only quantity × price with discount
+                    line_total = price * qty
+                    discount_amount = (line_total * discount) / 100
+                    final_amount = line_total - discount_amount
+                    
+                    # Create Non-GST calculation result
+                    gst_calc = {
+                        'unit_price_base': price,
+                        'line_base_total': line_total,
+                        'discount_amount': discount_amount,
+                        'taxable_amount': final_amount,
+                        'gst_rate': 0,
+                        'cgst_rate': 0,
+                        'sgst_rate': 0,
+                        'cgst_amount': 0,
+                        'sgst_amount': 0,
+                        'total_gst': 0,
+                        'final_total': final_amount,
+                        'mode': 'Non-GST'
+                    }
+                else:
+                    # Use GST calculation engine for GST bills
+                    # Determine GST mode (default to EXCLUSIVE for backward compatibility)
+                    item_gst_mode = gst_mode.upper() if gst_mode else 'EXCLUSIVE'
+                    
+                    # Calculate using new GST engine
+                    gst_calc = calc_line(
+                        price=price,
+                        qty=qty,
+                        gst_rate=gst_rate,
+                        discount_percent=discount,
+                        mode=item_gst_mode
+                    )
                 
                 # Update stock for existing products
                 if not is_custom_product and product:
@@ -997,7 +1360,7 @@ def register_routes(bp):
                     else:
                         current_app.logger.warning(f"Insufficient stock for product {product.product_name}. Available: {product.stock_qty}, Required: {qty}")
                 
-                # Create bill item with calculated values
+                # Create bill item with all calculated values
                 if is_custom_product:
                     bill_item = BillItem(
                         bill_id=bill.bill_id,
@@ -1007,6 +1370,14 @@ def register_routes(bp):
                         custom_hsn_code=hsn_code,
                         quantity=qty,
                         price_per_unit=price,
+                        discount_percent=discount,
+                        discount_amount=float(gst_calc['discount_amount']),
+                        taxable_amount=float(gst_calc['taxable_amount']),
+                        cgst_rate=float(gst_calc['cgst_rate']),
+                        sgst_rate=float(gst_calc['sgst_rate']),
+                        cgst_amount=float(gst_calc['cgst_amount']),
+                        sgst_amount=float(gst_calc['sgst_amount']),
+                        total_gst_amount=float(gst_calc['total_gst']),
                         total_price=float(gst_calc['final_total'])
                     )
                 else:
@@ -1018,6 +1389,14 @@ def register_routes(bp):
                         custom_hsn_code=None,
                         quantity=qty,
                         price_per_unit=price,
+                        discount_percent=discount,
+                        discount_amount=float(gst_calc['discount_amount']),
+                        taxable_amount=float(gst_calc['taxable_amount']),
+                        cgst_rate=float(gst_calc['cgst_rate']),
+                        sgst_rate=float(gst_calc['sgst_rate']),
+                        cgst_amount=float(gst_calc['cgst_amount']),
+                        sgst_amount=float(gst_calc['sgst_amount']),
+                        total_gst_amount=float(gst_calc['total_gst']),
                         total_price=float(gst_calc['final_total'])
                     )
                 
@@ -1137,7 +1516,7 @@ def register_routes(bp):
             'total_gst_amount': total_gst_amount,
             'gst_mode': gst_mode,
             'bill_gst_type': bill_gst_type,
-            'bill_gst_rate': bill_gst_rate,
+
             'amount_paid': paid_amount,
             'amount_unpaid': due_amount,
             'payment_status': payment_status
@@ -1154,62 +1533,14 @@ def register_routes(bp):
         #     f.write(rendered)
         # bill.pdf_file_path = f'static/bills/{filename}'
         
-        # Create ledger entry for customers with unpaid/partial amounts (existing OR newly created)
-        # Add logging to help debug missing ledger entries
-        if bill.customer_id and (payment_status == 'Unpaid' or payment_status == 'Partial'):
+        # Create comprehensive ledger entries for all customer bills (PAID, PARTIAL, UNPAID)
+        if bill.customer_id:  # Customer is linked to bill
             try:
-                current_app.logger.debug(f"Preparing ledger entries: bill_id={bill.bill_id}, customer_id={bill.customer_id}, payment_status={payment_status}, paid_amount={paid_amount}, overall_total={overall_grand_total}")
-                customer = Customer.query.get(bill.customer_id)
-                if customer:
-                    # Calculate debit and credit amounts
-                    debit_amount = Decimal(str(overall_grand_total))  # Total bill amount (purchase)
-                    credit_amount = Decimal(str(paid_amount))  # Amount paid
-
-                    # Calculate new balance
-                    current_balance = customer.total_balance or Decimal('0')
-                    new_balance = current_balance + debit_amount - credit_amount
-
-                    # Create purchase ledger entry
-                    purchase_entry = CustomerLedger(
-                        customer_id=customer.customer_id,
-                        shopkeeper_id=shopkeeper.user_id,
-                        invoice_no=bill_number,
-                        particulars=f"Bill Purchase - {bill_number}",
-                        debit_amount=debit_amount,
-                        credit_amount=0,
-                        balance_amount=current_balance + debit_amount,
-                        transaction_type='PURCHASE',
-                        reference_bill_id=bill.bill_id,
-                        notes=f"Products purchased via bill {bill_number}"
-                    )
-                    db.session.add(purchase_entry)
-
-                    # If there's a payment, create payment entry
-                    if credit_amount > 0:
-                        payment_entry = CustomerLedger(
-                            customer_id=customer.customer_id,
-                            shopkeeper_id=shopkeeper.user_id,
-                            invoice_no=f"PAY-{bill_number}",
-                            particulars=f"Payment for Bill {bill_number}",
-                            debit_amount=0,
-                            credit_amount=credit_amount,
-                            balance_amount=new_balance,
-                            transaction_type='PAYMENT',
-                            reference_bill_id=bill.bill_id,
-                            notes=f"Partial payment for bill {bill_number}"
-                        )
-                        db.session.add(payment_entry)
-
-                    # Update customer balance
-                    customer.total_balance = new_balance
-                    customer.updated_date = datetime.datetime.now()
-                    current_app.logger.debug(f"Ledger entries created for customer_id={customer.customer_id}, new_balance={new_balance}")
-                else:
-                    current_app.logger.warning(f"Bill has customer_id={bill.customer_id} but no customer found in DB.")
-
-            except Exception:
-                current_app.logger.exception("Error creating ledger entry")
-                # Don't fail the bill creation if ledger entry fails
+                CustomerLedgerService.create_ledger_entries_for_bill(bill, shopkeeper)
+                current_app.logger.debug(f"Created ledger entries for customer {bill.customer_id} on bill {bill.bill_number}")
+            except Exception as e:
+                current_app.logger.error(f"Failed to create ledger entries: {str(e)}")
+                # Don't fail bill creation if ledger fails
                 pass
         
         # Add appropriate flash messages based on customer creation outcome

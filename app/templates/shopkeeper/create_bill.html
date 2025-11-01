@@ -222,31 +222,7 @@
                 </div>
             </div>
 
-            <!-- Payment Status for Existing Customers -->
-            <div id="payment-status-section" class="hidden mt-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <label class="flex items-center">
-                        <input type="radio" name="payment_status" value="Paid" class="mr-2" checked>
-                        <span class="text-sm">Paid</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="radio" name="payment_status" value="Partial" class="mr-2">
-                        <span class="text-sm">Partial Payment</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="radio" name="payment_status" value="Unpaid" class="mr-2">
-                        <span class="text-sm">Credit (Unpaid)</span>
-                    </label>
-                </div>
-                
-                <div id="partial-payment-section" class="hidden mt-3">
-                    <label for="paid_amount" class="block text-sm font-medium text-gray-700 mb-2">Amount Paid</label>
-                    <input type="number" name="paid_amount" id="paid_amount" step="0.01" min="0"
-                           placeholder="Enter amount paid"
-                           class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
-                </div>
-            </div>
+
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div>
@@ -341,14 +317,76 @@
         <!-- Bill Summary Section -->
         <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200">
             <div class="flex items-center mb-4">
-                <i data-feather="calculator" class="w-5 h-5 text-[#ed6a3e] mr-2"></i>
+                <i data-feather="book-open" class="w-5 h-5 text-[#ed6a3e] mr-2"></i>
                 <h2 class="text-lg md:text-xl font-bold text-gray-800">Bill Summary</h2>
             </div>
             
             <div class="flex flex-col xl:flex-row gap-6">
-                <!-- Payment Details -->
-                <div class="flex-1 space-y-4">
-                    <!-- Payment details section removed - now using radio buttons only -->
+                <!-- Payment Status Section (for existing customers) -->
+                <div class="flex-1">
+                    <div id="payment-status-section" class="hidden">
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center mb-3">
+                                <i data-feather="credit-card" class="w-5 h-5 text-blue-600 mr-2"></i>
+                                <label class="block text-sm font-semibold text-blue-800">Payment Status</label>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                                <label class="flex items-center p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-green-300 transition-colors cursor-pointer">
+                                    <input type="radio" name="payment_status" value="Paid" class="sr-only" checked>
+                                    <div class="flex items-center w-full">
+                                        <div class="w-4 h-4 rounded-full border-2 border-green-500 bg-green-500 mr-3 flex items-center justify-center">
+                                            <div class="w-2 h-2 rounded-full bg-white"></div>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i data-feather="check-circle" class="w-4 h-4 text-green-600 mr-2"></i>
+                                            <span class="text-sm font-medium text-gray-700">Full Payment</span>
+                                        </div>
+                                    </div>
+                                </label>
+                                
+                                <label class="flex items-center p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-yellow-300 transition-colors cursor-pointer">
+                                    <input type="radio" name="payment_status" value="Partial" class="sr-only">
+                                    <div class="flex items-center w-full">
+                                        <div class="w-4 h-4 rounded-full border-2 border-yellow-500 bg-yellow-500 mr-3 flex items-center justify-center">
+                                            <div class="w-2 h-2 rounded-full bg-white"></div>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i data-feather="minus-circle" class="w-4 h-4 text-yellow-600 mr-2"></i>
+                                            <span class="text-sm font-medium text-gray-700">Partial Payment</span>
+                                        </div>
+                                    </div>
+                                </label>
+                                
+                                <label class="flex items-center p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-red-300 transition-colors cursor-pointer">
+                                    <input type="radio" name="payment_status" value="Unpaid" class="sr-only">
+                                    <div class="flex items-center w-full">
+                                        <div class="w-4 h-4 rounded-full border-2 border-red-500 bg-red-500 mr-3 flex items-center justify-center">
+                                            <div class="w-2 h-2 rounded-full bg-white"></div>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i data-feather="x-circle" class="w-4 h-4 text-red-600 mr-2"></i>
+                                            <span class="text-sm font-medium text-gray-700">Credit (Unpaid)</span>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <div id="partial-payment-section" class="hidden">
+                                <label for="paid_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i data-feather="dollar-sign" class="w-4 h-4 inline mr-1"></i>
+                                    Amount Paid
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
+                                    <input type="number" name="paid_amount" id="paid_amount" step="0.01" min="0"
+                                           placeholder="Enter amount paid"
+                                           class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Total Summary -->
                 <div class="xl:w-80">
@@ -376,7 +414,7 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200">
+        <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-200 mt-8">
             <div class="flex flex-col sm:flex-row gap-3 md:gap-4">
                 <button type="submit" name="action" value="save"
                         class="flex-1 bg-[#ed6a3e] text-white px-4 md:px-6 py-3 rounded-lg shadow hover:bg-orange-700 transition duration-300 flex items-center justify-center text-sm md:text-base font-medium">
@@ -464,9 +502,12 @@
         billGstType.addEventListener('change', updateGSTSectionVisibility);
         // Removed billStatus and amountPaidInput listeners - using radio buttons only
 
-        // Add listeners for payment status radio buttons
+        // Add listeners for payment status radio buttons with custom styling
         paymentStatusRadios.forEach(radio => {
             radio.addEventListener('change', function() {
+                // Update visual state of radio buttons
+                updatePaymentRadioVisual(this);
+                
                 // Show/hide partial payment section for radio buttons
                 if (this.value === 'Partial') {
                     partialPaymentSection.classList.remove('hidden');
@@ -520,6 +561,43 @@
 
     // Initialize feather icons
     setTimeout(() => feather.replace(), 100);
+
+    // Payment radio visual update function
+    function updatePaymentRadioVisual(selectedRadio) {
+        // Reset all radio button visuals
+        document.querySelectorAll('input[name="payment_status"]').forEach(radio => {
+            const label = radio.closest('label');
+            const radioCircle = label.querySelector('div > div');
+            
+            if (radio.checked) {
+                // Selected state
+                label.classList.remove('border-gray-200');
+                if (radio.value === 'Paid') {
+                    label.classList.add('border-green-300', 'bg-green-50');
+                    radioCircle.classList.remove('border-gray-300');
+                    radioCircle.classList.add('border-green-500', 'bg-green-500');
+                    radioCircle.innerHTML = '<div class="w-2 h-2 rounded-full bg-white"></div>';
+                } else if (radio.value === 'Partial') {
+                    label.classList.add('border-yellow-300', 'bg-yellow-50');
+                    radioCircle.classList.remove('border-gray-300');
+                    radioCircle.classList.add('border-yellow-500', 'bg-yellow-500');
+                    radioCircle.innerHTML = '<div class="w-2 h-2 rounded-full bg-white"></div>';
+                } else {
+                    label.classList.add('border-red-300', 'bg-red-50');
+                    radioCircle.classList.remove('border-gray-300');
+                    radioCircle.classList.add('border-red-500', 'bg-red-500');
+                    radioCircle.innerHTML = '<div class="w-2 h-2 rounded-full bg-white"></div>';
+                }
+            } else {
+                // Unselected state
+                label.classList.remove('border-green-300', 'bg-green-50', 'border-yellow-300', 'bg-yellow-50', 'border-red-300', 'bg-red-50');
+                label.classList.add('border-gray-200');
+                radioCircle.classList.remove('border-green-500', 'bg-green-500', 'border-yellow-500', 'bg-yellow-500', 'border-red-500', 'bg-red-500');
+                radioCircle.classList.add('border-gray-300');
+                radioCircle.innerHTML = '';
+            }
+        });
+    }
 
     // Customer management functions
     let customersData = [];
@@ -831,6 +909,12 @@
     document.addEventListener('DOMContentLoaded', function() {
         loadCustomers();
         feather.replace();
+        
+        // Initialize payment radio visuals
+        const defaultRadio = document.querySelector('input[name="payment_status"]:checked');
+        if (defaultRadio) {
+            updatePaymentRadioVisual(defaultRadio);
+        }
         
         // Add event listener for save-as-customer checkbox
         const saveAsCustomerCheckbox = document.getElementById('save_as_customer');

@@ -38,6 +38,12 @@
             border: 1px solid #a7f3d0;
             font-weight: 600;
         }
+        .gst-column {
+            transition: all 0.3s ease;
+        }
+        .hide-gst .gst-column {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -123,12 +129,32 @@
                 </div>
             </div>
 
+            <!-- Bill Configuration Section -->
+            <div class="mb-6 p-4 border rounded bg-yellow-50">
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <label class="block font-semibold mb-1">GST Type:</label>
+                        <select name="bill_gst_type" class="editable-field w-full" onchange="onBillGstTypeChange()">
+                            <option value="GST" {{ 'selected' if bill.gst_type == 'GST' else '' }}>GST Bill</option>
+                            <option value="Non-GST" {{ 'selected' if bill.gst_type == 'Non-GST' else '' }}>Non-GST Bill</option>
+                        </select>
+                    </div>
+                    <div id="gstModeSection">
+                        <label class="block font-semibold mb-1">GST Mode:</label>
+                        <select name="gst_mode" id="gstModeSelect" class="editable-field w-full" onchange="updateAllRowTotals()">
+                            <option value="EXCLUSIVE" {{ 'selected' if bill.gst_mode == 'EXCLUSIVE' else '' }}>Exclusive (Price + GST)</option>
+                            <option value="INCLUSIVE" {{ 'selected' if bill.gst_mode == 'INCLUSIVE' else '' }}>Inclusive (Price includes GST)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <!-- Payment Status Section -->
             <div class="mb-6 p-4 border rounded bg-blue-50">
                 <div class="grid grid-cols-3 gap-4 text-sm">
                     <div>
                         <label class="block font-semibold mb-1">Payment Status:</label>
-                        <select name="payment_status" class="editable-field w-full" onchange="updatePaymentFields()">
+                        <select name="payment_status" class="editable-field w-full" onchange="onPaymentStatusChange()">
                             <option value="Paid" {{ 'selected' if bill.payment_status == 'Paid' else '' }}>Paid</option>
                             <option value="Partial" {{ 'selected' if bill.payment_status == 'Partial' else '' }}>Partial</option>
                             <option value="Unpaid" {{ 'selected' if bill.payment_status == 'Unpaid' else '' }}>Unpaid</option>
@@ -137,11 +163,11 @@
                     <div>
                         <label class="block font-semibold mb-1">Paid Amount:</label>
                         <input type="number" name="paid_amount" value="{{ bill.paid_amount|round(2) }}" 
-                               step="0.01" min="0" class="editable-field w-full" onchange="updatePaymentFields()">
+                               step="0.01" min="0" class="editable-field w-full" onchange="onPaidAmountChange()">
                     </div>
                     <div>
                         <label class="block font-semibold mb-1">Due Amount:</label>
-                        <input type="number" name="due_amount" value="{{ bill.due_amount|round(2) }}" 
+                        <input type="number" name="due_amount" id="dueAmountInput" value="{{ bill.due_amount|round(2) }}" 
                                step="0.01" min="0" class="readonly-field w-full" readonly>
                     </div>
                 </div>
@@ -153,14 +179,15 @@
                 <table class="w-full border text-sm text-left" id="itemsTable">
                     <thead class="bg-orange-100 text-orange-700">
                         <tr>
-                            <th class="p-2 border">Item</th>
+                            <th class="p-2 min-w-36 border">Item</th>
                             <th class="p-2 border">HSN Code</th>
                             <th class="p-2 border text-right">Quantity</th>
                             <th class="p-2 border text-right">Unit Price</th>
                             <th class="p-2 border text-right">Discount %</th>
                             <th class="p-2 border text-right">Discounted Price</th>
-                            <th class="p-2 border text-center" colspan="2">SGST/UTGST</th>
-                            <th class="p-2 border text-center" colspan="2">CGST</th>
+                            <th class="p-2 border text-right gst-column">GST Rate %</th>
+                            <th class="p-2 border text-center gst-column" colspan="2">SGST/UTGST</th>
+                            <th class="p-2 border text-center gst-column" colspan="2">CGST</th>
                             <th class="p-2 border text-right">Sub Total</th>
                             <th class="p-2 border text-center">Action</th>
                         </tr>
@@ -171,10 +198,11 @@
                             <th class="p-2 border text-right"></th>
                             <th class="p-2 border text-right"></th>
                             <th class="p-2 border text-right"></th>
-                            <th class="p-2 border text-right">Rate (%)</th>
-                            <th class="p-2 border text-right">Amt</th>
-                            <th class="p-2 border text-right">Rate (%)</th>
-                            <th class="p-2 border text-right">Amt</th>
+                            <th class="p-2 border text-right gst-column"></th>
+                            <th class="p-2 border text-right gst-column">Rate (%)</th>
+                            <th class="p-2 border text-right gst-column">Amt</th>
+                            <th class="p-2 border text-right gst-column">Rate (%)</th>
+                            <th class="p-2 border text-right gst-column">Amt</th>
                             <th class="p-2 border text-right"></th>
                             <th class="p-2 border text-center"></th>
                         </tr>
@@ -187,7 +215,7 @@
                                        class="editable-field w-full" onchange="updateRowTotals(this)">
                                 <input type="hidden" name="product_id[]" value="{{ item_data.product.product_id if not item_data.is_custom else '' }}">
                             </td>
-                            <td class="p-2 border">
+                            <td class="p-2 min-w-20 border">
                                 <input type="text" name="hsn_code[]" value="{{ item_data.hsn_code }}" 
                                        class="editable-field w-full" onchange="updateRowTotals(this)">
                             </td>
@@ -206,17 +234,20 @@
                             <td class="p-2 border text-right">
                                 <span class="calculated-field inline-block px-2 py-1 rounded taxable-amount">₹{{ item_data.taxable_amount|round(2) }}</span>
                             </td>
-                            <td class="p-2 border text-right">
-                                <input type="number" name="gst_rate[]" value="{{ item_data.sgst_rate|round(2) }}" 
-                                       step="0.01" min="0" max="50" class="editable-field w-16 text-right" onchange="updateRowTotals(this)">
+                            <td class="p-2 border text-right gst-column">
+                                <input type="number" name="gst_rate[]" value="{{ item_data.gst_rate|round(2) }}" 
+                                       step="0.01" min="0" max="100" class="editable-field w-16 text-right" onchange="updateRowTotals(this)">
                             </td>
-                            <td class="p-2 border text-right">
+                            <td class="p-2 border text-right gst-column">
+                                <span class="calculated-field inline-block px-2 py-1 rounded sgst-rate">{{ (item_data.sgst_rate)|round(2) }}</span>
+                            </td>
+                            <td class="p-2 border text-right gst-column">
                                 <span class="calculated-field inline-block px-2 py-1 rounded sgst-amount">₹{{ item_data.sgst_amount|round(2) }}</span>
                             </td>
-                            <td class="p-2 border text-right">
+                            <td class="p-2 border text-right gst-column">
                                 <span class="calculated-field inline-block px-2 py-1 rounded cgst-rate">{{ item_data.cgst_rate|round(2) }}</span>
                             </td>
-                            <td class="p-2 border text-right">
+                            <td class="p-2 border text-right gst-column">
                                 <span class="calculated-field inline-block px-2 py-1 rounded cgst-amount">₹{{ item_data.cgst_amount|round(2) }}</span>
                             </td>
                             <td class="p-2 border text-right">
@@ -245,10 +276,10 @@
                 <thead class="bg-gray-100">
                     <tr>
                         <th class="p-2 border">Total Taxable Amount</th>
-                        <th class="p-2 border">GST Rate</th>
-                        <th class="p-2 border">CGST</th>
-                        <th class="p-2 border">SGST</th>
-                        <th class="p-2 border">Total GST</th>
+                        <th class="p-2 border gst-column">GST Rate</th>
+                        <th class="p-2 border gst-column">CGST</th>
+                        <th class="p-2 border gst-column">SGST</th>
+                        <th class="p-2 border gst-column">Total GST</th>
                         <th class="p-2 border">Grand Total</th>
                     </tr>
                 </thead>
@@ -256,20 +287,20 @@
                     {% for gst_rate, summary in gst_summary_by_rate.items() %}
                     <tr data-gst-rate="{{ gst_rate }}">
                         <td class="p-2 border summary-taxable">₹{{ summary.taxable_amount|round(2) }}</td>
-                        <td class="p-2 border">{{ gst_rate }}%</td>
-                        <td class="p-2 border summary-cgst">₹{{ summary.cgst_amount|round(2) }}</td>
-                        <td class="p-2 border summary-sgst">₹{{ summary.sgst_amount|round(2) }}</td>
-                        <td class="p-2 border summary-total-gst">₹{{ summary.total_gst_amount|round(2) }}</td>
+                        <td class="p-2 border gst-column">{{ gst_rate }}%</td>
+                        <td class="p-2 border gst-column summary-cgst">₹{{ summary.cgst_amount|round(2) }}</td>
+                        <td class="p-2 border gst-column summary-sgst">₹{{ summary.sgst_amount|round(2) }}</td>
+                        <td class="p-2 border gst-column summary-total-gst">₹{{ summary.total_gst_amount|round(2) }}</td>
                         <td class="p-2 border"></td>
                     </tr>
                     {% endfor %}
                     <!-- Grand Total Row -->
                     <tr class="bg-gray-50 font-bold">
                         <td class="p-2 border" id="grandTaxableAmount">₹{{ total_taxable_amount|round(2) }}</td>
-                        <td class="p-2 border"></td>
-                        <td class="p-2 border" id="grandCGSTAmount">₹{{ total_cgst_amount|round(2) }}</td>
-                        <td class="p-2 border" id="grandSGSTAmount">₹{{ total_sgst_amount|round(2) }}</td>
-                        <td class="p-2 border" id="grandGSTAmount">₹{{ total_gst_amount|round(2) }}</td>
+                        <td class="p-2 border gst-column"></td>
+                        <td class="p-2 border gst-column" id="grandCGSTAmount">₹{{ total_cgst_amount|round(2) }}</td>
+                        <td class="p-2 border gst-column" id="grandSGSTAmount">₹{{ total_sgst_amount|round(2) }}</td>
+                        <td class="p-2 border gst-column" id="grandGSTAmount">₹{{ total_gst_amount|round(2) }}</td>
                         <td class="p-2 border font-bold text-right" id="grandTotalAmount">₹{{ overall_grand_total|round(2) }}</td>
                     </tr>
                 </tbody>
@@ -305,24 +336,91 @@
             const discountPercent = parseFloat(row.querySelector('input[name="discount_percent[]"]').value) || 0;
             const gstRate = parseFloat(row.querySelector('input[name="gst_rate[]"]').value) || 0;
 
-            // Calculate line totals
-            const lineTotal = quantity * unitPrice;
-            const discountAmount = (lineTotal * discountPercent) / 100;
-            const taxableAmount = lineTotal - discountAmount;
+            // Get GST mode and bill type from form selectors
+            const gstMode = document.getElementById('gstModeSelect').value || 'EXCLUSIVE';
+            const billGstType = document.querySelector('select[name="bill_gst_type"]').value;
             
-            // Calculate GST amounts (split between CGST and SGST)
-            const sgstRate = gstRate / 2;
-            const cgstRate = gstRate / 2;
-            const sgstAmount = (taxableAmount * sgstRate) / 100;
-            const cgstAmount = (taxableAmount * cgstRate) / 100;
-            const finalTotal = taxableAmount + sgstAmount + cgstAmount;
+            let lineBaseTotal, taxableAmount, finalTotal;
+            
+            // Handle Non-GST bills first
+            if (billGstType === 'Non-GST') {
+                // For Non-GST bills, ignore GST calculations entirely
+                lineBaseTotal = unitPrice * quantity;
+                const discountAmount = (lineBaseTotal * discountPercent) / 100;
+                taxableAmount = lineBaseTotal - discountAmount;
+                finalTotal = taxableAmount; // No GST added
+                
+                // Update displayed values for Non-GST
+                row.querySelector('.taxable-amount').textContent = '₹' + taxableAmount.toFixed(2);
+                row.querySelector('.sgst-rate').textContent = '0.00';
+                row.querySelector('.sgst-amount').textContent = '₹0.00';
+                row.querySelector('.cgst-rate').textContent = '0.00';
+                row.querySelector('.cgst-amount').textContent = '₹0.00';
+                row.querySelector('.final-total').textContent = '₹' + finalTotal.toFixed(2);
+                
+                console.log(`Non-GST calculation - Price: ${unitPrice}, Qty: ${quantity}, Discount: ${discountPercent}%`);
+                console.log(`Result - Taxable: ₹${taxableAmount.toFixed(2)}, Final: ₹${finalTotal.toFixed(2)}`);
+                
+                updateBillTotals();
+                return;
+            }
+            
+            // GST Bill calculations
+            if (gstMode.toUpperCase() === 'INCLUSIVE') {
+                // INCLUSIVE Mode: Following user's exact formula
+                // 1. Total Price (incl. GST) = Price × Quantity
+                const totalPriceInclGST = unitPrice * quantity;
+                
+                // 2. Base Price = Total Price ÷ (1 + GST/100)
+                if (gstRate === 0) {
+                    lineBaseTotal = totalPriceInclGST;
+                } else {
+                    const divisor = 1 + (gstRate / 100);
+                    lineBaseTotal = totalPriceInclGST / divisor;
+                }
+                
+                // 3. Discount = Base Price × (Discount% / 100)
+                const discountAmount = (lineBaseTotal * discountPercent) / 100;
+                
+                // 4. Taxable Amount = Base Price - Discount
+                taxableAmount = lineBaseTotal - discountAmount;
+                
+            } else {
+                // EXCLUSIVE Mode: Following user's exact formula
+                // 1. Base Price = Price × Quantity
+                lineBaseTotal = unitPrice * quantity;
+                
+                // 2. Discount = Base Price × (Discount% / 100)
+                const discountAmount = (lineBaseTotal * discountPercent) / 100;
+                
+                // 3. Taxable Amount = Base Price - Discount
+                taxableAmount = lineBaseTotal - discountAmount;
+            }
+            
+            // 5. Calculate GST on Taxable Amount (same for both modes)
+            let sgstAmount = 0, cgstAmount = 0, totalGST = 0;
+            
+            if (gstRate > 0) {
+                // Split GST equally between CGST and SGST (intra-state model)
+                const halfRate = gstRate / 2;
+                sgstAmount = (taxableAmount * halfRate) / 100;
+                cgstAmount = (taxableAmount * halfRate) / 100;
+                totalGST = sgstAmount + cgstAmount;
+            }
+            
+            // 6. Final Price = Taxable Amount + GST
+            finalTotal = taxableAmount + totalGST;
 
-            // Update displayed values
+            // Update displayed values with proper rounding
             row.querySelector('.taxable-amount').textContent = '₹' + taxableAmount.toFixed(2);
+            row.querySelector('.sgst-rate').textContent = (gstRate / 2).toFixed(2);
             row.querySelector('.sgst-amount').textContent = '₹' + sgstAmount.toFixed(2);
-            row.querySelector('.cgst-rate').textContent = cgstRate.toFixed(2);
+            row.querySelector('.cgst-rate').textContent = (gstRate / 2).toFixed(2);
             row.querySelector('.cgst-amount').textContent = '₹' + cgstAmount.toFixed(2);
             row.querySelector('.final-total').textContent = '₹' + finalTotal.toFixed(2);
+
+            console.log(`Row calculation - Mode: ${gstMode}, Price: ${unitPrice}, Qty: ${quantity}, Discount: ${discountPercent}%, GST: ${gstRate}%`);
+            console.log(`Result - Taxable: ₹${taxableAmount.toFixed(2)}, GST: ₹${totalGST.toFixed(2)}, Final: ₹${finalTotal.toFixed(2)}`);
 
             // Update bill totals
             updateBillTotals();
@@ -371,20 +469,58 @@
         function updatePaymentFields() {
             const grandTotal = parseFloat(document.getElementById('hiddenGrandTotal').value) || 0;
             const paidAmount = parseFloat(document.querySelector('input[name="paid_amount"]').value) || 0;
-            const dueAmount = grandTotal - paidAmount;
+            const paymentStatus = document.querySelector('select[name="payment_status"]').value;
+            const dueAmountInput = document.getElementById('dueAmountInput');
 
-            document.querySelector('input[name="due_amount"]').value = Math.max(0, dueAmount).toFixed(2);
+            // For Partial status, due amount is always readonly and calculated automatically
+            // Only paid amount is editable in Partial status
+            dueAmountInput.classList.remove('editable-field');
+            dueAmountInput.classList.add('readonly-field');
+            dueAmountInput.setAttribute('readonly', true);
 
-            // Update payment status automatically
-            const paymentStatusSelect = document.querySelector('select[name="payment_status"]');
-            if (paidAmount >= grandTotal) {
-                paymentStatusSelect.value = 'Paid';
-            } else if (paidAmount > 0) {
-                paymentStatusSelect.value = 'Partial';
+            // Calculate due amount based on payment status
+            let dueAmount;
+            if (paymentStatus === 'Paid') {
+                // Paid: paid amount = grand total, due = 0
+                document.querySelector('input[name="paid_amount"]').value = grandTotal.toFixed(2);
+                dueAmount = 0;
+            } else if (paymentStatus === 'Unpaid') {
+                // Unpaid: paid amount = 0, due = grand total
+                document.querySelector('input[name="paid_amount"]').value = '0.00';
+                dueAmount = grandTotal;
             } else {
-                paymentStatusSelect.value = 'Unpaid';
+                // Partial: due amount = grand total - paid amount (automatic calculation)
+                dueAmount = grandTotal - paidAmount;
             }
+
+            dueAmountInput.value = Math.max(0, dueAmount).toFixed(2);
+
+            console.log(`Payment Update - Status: ${paymentStatus}, Grand Total: ₹${grandTotal}, Paid: ₹${paidAmount}, Due: ₹${dueAmount}`);
         }
+
+        function onPaymentStatusChange() {
+            updatePaymentFields();
+        }
+
+        function onPaidAmountChange() {
+            const paymentStatus = document.querySelector('select[name="payment_status"]').value;
+            if (paymentStatus !== 'Partial') {
+                // Auto-update payment status based on paid amount
+                const grandTotal = parseFloat(document.getElementById('hiddenGrandTotal').value) || 0;
+                const paidAmount = parseFloat(document.querySelector('input[name="paid_amount"]').value) || 0;
+                
+                if (paidAmount >= grandTotal) {
+                    document.querySelector('select[name="payment_status"]').value = 'Paid';
+                } else if (paidAmount > 0) {
+                    document.querySelector('select[name="payment_status"]').value = 'Partial';
+                } else {
+                    document.querySelector('select[name="payment_status"]').value = 'Unpaid';
+                }
+            }
+            updatePaymentFields();
+        }
+
+
 
         function removeRow(button) {
             if (document.querySelectorAll('.item-row').length > 1) {
@@ -428,17 +564,20 @@
                 <td class="p-2 border text-right">
                     <span class="calculated-field inline-block px-2 py-1 rounded taxable-amount">₹0.00</span>
                 </td>
-                <td class="p-2 border text-right">
+                <td class="p-2 border text-right gst-column">
                     <input type="number" name="gst_rate[]" value="18" 
-                           step="0.01" min="0" max="50" class="editable-field w-16 text-right" onchange="updateRowTotals(this)">
+                           step="0.01" min="0" max="100" class="editable-field w-16 text-right" onchange="updateRowTotals(this)">
                 </td>
-                <td class="p-2 border text-right">
+                <td class="p-2 border text-right gst-column">
+                    <span class="calculated-field inline-block px-2 py-1 rounded sgst-rate">9.00</span>
+                </td>
+                <td class="p-2 border text-right gst-column">
                     <span class="calculated-field inline-block px-2 py-1 rounded sgst-amount">₹0.00</span>
                 </td>
-                <td class="p-2 border text-right">
+                <td class="p-2 border text-right gst-column">
                     <span class="calculated-field inline-block px-2 py-1 rounded cgst-rate">9.00</span>
                 </td>
-                <td class="p-2 border text-right">
+                <td class="p-2 border text-right gst-column">
                     <span class="calculated-field inline-block px-2 py-1 rounded cgst-amount">₹0.00</span>
                 </td>
                 <td class="p-2 border text-right">
@@ -453,6 +592,38 @@
             
             tbody.appendChild(newRow);
             updateBillTotals();
+        }
+
+        function updateAllRowTotals() {
+            // Update all rows when GST mode changes
+            document.querySelectorAll('.item-row').forEach(row => {
+                const firstInput = row.querySelector('input');
+                if (firstInput) {
+                    updateRowTotals(firstInput);
+                }
+            });
+        }
+
+        function onBillGstTypeChange() {
+            const billGstType = document.querySelector('select[name="bill_gst_type"]').value;
+            const itemsTable = document.getElementById('itemsTable');
+            const summaryTable = document.getElementById('summaryTable');
+            const gstModeSection = document.getElementById('gstModeSection');
+            
+            if (billGstType === 'Non-GST') {
+                // Hide GST columns and GST mode selector
+                itemsTable.classList.add('hide-gst');
+                summaryTable.classList.add('hide-gst');
+                gstModeSection.style.display = 'none';
+            } else {
+                // Show GST columns and GST mode selector
+                itemsTable.classList.remove('hide-gst');
+                summaryTable.classList.remove('hide-gst');
+                gstModeSection.style.display = 'block';
+            }
+            
+            // Update all calculations
+            updateAllRowTotals();
         }
 
         function saveBill() {
@@ -484,6 +655,8 @@
 
         // Initialize calculations on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize GST column visibility based on bill type
+            onBillGstTypeChange();
             updateBillTotals();
         });
     </script>
