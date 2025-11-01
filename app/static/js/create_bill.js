@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="col-span-1">
                     <input name="discount" type="number" min="0" max="100" step="0.01" value="0" 
                            class="discount w-full border border-gray-300 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
-                           placeholder="0">
+                           placeholder="0%" title="Discount Percentage">
                 </div>
                 <div class="col-span-2 gst-col">
                     <input name="gst_rate" type="number" min="0" max="100" step="0.01" value="${gstRate}" 
