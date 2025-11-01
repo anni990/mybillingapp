@@ -302,36 +302,120 @@
         <!-- Header Actions -->
         <div class="flex items-center space-x-3 lg:space-x-6">
           <!-- Notifications -->
-          <div class="relative group">
-            <button class="relative focus:outline-none p-2 hover:bg-gray-100 rounded-lg transition-colors" id="notificationDropdownBtn">
-              <svg class="w-5 h-5 lg:w-6 lg:h-6 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <div class="relative">
+            <button class="relative group focus:outline-none p-2.5 hover:bg-gray-50 rounded-xl transition-all duration-200 hover:shadow-sm" id="notificationDropdownBtn">
+              <svg class="w-5 h-5 lg:w-6 lg:h-6 text-gray-600 group-hover:text-[#ed6a3e] transition-colors duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
               {% if ca_pending_requests|length > 0 %}
-              <span class="absolute -top-1 -right-1 inline-block w-3 h-3 bg-red-500 rounded-full"></span>
+              <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-white text-xs items-center justify-center font-medium">
+                  {{ ca_pending_requests|length if ca_pending_requests|length <= 9 else '9+' }}
+                </span>
+              </span>
               {% endif %}
             </button>
-            <div class="hidden group-hover:block absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200" id="notificationDropdown">
-              <div class="p-4 border-b font-semibold text-[#ed6a3e]">Pending Connection Requests</div>
-              <div class="max-h-80 overflow-y-auto custom-scrollbar">
+            
+            <!-- Notification Dropdown -->
+            <div class="absolute -right-10 mt-3 w-96 max-w-[calc(100vw-5rem)] sm:max-w-96 bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 overflow-hidden transform opacity-0 scale-95 transition-all duration-200 pointer-events-none" id="notificationDropdown">
+              <!-- Header -->
+              <!-- <div class="bg-gradient-to-r from-[#ed6a3e] to-[#d45f34] px-4 sm:px-6 py-3 sm:py-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-white font-semibold text-base sm:text-lg truncate pr-2">Connection Requests</h3>
+                  {% if ca_pending_requests|length > 0 %}
+                  <span class="bg-white/20 text-white text-xs sm:text-sm px-2 sm:px-2.5 py-1 rounded-full font-medium flex-shrink-0">
+                    {{ ca_pending_requests|length }} pending
+                  </span>
+                  {% endif %}
+                </div>
+              </div> -->
+              <div class="bg-orange-200 px-4 sm:px-6 py-3 sm:py-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-orange-600 font-semibold text-base sm:text-lg truncate pr-2">Connection Requests</h3>
+                  {% if ca_pending_requests|length > 0 %}
+                  <span class="bg-white/20 text-white text-xs sm:text-sm px-2 sm:px-2.5 py-1 rounded-full font-medium flex-shrink-0">
+                    {{ ca_pending_requests|length }} pending
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <!-- Content -->
+              <div class="max-h-80 sm:max-h-96 overflow-y-auto custom-scrollbar">
                 {% if ca_pending_requests %}
                   {% for req in ca_pending_requests %}
-                  <div class="flex items-center justify-between px-4 py-3 hover:bg-orange-50 border-b border-gray-100">
-                    <div class="flex-1 min-w-0">
-                      <div class="font-bold truncate">{{ req.shop_name }}</div>
-                      <div class="text-xs text-gray-500 truncate">{{ req.domain }} | {{ req.contact_number }}</div>
+                  <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-50 hover:bg-gray-50/70 transition-colors duration-200 group">
+                    <div class="flex items-start space-x-3 sm:space-x-4">
+                      <!-- Shop Avatar -->
+                      <div class="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg sm:rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                      </div>
+                      
+                      <!-- Shop Info -->
+                      <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-gray-900 truncate text-sm mb-1">{{ req.shop_name }}</h4>
+                        <div class="space-y-1">
+                          <p class="text-xs text-gray-500 flex items-center truncate">
+                            <svg class="w-3 h-3 mr-1.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                            <span class="truncate">{{ req.domain }}</span>
+                          </p>
+                          <p class="text-xs text-gray-500 flex items-center truncate">
+                            <svg class="w-3 h-3 mr-1.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21L6.1 11.5s-.5 2.5 2 5 5 2 5 2l2.113-4.124a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2C9.716 21 3 14.284 3 5z"/>
+                            </svg>
+                            <span class="truncate">{{ req.contact_number }}</span>
+                          </p>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <form method="POST" action="{{ url_for('ca.handle_shop_connection_request') }}" class="flex space-x-2 mt-3">
+                          <input type="hidden" name="conn_id" value="{{ req.conn_id }}">
+                          <button name="action" value="accept" class="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium py-2 px-2 sm:px-3 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-1">
+                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span class="hidden sm:inline">Accept</span>
+                            <span class="sm:hidden">✓</span>
+                          </button>
+                          <button name="action" value="reject" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium py-2 px-2 sm:px-3 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-1">
+                            <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            <span class="hidden sm:inline">Decline</span>
+                            <span class="sm:hidden">✕</span>
+                          </button>
+                        </form>
+                      </div>
                     </div>
-                    <form method="POST" action="{{ url_for('ca.handle_shop_connection_request') }}" class="flex space-x-1 ml-2">
-                      <input type="hidden" name="conn_id" value="{{ req.conn_id }}">
-                      <button name="action" value="accept" class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600 transition-colors">Accept</button>
-                      <button name="action" value="reject" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition-colors">Reject</button>
-                    </form>
                   </div>
                   {% endfor %}
                 {% else %}
-                  <div class="px-4 py-4 text-gray-400 text-center">No pending requests.</div>
+                  <!-- Empty State -->
+                  <div class="px-4 sm:px-6 py-8 sm:py-12 text-center">
+                    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                      </svg>
+                    </div>
+                    <h4 class="text-gray-600 font-medium text-sm mb-1">All caught up!</h4>
+                    <p class="text-gray-400 text-xs px-2">No pending connection requests at the moment.</p>
+                  </div>
                 {% endif %}
               </div>
+              
+              {% if ca_pending_requests|length > 3 %}
+              <!-- Footer for many notifications -->
+              <div class="px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-100">
+                <a href="{{ url_for('ca.connection_requests') }}" class="text-[#ed6a3e] hover:text-[#d45f34] text-sm font-medium transition-colors duration-200">
+                  View all requests →
+                </a>
+              </div>
+              {% endif %}
             </div>
           </div>
           
@@ -548,22 +632,53 @@
     }, 4000);
   }
 
-  // Notification dropdown toggle logic
+  // Enhanced notification dropdown toggle logic
   const notifBtn = document.getElementById('notificationDropdownBtn');
   const notifDropdown = document.getElementById('notificationDropdown');
+  let isNotificationOpen = false;
+  
   if (notifBtn && notifDropdown) {
     notifBtn.addEventListener('click', function(e) {
       e.stopPropagation();
-      notifDropdown.classList.toggle('hidden');
+      toggleNotificationDropdown();
     });
+    
     document.addEventListener('click', function(e) {
-      if (!notifDropdown.classList.contains('hidden')) {
-        notifDropdown.classList.add('hidden');
+      if (isNotificationOpen && !notifDropdown.contains(e.target)) {
+        closeNotificationDropdown();
       }
     });
+    
     notifDropdown.addEventListener('click', function(e) {
       e.stopPropagation();
     });
+    
+    // Handle escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && isNotificationOpen) {
+        closeNotificationDropdown();
+      }
+    });
+  }
+  
+  function toggleNotificationDropdown() {
+    if (isNotificationOpen) {
+      closeNotificationDropdown();
+    } else {
+      openNotificationDropdown();
+    }
+  }
+  
+  function openNotificationDropdown() {
+    isNotificationOpen = true;
+    notifDropdown.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+    notifDropdown.classList.add('opacity-100', 'scale-100');
+  }
+  
+  function closeNotificationDropdown() {
+    isNotificationOpen = false;
+    notifDropdown.classList.remove('opacity-100', 'scale-100');
+    notifDropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
   }
 </script>
 </body>
