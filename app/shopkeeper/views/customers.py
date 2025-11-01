@@ -33,8 +33,13 @@ def register_routes(bp):
         
         # Calculate customer statistics
         active_customers_count = len([c for c in customers if c.total_balance > 0])
-        total_sales = sum(float(c.total_balance) for c in customers if c.total_balance > 0)
-        avg_order_value = total_sales / len(customers) if customers else 0
+        
+        # Calculate total sales from all credit amounts in customer ledger
+        total_sales_query = db.session.query(db.func.sum(CustomerLedger.credit_amount)).filter_by(shopkeeper_id=shopkeeper.user_id).scalar()
+        total_sales = float(total_sales_query or 0)
+        
+        # Calculate total remaining balance (sum of all customer balances)
+        total_remaining_balance = sum(float(c.total_balance) for c in customers if c.total_balance > 0)
         
         # Get unique locations
         unique_locations = list(set([c.address for c in customers if c.address]))
@@ -52,7 +57,7 @@ def register_routes(bp):
                             customers=customers,
                             active_customers_count=active_customers_count,
                             total_sales=total_sales,
-                            avg_order_value=avg_order_value,
+                            total_remaining_balance=total_remaining_balance,
                             unique_locations=unique_locations)
 
     @bp.route('/add_customer', methods=['POST'])
@@ -213,16 +218,27 @@ def register_routes(bp):
     @login_required
     @shopkeeper_required
     def customer_ledger(customer_id):
+        print(f"🔍 Customer ledger route called for customer ID: {customer_id}")
+        
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         shop_name = shopkeeper.shop_name
         customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
         
         if not customer:
+            print(f"❌ Customer not found: ID {customer_id}")
             flash('Customer not found.', 'error')
             return redirect(url_for('shopkeeper.customer_management'))
         
+        print(f"✅ Customer found: {customer.name}, Balance: ₹{customer.total_balance}")
+        
         # Get ledger entries
         ledger_entries = CustomerLedger.query.filter_by(customer_id=customer_id).order_by(desc(CustomerLedger.transaction_date)).all()
+        
+        print(f"📝 Found {len(ledger_entries)} ledger entries for customer {customer.name}")
+        
+        # Debug: Print recent entries
+        for i, entry in enumerate(ledger_entries[:3]):
+            print(f"   Entry {i+1}: {entry.transaction_date} - {entry.transaction_type} - Credit: ₹{entry.credit_amount} - Debit: ₹{entry.debit_amount}")
         
         return render_template('shopkeeper/customer_ledger.html', 
                             shop_name=shop_name,
@@ -274,6 +290,66 @@ def register_routes(bp):
             return jsonify({'success': True, 'message': 'Ledger entry added successfully', 'new_balance': float(new_balance)})
         
         except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': str(e)})
+
+    @bp.route('/complete_payment/<int:customer_id>', methods=['POST'])
+    @login_required
+    @shopkeeper_required
+    def complete_payment(customer_id):
+        print(f"🔍 Complete payment route called for customer ID: {customer_id}")
+        
+        shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
+        
+        if not customer:
+            print(f"❌ Customer not found: ID {customer_id}, Shopkeeper ID {shopkeeper.user_id if shopkeeper else 'None'}")
+            return jsonify({'success': False, 'message': 'Customer not found'})
+        
+        print(f"✅ Customer found: {customer.name}, Balance: ₹{customer.total_balance}")
+        
+        try:
+            current_balance = customer.total_balance or Decimal('0')
+            print(f"💰 Current balance: ₹{current_balance}")
+            
+            # Check if customer has any outstanding balance
+            if current_balance <= 0:
+                print("❌ No outstanding balance to clear")
+                return jsonify({'success': False, 'message': 'No outstanding balance to clear'})
+            
+            print("📝 Creating ledger entry...")
+            
+            # Create ledger entry for complete payment
+            ledger_entry = CustomerLedger(
+                customer_id=customer_id,
+                shopkeeper_id=shopkeeper.user_id,
+                transaction_date=datetime.datetime.now(),  # Explicitly set current timestamp
+                invoice_no=f"PAY{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}",
+                particulars="Complete Balance Payment - Cash Received",
+                debit_amount=Decimal('0'),
+                credit_amount=current_balance,
+                balance_amount=Decimal('0'),
+                transaction_type='PAYMENT',
+                notes="Full outstanding balance paid in cash"
+            )
+            
+            # Clear customer balance
+            customer.total_balance = Decimal('0')
+            customer.updated_date = datetime.datetime.now()
+            
+            db.session.add(ledger_entry)
+            db.session.commit()
+            
+            print(f"✅ Complete payment processed successfully! Ledger entry ID: {ledger_entry.ledger_id}")
+            
+            return jsonify({
+                'success': True, 
+                'message': f'Complete payment of ₹{current_balance:.2f} recorded successfully',
+                'amount_cleared': float(current_balance)
+            })
+        
+        except Exception as e:
+            print(f"❌ Error during complete payment: {e}")
             db.session.rollback()
             return jsonify({'success': False, 'message': str(e)})
 

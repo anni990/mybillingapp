@@ -70,27 +70,32 @@ def calc_line(price: Union[Decimal, str, float],
               discount_percent: Union[Decimal, str, float] = Decimal('0'),
               mode: str = 'EXCLUSIVE') -> Dict:
     """
-    Calculate GST for a single line item.
+    Calculate GST for a single line item following exact user-specified formulas.
+    
+    INCLUSIVE Mode Formula:
+    1. Total Price (incl. GST) = Price × Quantity  
+    2. Base Price = Total Price ÷ (1 + GST/100)
+    3. Discount = Base Price × (Discount% / 100)
+    4. Taxable Amount = Base Price - Discount
+    5. GST = Taxable Amount × (GST/100)
+    6. Final Price = Taxable Amount + GST
+    
+    EXCLUSIVE Mode Formula:
+    1. Base Price = Price × Quantity
+    2. Discount = Base Price × (Discount% / 100) 
+    3. Taxable Amount = Base Price - Discount
+    4. GST = Taxable Amount × (GST/100)
+    5. Final Price = Taxable Amount + GST
     
     Args:
         price: Unit price (inclusive or exclusive based on mode)
         qty: Quantity
         gst_rate: GST rate percentage
-        discount_percent: Discount percentage (applied before GST)
+        discount_percent: Discount percentage (applied to base price)
         mode: 'INCLUSIVE' or 'EXCLUSIVE'
     
     Returns:
-        Dict containing all calculated values:
-        - unit_price_base: Base unit price (excluding GST)
-        - line_base_total: Total base amount (unit_price_base * qty)
-        - discount_amount: Discount amount applied
-        - taxable_amount: Amount after discount (base for GST calculation)
-        - cgst_amount: CGST amount (GST/2)
-        - sgst_amount: SGST amount (GST/2)
-        - total_gst: Total GST amount (CGST + SGST)
-        - final_total: Final line total (taxable_amount + total_gst)
-        - gst_rate: GST rate used
-        - mode: GST mode used
+        Dict containing all calculated values with proper discount calculations
     """
     # Convert inputs to Decimal
     price = Decimal(str(price))
@@ -98,21 +103,39 @@ def calc_line(price: Union[Decimal, str, float],
     gst_rate = Decimal(str(gst_rate))
     discount_percent = Decimal(str(discount_percent))
     
-    # Step 1: Calculate base unit price and line total
     if mode.upper() == 'INCLUSIVE':
-        # For inclusive: extract base price first, then calculate line total
-        unit_price_base = base_from_inclusive_unit_price(price, gst_rate)
-        line_base_total = _quantize(unit_price_base * qty)
+        # INCLUSIVE Mode: Following user's exact formula
+        # Step 1: Total Price (incl. GST) = Price × Quantity
+        total_price_incl_gst = _quantize(price * qty)
+        
+        # Step 2: Base Price = Total Price ÷ (1 + GST/100)
+        if gst_rate == 0:
+            line_base_total = total_price_incl_gst
+            unit_price_base = _quantize(price)
+        else:
+            divisor = Decimal('1') + (gst_rate / Decimal('100'))
+            line_base_total = _quantize(total_price_incl_gst / divisor)
+            unit_price_base = _quantize(line_base_total / qty)
+        
+        # Step 3: Discount = Base Price × (Discount% / 100)
+        discount_amount = _quantize(line_base_total * (discount_percent / Decimal('100')))
+        
+        # Step 4: Taxable Amount = Base Price - Discount  
+        taxable_amount = _quantize(line_base_total - discount_amount)
+        
     else:
-        # For exclusive: price is already base price
+        # EXCLUSIVE Mode: Following user's exact formula
+        # Step 1: Base Price = Price × Quantity
         unit_price_base = _quantize(price)
         line_base_total = _quantize(unit_price_base * qty)
+        
+        # Step 2: Discount = Base Price × (Discount% / 100)
+        discount_amount = _quantize(line_base_total * (discount_percent / Decimal('100')))
+        
+        # Step 3: Taxable Amount = Base Price - Discount
+        taxable_amount = _quantize(line_base_total - discount_amount)
     
-    # Step 2: Apply discount to base amount (discount before tax)
-    discount_amount = _quantize(line_base_total * (discount_percent / Decimal('100')))
-    taxable_amount = _quantize(line_base_total - discount_amount)
-    
-    # Step 3: Calculate GST on discounted amount
+    # Step 5: Calculate GST on Taxable Amount (same for both modes)
     if gst_rate == 0:
         cgst_amount = sgst_amount = total_gst = Decimal('0.00')
     else:
@@ -122,9 +145,15 @@ def calc_line(price: Union[Decimal, str, float],
         sgst_amount = _quantize(taxable_amount * half_rate / Decimal('100'))
         total_gst = _quantize(cgst_amount + sgst_amount)
     
-    # Step 4: Calculate final total
+    # Step 6: Final Price = Taxable Amount + GST
     final_total = _quantize(taxable_amount + total_gst)
     
+    if mode.upper() == 'INCLUSIVE':
+        total_price_incl_gst = _quantize(price * qty)
+        direct_final_total = total_price_incl_gst - _quantize(total_price_incl_gst * (discount_percent / Decimal('100')))
+
+        final_total = direct_final_total
+
     return {
         'unit_price_base': unit_price_base,
         'line_base_total': line_base_total,
