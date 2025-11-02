@@ -64,6 +64,25 @@
                 <p class="text-lg font-bold text-gray-900">{{ ledger_entries|length }}</p>
             </div>
         </div>
+        
+        {% if customer.gstin or customer.address %}
+        <div class="mt-4 pt-4 border-t border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if customer.gstin %}
+                <div>
+                    <p class="text-sm font-medium text-gray-600">GSTIN</p>
+                    <p class="text-sm font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block">{{ customer.gstin }}</p>
+                </div>
+                {% endif %}
+                {% if customer.address %}
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Address</p>
+                    <p class="text-sm text-gray-900">{{ customer.address }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Ledger Table -->

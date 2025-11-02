@@ -76,6 +76,20 @@ def create_app():
         
         return user_info
 
+    # Custom template filters
+    @app.template_filter('format_bill_date')
+    def format_bill_date(bill_date, date_with_time=True):
+        """Format bill date based on date_with_time setting."""
+        if not bill_date:
+            return ''
+        
+        if date_with_time:
+            # Show date with time: dd-mm-yyyy hh:mm:ss
+            return bill_date.strftime('%d-%m-%Y %H:%M:%S')
+        else:
+            # Show date only: dd-mm-yyyy
+            return bill_date.strftime('%d-%m-%Y')
+
     # Error handlers
     @app.errorhandler(401)
     def unauthorized_access(error):

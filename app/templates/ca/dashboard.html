@@ -12,7 +12,7 @@
     <p class="text-slate-500 mt-1">Here's a snapshot of your practice's performance.</p>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+  <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-3 gap-6 mb-8">
     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
       <div class="flex justify-between items-start">
         <div>
@@ -50,19 +50,6 @@
         <div class="p-3 bg-yellow-100 rounded-xl">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-      </div>
-    </div>
-    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xl hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-      <div class="flex justify-between items-start">
-        <div>
-          <p class="text-sm font-medium text-slate-500">Billed This Month</p>
-          <p class="text-4xl font-bold text-slate-800 mt-2">₹{{ "%.2f"|format(billed_this_month|default(0)) }}</p> <p class="text-xs text-slate-400 mt-1">In {{ current_month }}</p>
-        </div>
-        <div class="p-3 bg-orange-100 rounded-xl">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
       </div>

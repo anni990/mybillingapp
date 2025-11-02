@@ -106,3 +106,14 @@ UPDATE `bill_items` SET
 WHERE `discount_percent` IS NULL;
 
 UPDATE `bills` SET `gst_mode` = 'EXCLUSIVE' WHERE `gst_mode` IS NULL;
+
+ALTER TABLE bills 
+ADD date_with_time BOOLEAN DEFAULT FALSE;
+
+-- Update existing bills to show date only by default
+UPDATE bills SET date_with_time = FALSE WHERE date_with_time IS NULL;
+
+-- Add gstin column to customers table
+ALTER TABLE customers 
+ADD COLUMN gstin VARCHAR(15) NULL 
+COMMENT 'Customer GST Identification Number (15 characters max)';
