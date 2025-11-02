@@ -83,7 +83,8 @@ def register_routes(bp):
                 name=request.form.get('name'),
                 phone=request.form.get('phone'),
                 email=request.form.get('email') or None,
-                address=request.form.get('address') or None
+                address=request.form.get('address') or None,
+                gstin=request.form.get('gstin') or None
             )
             
             db.session.add(customer)
@@ -112,7 +113,8 @@ def register_routes(bp):
                 'name': customer.name,
                 'phone': customer.phone,
                 'email': customer.email,
-                'address': customer.address
+                'address': customer.address,
+                'gstin': customer.gstin
             }
         })
 
@@ -142,6 +144,7 @@ def register_routes(bp):
             customer.phone = new_phone
             customer.email = request.form.get('email') or None
             customer.address = request.form.get('address') or None
+            customer.gstin = request.form.get('gstin') or None
             customer.updated_date = datetime.datetime.now()
             
             db.session.commit()
@@ -209,6 +212,7 @@ def register_routes(bp):
                 'phone': customer.phone,
                 'email': customer.email,
                 'address': customer.address,
+                'gstin': customer.gstin,
                 'total_balance': float(customer.total_balance)
             },
             'orders': orders
@@ -372,6 +376,7 @@ def register_routes(bp):
                 'phone': customer.phone,
                 'email': customer.email,
                 'address': customer.address,
+                'gstin': customer.gstin,
                 'balance': float(customer.total_balance)
             })
         
@@ -395,7 +400,7 @@ def register_routes(bp):
         writer = csv.writer(output)
         
         # Write header
-        writer.writerow(['Name', 'Phone', 'Email', 'Address', 'Balance', 'Created Date'])
+        writer.writerow(['Name', 'Phone', 'Email', 'Address', 'GSTIN', 'Balance', 'Created Date'])
         
         # Write customer data
         for customer in customers:
@@ -404,6 +409,7 @@ def register_routes(bp):
                 customer.phone,
                 customer.email or '',
                 customer.address or '',
+                customer.gstin or '',
                 f"{customer.total_balance:.2f}",
                 customer.created_date.strftime('%Y-%m-%d')
             ])

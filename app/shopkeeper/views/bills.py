@@ -61,6 +61,7 @@ def register_routes(bp):
                 # Bill configuration
                 gst_type = request.form.get('bill_gst_type', 'GST')  # Updated field name
                 gst_mode = request.form.get('gst_mode', 'EXCLUSIVE').upper()  # New field
+                date_with_time = request.form.get('date_with_time') == '1'  # Get date/time toggle
                 payment_status = request.form.get('payment_status', 'Paid')
                 paid_amount = Decimal(request.form.get('paid_amount', '0') or '0')
                 
@@ -241,8 +242,52 @@ def register_routes(bp):
             flash('Access denied.', 'danger')
             return redirect(url_for('shopkeeper.manage_bills'))
         
-        bill_items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
         shopkeeper = bill.shopkeeper
+        
+        # Access control: Check if current user can access this bill
+        if current_user.role == 'CA':
+            ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
+            if not ca:
+                flash('Access denied: CA profile not found.', 'danger')
+                return redirect(url_for('ca.bills_panel'))
+            
+            # Check if the bill's shopkeeper is connected to this CA
+            ca_connection = CAConnection.query.filter_by(
+                shopkeeper_id=bill.shopkeeper_id,
+                ca_id=ca.ca_id,
+                status='approved'
+            ).first()
+            
+            if not ca_connection:
+                flash('Access denied: You can only view bills from connected shopkeepers.', 'danger')
+                return redirect(url_for('ca.bills_panel'))
+                
+        elif current_user.role == 'employee':
+            employee = CAEmployee.query.filter_by(user_id=current_user.user_id).first()
+            if not employee:
+                flash('Access denied: Employee profile not found.', 'danger')
+                return redirect(url_for('ca.bills_panel'))
+            
+            # Check if the bill's shopkeeper is assigned to this employee
+            employee_client = EmployeeClient.query.filter_by(
+                shopkeeper_id=bill.shopkeeper_id,
+                employee_id=employee.employee_id
+            ).first()
+            
+            if not employee_client:
+                flash('Access denied: You can only view bills from assigned shopkeepers.', 'danger')
+                return redirect(url_for('ca.bills_panel'))
+                
+        elif current_user.role == 'shopkeeper':
+            # Shopkeepers can only view their own bills
+            if bill.shopkeeper.user_id != current_user.user_id:
+                flash('Access denied: You can only view your own bills.', 'danger')
+                return redirect(url_for('shopkeeper.manage_bills'))
+        else:
+            flash('Access denied: Invalid role.', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        bill_items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
         products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
         products_dict = {str(p.product_id): p for p in products}
         
@@ -910,6 +955,7 @@ def register_routes(bp):
             customer_gstin = request.form.get('customer_gstin', '').strip()
             payment_status = request.form.get('payment_status', 'Paid')
             paid_amount = float(request.form.get('paid_amount', 0) or 0)
+            date_with_time = request.form.get('date_with_time') == '1'  # Get date/time toggle
             
             # Update basic bill information
             bill.customer_name = customer_name
@@ -918,6 +964,7 @@ def register_routes(bp):
             bill.customer_gstin = customer_gstin
             bill.payment_status = payment_status
             bill.paid_amount = paid_amount
+            bill.date_with_time = date_with_time  # Update date/time display toggle
 
             # Get bill items data from dynamic form arrays
             product_ids = request.form.getlist('product_id[]')
@@ -1162,6 +1209,7 @@ def register_routes(bp):
         
         gst_mode = request.form.get('gst_mode', 'EXCLUSIVE').upper()
         bill_gst_type = request.form.get('bill_gst_type', 'GST')
+        date_with_time = request.form.get('date_with_time') == '1'  # Get date/time toggle
         items = request.form.getlist('product_id')
         product_names = request.form.getlist('product_name')  # Get custom product names
         quantities = request.form.getlist('quantity')
@@ -1240,6 +1288,7 @@ def register_routes(bp):
                             phone=customer_contact.strip() if customer_contact else '',
                             email='',  # Email not captured in current form
                             address=customer_address.strip() if customer_address else '',
+                            gstin=customer_gstin.strip() if customer_gstin else '',
                             is_active=True,
                             total_balance=0.00
                         )
@@ -1272,6 +1321,7 @@ def register_routes(bp):
             bill_date=bill_date,
             gst_type=bill_gst_type,
             gst_mode=gst_mode,  # Add GST mode field
+            date_with_time=date_with_time,  # Add date/time display toggle
             total_amount=0,
             payment_status=payment_status,
             paid_amount=paid_amount,

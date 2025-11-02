@@ -74,7 +74,7 @@
                 <div class="text-right">
                     <p class="text-xl font-semibold text-gray-800">Invoice</p>
                     <p class="text-gray-600">{{ bill.bill_number }}</p>
-                    <p class="text-gray-600">Date: {{ bill.bill_date }}</p>
+                    <p class="text-gray-600">Date: {{ bill.bill_date|format_bill_date(bill.date_with_time) }}</p>
                 </div>
             </div>
             {% elif shopkeeper.template_choice == 'template3' %}
@@ -131,7 +131,7 @@
 
             <!-- Bill Configuration Section -->
             <div class="mb-6 p-4 border rounded bg-yellow-50">
-                <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="grid grid-cols-3 gap-4 text-sm">
                     <div>
                         <label class="block font-semibold mb-1">GST Type:</label>
                         <select name="bill_gst_type" class="editable-field w-full" onchange="onBillGstTypeChange()">
@@ -145,6 +145,19 @@
                             <option value="EXCLUSIVE" {{ 'selected' if bill.gst_mode == 'EXCLUSIVE' else '' }}>Exclusive (Price + GST)</option>
                             <option value="INCLUSIVE" {{ 'selected' if bill.gst_mode == 'INCLUSIVE' else '' }}>Inclusive (Price includes GST)</option>
                         </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Date Display:</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="date_with_time" name="date_with_time" value="1"
+                                   {{ 'checked' if bill.date_with_time else '' }}
+                                   class="rounded border-gray-300 text-orange-600 focus:ring-orange-500 focus:ring-offset-0">
+                            <label for="date_with_time" class="text-sm text-gray-700 cursor-pointer">Show time on bill</label>
+                        </div>
+                        <!-- <div class="text-xs text-gray-500 mt-1">
+                            <span class="block">✓ Checked: dd-mm-yyyy hh:mm:ss</span>
+                            <span class="block">✗ Unchecked: dd-mm-yyyy</span>
+                        </div> -->
                     </div>
                 </div>
             </div>

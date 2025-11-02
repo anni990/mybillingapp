@@ -21,8 +21,10 @@ def register_routes(bp):
         ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
         firm_name = ca.firm_name
 
-        # Get all clients with their connection status
-        connections = CAConnection.query.filter_by(ca_id=ca.ca_id).all()
+        # Get clients with approved or pending connection status only (exclude rejected)
+        connections = CAConnection.query.filter_by(ca_id=ca.ca_id).filter(
+            CAConnection.status.in_(['approved', 'pending'])
+        ).all()
         clients = []
         for conn in connections:
             shop = Shopkeeper.query.get(conn.shopkeeper_id)
@@ -42,12 +44,29 @@ def register_routes(bp):
         """Client profile - preserves original logic."""
         if current_user.role != 'CA':
             return redirect(url_for('ca.dashboard'))
-        shop = Shopkeeper.query.get(shopkeeper_id)
+        
         ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
-        firm_name = ca.firm_name
+        if not ca:
+            flash('CA profile not found', 'danger')
+            return redirect(url_for('ca.clients'))
+        
+        shop = Shopkeeper.query.get(shopkeeper_id)
         if not shop:
             flash('Client not found', 'danger')
             return redirect(url_for('ca.clients'))
+        
+        # Check if the shopkeeper is connected to this CA with approved status
+        connection = CAConnection.query.filter_by(
+            ca_id=ca.ca_id,
+            shopkeeper_id=shopkeeper_id,
+            status='approved'
+        ).first()
+        
+        if not connection:
+            flash('Shopkeeper not connected yet.', 'warning')
+            return redirect(url_for('ca.clients'))
+        
+        firm_name = ca.firm_name
         user = User.query.get(shop.user_id)  # Fetch the related user
         documents = shop.documents  # List of Document objects
         

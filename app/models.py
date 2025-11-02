@@ -144,6 +144,7 @@ class Bill(db.Model):
     payment_status = db.Column(db.String(20), default='PAID')  # 'PAID', 'PARTIAL', 'UNPAID'
     paid_amount = db.Column(db.Numeric(10,2), default=0.00)  # Tracking payments
     due_amount = db.Column(db.Numeric(10,2), default=0.00)   # Tracking dues
+    date_with_time = db.Column(db.Boolean, default=False)    # Toggle for date display: False=date only, True=date with time
     # Relationships
     bill_items = db.relationship('BillItem', backref='bill', cascade='all, delete-orphan')
 
@@ -220,6 +221,7 @@ class Customer(db.Model):
     phone = db.Column(db.String(15), nullable=False)
     email = db.Column(db.String(100), nullable=True)
     address = db.Column(db.Text, nullable=True)
+    gstin = db.Column(db.String(15), nullable=True)
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
     updated_date = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
