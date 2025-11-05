@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}MyBillingApp{% endblock %}</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
   <style>
     /* Flash Message Popup Styles */
     @keyframes slideInRight {
@@ -204,63 +205,42 @@
           <li>
             <a href="/ca/dashboard"
               class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-              <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"
-                  stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
+              <i data-feather="home" class="w-5 h-5"></i>
               <span class="sidebar-text ml-3 whitespace-nowrap">Dashboard Home</span>
             </a>
           </li>
           <li>
             <a href="/ca/clients"
               class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-              <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path
-                  d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 000 7.75"
-                  stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
+              <i data-feather="users" class="w-5 h-5"></i>
               <span class="sidebar-text ml-3 whitespace-nowrap">Clients List</span>
             </a>
           </li>
           <li>
             <a href="/ca/bills"
               class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-              <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M9 17v-2a4 4 0 014-4h4m0 0V7a4 4 0 00-4-4H7a4 4 0 00-4 4v10a4 4 0 004 4h4"
-                  stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
+              <i data-feather="file-text" class="w-5 h-5"></i>
               <span class="sidebar-text ml-3 whitespace-nowrap">Bills Panel</span>
             </a>
           </li>
           <li>
             <a href="/ca/reports"
               class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-              <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M9 17v-2a4 4 0 014-4h4m0 0V7a4 4 0 00-4-4H7a4 4 0 00-4 4v10a4 4 0 004 4h4"
-                  stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
+              <i data-feather="download" class="w-5 h-5"></i>
               <span class="sidebar-text ml-3 whitespace-nowrap">Export Reports</span>
             </a>
           </li>
           <li>
             <a href="/ca/employees"
               class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-              <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path
-                  d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
+              <i data-feather="award" class="w-5 h-5"></i>
               <span class="sidebar-text ml-3 whitespace-nowrap">Employees</span>
             </a>
           </li>
           <li>
             <a href="{{ url_for('ca.shopkeeper_marketplace') }}"
               class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-              <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path
-                  d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 000 7.75"
-                  stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
+              <i data-feather="briefcase" class="w-5 h-5"></i>
               <span class="sidebar-text ml-3 whitespace-nowrap">Shopkeeper Marketplace</span>
             </a>
           </li>
@@ -475,6 +455,9 @@
     </div>
 
 <script>
+
+  feather.replace();
+
   // Sidebar functionality
   const sidebar = document.getElementById('sidebar');
   const sidebarToggle = document.getElementById('sidebar-toggle');
