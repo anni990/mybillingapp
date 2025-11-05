@@ -11,7 +11,7 @@ shopkeeper_bp = Blueprint('shopkeeper', __name__, url_prefix='/shopkeeper')
 # from . import routes
 
 # Register view modules
-from .views import dashboard, bills, products, reports, customers, profile, ca_connections
+from .views import dashboard, bills, products, reports, customers, profile, ca_connections, purchase_bills
 
 # Register routes from each module
 dashboard.register_routes(shopkeeper_bp)
@@ -21,3 +21,4 @@ reports.register_routes(shopkeeper_bp)
 customers.register_routes(shopkeeper_bp)
 profile.register_routes(shopkeeper_bp)
 ca_connections.register_routes(shopkeeper_bp)
+purchase_bills.register_routes(shopkeeper_bp)

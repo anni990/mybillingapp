@@ -191,11 +191,11 @@ def register_routes(bp):
             now=datetime.datetime.now()  # Pass current datetime as 'now'
         )
 
-    # Manage Bills
-    @bp.route('/manage_bills')
+    # Sales Bills
+    @bp.route('/sales_bills')
     @login_required
     @shopkeeper_required
-    def manage_bills():
+    def sales_bills():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         shop_name=shopkeeper.shop_name
         # In all relevant routes, comment out the is_verified restriction logic
@@ -217,6 +217,23 @@ def register_routes(bp):
             query = query.filter(Bill.payment_status.in_(selected_statuses))
         bills = query.order_by(Bill.bill_date.desc()).all() if shopkeeper else []
         
+        # Add edit availability to each bill (60 minutes from creation)
+        current_time = datetime.datetime.now()
+        for bill in bills:
+            # Calculate time difference between current time and bill creation
+            time_diff = current_time - bill.bill_date
+            # Bill is editable if created within last 60 minutes (3600 seconds)
+            bill.is_editable = time_diff.total_seconds() <= 3600
+            # Calculate remaining time for editing
+            if bill.is_editable:
+                remaining_seconds = 3600 - int(time_diff.total_seconds())
+                bill.remaining_edit_time = {
+                    'minutes': remaining_seconds // 60,
+                    'seconds': remaining_seconds % 60
+                }
+            else:
+                bill.remaining_edit_time = None
+        
         # Purchase Bills Query
         purchase_query = PurchaseBill.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)
         if search:
@@ -226,11 +243,11 @@ def register_routes(bp):
             )
         purchase_bills = purchase_query.order_by(PurchaseBill.bill_date.desc()).all() if shopkeeper else []
         
-        return render_template('shopkeeper/manage_bills.html', 
+        return render_template('shopkeeper/sales_bills.html', 
                              shop_name=shop_name,
                              bills=bills, 
-                             purchase_bills=purchase_bills,
-                             selected_statuses=selected_statuses)
+                             selected_statuses=selected_statuses,
+                             current_time=current_time)
 
         
     @bp.route('/bill/<int:bill_id>')
@@ -240,7 +257,7 @@ def register_routes(bp):
         bill = Bill.query.get_or_404(bill_id)
         if bill.shopkeeper.user_id != current_user.user_id:
             flash('Access denied.', 'danger')
-            return redirect(url_for('shopkeeper.manage_bills'))
+            return redirect(url_for('shopkeeper.sales_bills'))
         
         shopkeeper = bill.shopkeeper
         
@@ -282,7 +299,7 @@ def register_routes(bp):
             # Shopkeepers can only view their own bills
             if bill.shopkeeper.user_id != current_user.user_id:
                 flash('Access denied: You can only view your own bills.', 'danger')
-                return redirect(url_for('shopkeeper.manage_bills'))
+                return redirect(url_for('shopkeeper.sales_bills'))
         else:
             flash('Access denied: Invalid role.', 'danger')
             return redirect(url_for('auth.login'))
@@ -476,7 +493,23 @@ def register_routes(bp):
             total_sgst_amount = 0
             total_gst_amount = 0
 
-        is_editable = True  # You can set conditions for editability here
+        # Check if bill is editable based on timing (60 minutes from creation) and user role
+        current_time = datetime.datetime.now()
+        time_diff = current_time - bill.bill_date
+        is_time_editable = time_diff.total_seconds() <= 3600  # 60 minutes = 3600 seconds
+        
+        # Final editability check: must be within time limit AND user must be the shopkeeper owner
+        is_editable = False
+        remaining_edit_time = None
+        
+        if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id == current_user.user_id:
+            is_editable = is_time_editable
+            if is_editable:
+                remaining_seconds = 3600 - int(time_diff.total_seconds())
+                remaining_edit_time = {
+                    'minutes': remaining_seconds // 60,
+                    'seconds': remaining_seconds % 60
+                }
 
         return render_template('shopkeeper/bill_receipt.html',
             bill=bill,
@@ -490,7 +523,9 @@ def register_routes(bp):
             total_gst_amount=total_gst_amount,
             overall_grand_total=overall_grand_total,
             is_editable=is_editable,
-            back_url=url_for('shopkeeper.manage_bills'))
+            remaining_edit_time=remaining_edit_time,
+            current_time=current_time,
+            back_url=url_for('shopkeeper.sales_bills'))
 
     @bp.route('/bill/<int:bill_id>/edit')
     @login_required
@@ -500,7 +535,7 @@ def register_routes(bp):
         bill = Bill.query.get_or_404(bill_id)
         if bill.shopkeeper.user_id != current_user.user_id:
             flash('Access denied.', 'danger')
-            return redirect(url_for('shopkeeper.manage_bills'))
+            return redirect(url_for('shopkeeper.sales_bills'))
         
         bill_items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
         shopkeeper = bill.shopkeeper
@@ -752,7 +787,7 @@ def register_routes(bp):
         # Check permissions
         if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id != current_user.user_id:
             flash('Access denied.', 'danger')
-            return redirect(url_for('shopkeeper.manage_bills'))
+            return redirect(url_for('shopkeeper.sales_bills'))
         
         # Get bill data
         bill_items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
@@ -946,7 +981,7 @@ def register_routes(bp):
             # Check permissions - only shopkeepers can edit bills
             if current_user.role != 'shopkeeper' or bill.shopkeeper.user_id != current_user.user_id:
                 flash('Access denied. Only shopkeepers can edit bills.', 'danger')
-                return redirect(url_for('shopkeeper.manage_bills'))
+                return redirect(url_for('shopkeeper.sales_bills'))
 
             # Get form data from the new comprehensive edit bill form
             customer_name = request.form.get('customer_name', '').strip()
@@ -1551,6 +1586,24 @@ def register_routes(bp):
         
         db.session.commit()
         
+        # Check if bill is editable based on timing (60 minutes from creation) and user role
+        current_time = datetime.datetime.now()
+        time_diff = current_time - bill.bill_date
+        is_time_editable = time_diff.total_seconds() <= 3600  # 60 minutes = 3600 seconds
+        
+        # Final editability check: must be within time limit AND user must be the shopkeeper owner
+        is_editable = False
+        remaining_edit_time = None
+        
+        if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id == current_user.user_id:
+            is_editable = is_time_editable
+            if is_editable:
+                remaining_seconds = 3600 - int(time_diff.total_seconds())
+                remaining_edit_time = {
+                    'minutes': remaining_seconds // 60,
+                    'seconds': remaining_seconds % 60
+                }
+
         # Prepare data for receipt
         bill_data = {
             'bill': bill,
@@ -1566,13 +1619,17 @@ def register_routes(bp):
             'total_gst_amount': total_gst_amount,
             'gst_mode': gst_mode,
             'bill_gst_type': bill_gst_type,
-
             'amount_paid': paid_amount,
             'amount_unpaid': due_amount,
-            'payment_status': payment_status
+            'payment_status': payment_status,
+            # Add timing variables for edit functionality
+            'is_editable': is_editable,
+            'remaining_edit_time': remaining_edit_time,
+            'can_edit': is_editable,
+            'edit_expired': not is_time_editable
         }
         
-        # rendered = render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
+        # rendered = render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.sales_bills'))
         # bills_dir = os.path.join('app', 'static', 'bills')
         # os.makedirs(bills_dir, exist_ok=True)
         # # Use current system date/time for filename
@@ -1613,7 +1670,7 @@ def register_routes(bp):
             flash('Bill created successfully!', 'success')
         
         db.session.commit()
-        return render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.manage_bills'))
+        return render_template('shopkeeper/bill_receipt.html', **bill_data, back_url=url_for('shopkeeper.sales_bills'))
 
     @bp.route('/bills/<filename>')
     def serve_bill_file(filename):
