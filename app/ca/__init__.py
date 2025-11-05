@@ -15,7 +15,7 @@ def inject_ca_pending_requests():
     return {'ca_pending_requests': get_ca_pending_requests()}
 
 # Register view modules
-from .views import dashboard, employee_dashboard, clients, employees, bills, connections, reports
+from .views import dashboard, employee_dashboard, clients, employees, bills, connections, reports, messages
 
 # Register routes from each module
 dashboard.register_routes(ca_bp)
@@ -25,3 +25,4 @@ employees.register_routes(ca_bp)
 bills.register_routes(ca_bp)
 connections.register_routes(ca_bp)
 reports.register_routes(ca_bp)
+messages.register_routes(ca_bp)

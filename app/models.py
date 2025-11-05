@@ -311,3 +311,30 @@ class PurchaseBillItem(db.Model):
     
     # Relationships
     matched_product = db.relationship('Product', backref='purchase_items')
+
+class Message(db.Model):
+    """Messages and remarks between CAs and Shopkeepers."""
+    __tablename__ = 'messages'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.String(50), nullable=False)  # user_id from users table
+    receiver_id = db.Column(db.String(50), nullable=False)  # user_id from users table
+    message = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    # Bill integration
+    bill_id = db.Column(db.Integer, db.ForeignKey('bills.bill_id'), nullable=True)
+    message_type = db.Column(db.String(10), default='chat')  # 'chat' or 'remark'
+    
+    # Message status
+    read = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Relationships - using primaryjoin to avoid FK issues
+    bill = db.relationship('Bill', backref='messages', lazy=True)
+    
+    # Indexes for performance
+    __table_args__ = (
+        db.Index('idx_conversation', 'sender_id', 'receiver_id', 'timestamp'),
+        db.Index('idx_bill_messages', 'bill_id', 'message_type'),
+        db.Index('idx_unread_messages', 'receiver_id', 'read', 'timestamp'),
+    )

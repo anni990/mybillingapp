@@ -1,0 +1,151 @@
+{% extends "shopkeeper/s_base.html" %}
+
+{% block title %}Messages - MyBillingApp{% endblock %}
+
+{% block content %}
+<div class="p-6 min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Messages</h1>
+        {% if connected_ca %}
+            <p class="text-gray-600">Chat with your connected CA: {{ connected_ca.firm_name }}</p>
+        {% else %}
+            <p class="text-gray-600">Connect with a CA to start messaging</p>
+        {% endif %}
+    </div>
+    
+    {% if not connected_ca %}
+        <!-- No CA Connected State -->
+        <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+            <i data-feather="message-circle" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">No CA Connected</h3>
+            <p class="text-gray-600 mb-6">To use the messaging feature, you need to connect with a Chartered Accountant first.</p>
+            <a href="{{ url_for('shopkeeper.ca_marketplace') }}" 
+               class="inline-flex items-center px-6 py-3 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition-colors">
+                <i data-feather="briefcase" class="w-5 h-5 mr-2"></i>
+                Browse CA Marketplace
+            </a>
+        </div>
+    {% else %}
+        <!-- Chat Interface -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden" style="height: calc(100vh - 200px);">
+            <div class="flex h-full">
+                <!-- Chat Window (Full Width for Shopkeeper) -->
+                <div class="flex-1 flex flex-col">
+                    <!-- Chat Header -->
+                    <div class="p-4 bg-gray-50 border-b border-gray-200">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                                {{ connected_ca.firm_name[:1].upper() }}
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">{{ connected_ca.firm_name }}</h3>
+                                <p class="text-sm text-gray-500">Your Chartered Accountant</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat/Remarks Toggle -->
+                    <div class="p-4 bg-white border-b border-gray-200">
+                        <div class="flex bg-gray-100 rounded-lg p-1">
+                            <button id="chat-tab" class="flex-1 py-2 px-4 text-sm font-medium text-gray-700 bg-white rounded-lg shadow-sm transition-all duration-200">
+                                Chat
+                            </button>
+                            <button id="remarks-tab" class="flex-1 py-2 px-4 text-sm font-medium text-gray-700 transition-all duration-200">
+                                Remarks
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Messages Area -->
+                    <div class="flex-1 overflow-y-auto custom-scrollbar" id="messages-container">
+                        <div id="messages-list" class="p-4 space-y-4">
+                            <!-- Messages will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Message Input -->
+                    <div class="p-4 bg-white border-t border-gray-200">
+                        <div class="flex items-center space-x-3">
+                            <div class="flex-1">
+                                <textarea id="message-input" 
+                                          placeholder="Type your message..." 
+                                          rows="1"
+                                          class="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                          maxlength="2000"></textarea>
+                            </div>
+                            <button id="send-btn" 
+                                    class="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled>
+                                <i data-feather="send" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="mt-2 text-right">
+                            <span id="char-count" class="text-xs text-gray-500">0/2000</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Remark Modal -->
+<div id="remark-modal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Add Remark to Bill</h3>
+            <button id="close-remark-modal" class="text-gray-400 hover:text-gray-600">
+                <i data-feather="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <div class="mb-4">
+            <div id="remark-bill-info" class="bg-gray-50 rounded-lg p-3 mb-4">
+                <!-- Bill info will be displayed here -->
+            </div>
+            <textarea id="remark-text" 
+                      placeholder="Enter your remark..." 
+                      rows="4"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      maxlength="2000"></textarea>
+            <div class="mt-2 text-right">
+                <span id="remark-char-count" class="text-xs text-gray-500">0/2000</span>
+            </div>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+            <button id="cancel-remark" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Cancel
+            </button>
+            <button id="submit-remark" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50">
+                Add Remark
+            </button>
+        </div>
+    </div>
+</div>
+
+{% if connected_ca %}
+<script src="{{ url_for('static', filename='js/messages.js') }}"></script>
+
+<script>
+// Initialize messages page for Shopkeeper
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof MessagesApp !== 'undefined') {
+        MessagesApp.init({
+            userRole: 'shopkeeper',
+            userId: {{ current_user.user_id }},
+            selectedClientId: {{ connected_ca.user.user_id }}, // Pre-select the CA
+            connectedCAName: '{{ connected_ca.firm_name }}'
+        });
+        
+        // Automatically load conversation with CA
+        MessagesApp.selectClient({{ connected_ca.user.user_id }}, '{{ connected_ca.firm_name }}');
+    }
+    
+    // Initialize feather icons for dynamically added content
+    feather.replace();
+});
+</script>
+{% endif %}
+{% endblock %}
