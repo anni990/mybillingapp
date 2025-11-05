@@ -204,6 +204,44 @@
             overflow-x: hidden;
         }
 
+        /* Create Bill Dropdown Styles */
+        .create-bill-dropdown-content.open {
+            max-height: 200px;
+            opacity: 1;
+            margin-top: 0.25rem;
+        }
+
+        .create-bill-arrow.rotated {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-collapsed .create-bill-dropdown-content {
+            display: none;
+        }
+
+        .sidebar-collapsed .create-bill-arrow {
+            display: none;
+        }
+
+        /* Purchase Bills Dropdown Styles */
+        .purchase-bills-dropdown-content.open {
+            max-height: 200px;
+            opacity: 1;
+            margin-top: 0.25rem;
+        }
+
+        .purchase-bills-arrow.rotated {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-collapsed .purchase-bills-dropdown-content {
+            display: none;
+        }
+
+        .sidebar-collapsed .purchase-bills-arrow {
+            display: none;
+        }
+
         /* Additional mobile-first utilities */
         .line-clamp-2 {
             display: -webkit-box;
@@ -438,18 +476,65 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('shopkeeper.create_bill') }}"
+                        <!-- Create Bill Dropdown -->
+                        <div class="create-bill-dropdown hover:bg-white/10 rounded-xl">
+                            <button class="flex items-center justify-between w-full px-3 py-3 transition duration-300 group text-left"
+                                    onclick="toggleCreateBillDropdown(event)">
+                                <div class="flex items-center">
+                                    <i data-feather="file-plus" class="w-5 h-5 flex-shrink-0"></i>
+                                    <span class="sidebar-text ml-3 whitespace-nowrap">Create Bill</span>
+                                </div>
+                                <i data-feather="chevron-down" class="w-6 h-6 transition-transform duration-300 sidebar-text create-bill-arrow"></i>
+                            </button>
+                            
+                            <!-- Dropdown Content -->
+                            <div class="create-bill-dropdown-content ml-8 mt-1 space-y-1 overflow-hidden transition-all duration-300 max-h-0 opacity-0">
+                                <a href="{{ url_for('shopkeeper.create_bill') }}?customer_type=existing"
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mr-2">
+                                    <i data-feather="users" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">Existing Customer</span>
+                                </a>
+                                <a href="{{ url_for('shopkeeper.create_bill') }}?customer_type=new"
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mb-2 mr-2">
+                                    <i data-feather="user-plus" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">New Customer</span>
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('shopkeeper.sales_bills') }}"
                             class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-                            <i data-feather="file-plus" class="w-5 h-5 flex-shrink-0"></i>
-                            <span class="sidebar-text ml-3 whitespace-nowrap">Create Bill</span>
+                            <i data-feather="file-text" class="w-5 h-5 flex-shrink-0"></i>
+                            <span class="sidebar-text ml-3 whitespace-nowrap">Sales Bills</span>
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('shopkeeper.manage_bills') }}"
-                            class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-                            <i data-feather="file-text" class="w-5 h-5 flex-shrink-0"></i>
-                            <span class="sidebar-text ml-3 whitespace-nowrap">Manage Bills</span>
-                        </a>
+                        <!-- Purchase Bills Dropdown -->
+                        <div class="purchase-bills-dropdown hover:bg-white/10 rounded-xl">
+                            <button class="flex items-center justify-between w-full px-3 py-3 transition duration-300 group text-left"
+                                    onclick="togglePurchaseBillsDropdown(event)">
+                                <div class="flex items-center">
+                                    <i data-feather="shopping-cart" class="w-5 h-5 flex-shrink-0"></i>
+                                    <span class="sidebar-text ml-3 whitespace-nowrap">Purchase Bills</span>
+                                </div>
+                                <!-- <i data-feather="chevron-down" class="w-6 h-6 transition-transform duration-300 sidebar-text purchase-bills-arrow rotated"></i> -->
+                            </button>
+                            
+                            <!-- Dropdown Content - Initially Open -->
+                            <div class="purchase-bills-dropdown-content ml-8 mt-1 space-y-1 overflow-hidden transition-all duration-300 max-h-200 opacity-100 open">
+                                <a href="{{ url_for('shopkeeper.purchase_bills') }}"
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mr-2">
+                                    <i data-feather="list" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">All Bills</span>
+                                </a>
+                                <a href="{{ url_for('shopkeeper.scan_purchase_bill') }}"
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mb-2 mr-2">
+                                    <i data-feather="camera" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">Scan Bill</span>
+                                </a>
+                            </div>
+                        </div>
                     </li>
                     <li>
                         <a href="{{ url_for('shopkeeper.products_stock') }}"
@@ -597,6 +682,9 @@
                 mainContent.style.marginLeft = '';  // Reset to CSS default (ml-64)
                 fixedToggleBtn.classList.remove('show');
             }
+            
+            // Handle dropdown closure when sidebar is collapsed
+            handleSidebarCollapseDropdown();
         }
 
         // Desktop sidebar toggle
@@ -784,6 +872,85 @@
             isNotificationOpen = false;
             notifDropdown.classList.remove('opacity-100', 'scale-100');
             notifDropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+        }
+
+        // Create Bill Dropdown functionality
+        function toggleCreateBillDropdown(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const dropdownContent = document.querySelector('.create-bill-dropdown-content');
+            const arrow = document.querySelector('.create-bill-arrow');
+            
+            if (dropdownContent && arrow) {
+                dropdownContent.classList.toggle('open');
+                arrow.classList.toggle('rotated');
+            }
+        }
+
+        // Purchase Bills Dropdown functionality
+        function togglePurchaseBillsDropdown(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const dropdownContent = document.querySelector('.purchase-bills-dropdown-content');
+            const arrow = document.querySelector('.purchase-bills-arrow');
+            
+            if (dropdownContent && arrow) {
+                dropdownContent.classList.toggle('open');
+                arrow.classList.toggle('rotated');
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const createBillDropdown = document.querySelector('.create-bill-dropdown');
+            const purchaseBillsDropdown = document.querySelector('.purchase-bills-dropdown');
+            
+            // Handle Create Bill dropdown
+            if (createBillDropdown && !createBillDropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.create-bill-dropdown-content');
+                const arrow = document.querySelector('.create-bill-arrow');
+                
+                if (dropdownContent && arrow) {
+                    dropdownContent.classList.remove('open');
+                    arrow.classList.remove('rotated');
+                }
+            }
+            
+            // Handle Purchase Bills dropdown
+            if (purchaseBillsDropdown && !purchaseBillsDropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.purchase-bills-dropdown-content');
+                const arrow = document.querySelector('.purchase-bills-arrow');
+                
+                if (dropdownContent && arrow) {
+                    dropdownContent.classList.remove('open');
+                    arrow.classList.remove('rotated');
+                }
+            }
+        });
+
+        // Handle sidebar collapse - close dropdown when sidebar is collapsed
+        function handleSidebarCollapseDropdown() {
+            if (isCollapsed) {
+                // Close Create Bill dropdown
+                const createBillDropdownContent = document.querySelector('.create-bill-dropdown-content');
+                const createBillArrow = document.querySelector('.create-bill-arrow');
+                
+                if (createBillDropdownContent && createBillArrow) {
+                    createBillDropdownContent.classList.remove('open');
+                    createBillArrow.classList.remove('rotated');
+                }
+
+                // Close Purchase Bills dropdown
+                const purchaseBillsDropdownContent = document.querySelector('.purchase-bills-dropdown-content');
+                const purchaseBillsArrow = document.querySelector('.purchase-bills-arrow');
+                
+                if (purchaseBillsDropdownContent && purchaseBillsArrow) {
+                    purchaseBillsDropdownContent.classList.remove('open');
+                    purchaseBillsArrow.classList.remove('rotated');
+                }
+            }
         }
     </script>
     

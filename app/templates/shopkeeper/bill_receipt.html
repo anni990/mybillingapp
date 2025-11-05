@@ -4,35 +4,132 @@
     <meta charset="UTF-8">
     <title>Bill Receipt - {{ bill.bill_number }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
     <style>
         @media print {
             .no-print {
-                display: none;
+                display: none !important;
+            }
+            
+            /* Print-specific table styling */
+            .overflow-x-auto {
+                overflow-x: visible !important;
+            }
+            
+            table {
+                width: 100% !important;
+                table-layout: fixed !important;
+                font-size: 12px !important;
+            }
+            
+            th, td {
+                padding: 4px 2px !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+                hyphens: auto !important;
+            }
+            
+            /* Adjust column widths for better print layout */
+            .gst-table th:nth-child(1), .gst-table td:nth-child(1) { width: 16% !important; } /* Item */
+            .gst-table th:nth-child(2), .gst-table td:nth-child(2) { width: 8% !important; }  /* HSN */
+            .gst-table th:nth-child(3), .gst-table td:nth-child(3) { width: 4% !important; }  /* Qty */
+            .gst-table th:nth-child(4), .gst-table td:nth-child(4) { width: 8% !important; } /* Unit Price */
+            .gst-table th:nth-child(5), .gst-table td:nth-child(5) { width: 10% !important; } /* Discount */
+            .gst-table th:nth-child(6), .gst-table td:nth-child(6) { width: 10% !important; } /* Discounted Price */
+            .gst-table th:nth-child(7), .gst-table td:nth-child(7) { width: 14% !important; }  /* SGST */
+            .gst-table th:nth-child(8), .gst-table td:nth-child(8) { width: 14% !important; }  /* CGST */
+            .gst-table th:nth-child(9), .gst-table td:nth-child(9) { width: 10% !important; }  /* Sub total */
+            /* .gst-table th:nth-child(10), .gst-table td:nth-child(10) { width: 15% !important; } CGST Amt */
+            /* .gst-table th:nth-child(11), .gst-table td:nth-child(11) { width: 12% !important; } Sub Total */
+            
+            /* Non-GST table column widths */
+            .non-gst-table th:nth-child(1), .non-gst-table td:nth-child(1) { width: 40% !important; } /* Item */
+            .non-gst-table th:nth-child(2), .non-gst-table td:nth-child(2) { width: 15% !important; } /* Qty */
+            .non-gst-table th:nth-child(3), .non-gst-table td:nth-child(3) { width: 15% !important; } /* Unit Price */
+            .non-gst-table th:nth-child(4), .non-gst-table td:nth-child(4) { width: 15% !important; } /* Discount */
+            .non-gst-table th:nth-child(5), .non-gst-table td:nth-child(5) { width: 15% !important; } /* Total */
+            
+            /* Ensure proper page margins for printing */
+            @page {
+                margin: 0.5in;
+                size: A4;
+            }
+            
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+        
+        /* Prevent layout shifts */
+        .print-container {
+            position: relative;
+        }
+        
+        .print-container::before {
+            content: '';
+            display: block;
+            height: 0;
+        }
+        
+        /* Additional print preparation styles */
+        .printing {
+            overflow: visible !important;
+        }
+        
+        .printing .overflow-x-auto {
+            overflow-x: visible !important;
+        }
+        
+        /* Responsive table handling for smaller content */
+        @media screen and (max-width: 768px) {
+            .gst-table {
+                font-size: 11px;
+            }
+            
+            .gst-table th, .gst-table td {
+                padding: 2px 1px;
             }
         }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
-    <div class="max-w-4xl mx-auto bg-white p-6 mt-10 rounded shadow-lg">
-        <div class="mb-4 flex justify-between items-center no-print">
-            <a href="{{ back_url }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
-                ← Back
+    <div class="max-w-4xl mx-auto bg-white p-6 mt-10 rounded shadow-lg print-container">
+        <div class="mb-4 flex justify-between items-start no-print">
+            <!-- Left side: Back button -->
+            <a href="{{ back_url }}" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-4 py-2 rounded flex items-center gap-2">
+                <i data-feather="arrow-left" class="w-5 h-5"></i> 
+                <span>Back</span>
             </a>
-            <div>
-                {% if is_editable %}
-                <a href="{{ url_for('shopkeeper.edit_bill', bill_id=bill.bill_id) }}" target="_blank" id="editBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded inline-block">
-                    Edit Bill
-                </a>
-                {% else %}
-                {% if current_user.role in ['CA', 'employee'] %}
-                <button onclick="showEditRestriction()" id="editBtn" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded cursor-not-allowed">
-                    Edit Bill
-                </button>
+            
+            <!-- Right side: Edit and Print buttons -->
+            <div class="flex flex-col items-end space-y-2">
+                <!-- Button row -->
+                <div class="flex items-center space-x-2">
+                    <!-- Only show edit button for shopkeeper role -->
+                    {% if current_user.role == 'shopkeeper' %}
+                        {% if is_editable and remaining_edit_time %}
+                        <a href="{{ url_for('shopkeeper.edit_bill', bill_id=bill.bill_id) }}" target="_blank" id="editBtn" class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-4 py-2 rounded inline-block font-bold">
+                            Edit Bill
+                        </a>
+                        {% elif bill.shopkeeper.user_id == current_user.user_id %}
+                        <button onclick="showTimeExpiredMessage()" id="editBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded cursor-not-allowed font-bold">
+                            Edit Bill (Expired)
+                        </button>
+                        {% endif %}
+                    {% endif %}
+                    <button onclick="printToPDF()" class="bg-green-100 hover:bg-green-200 text-green-600 px-4 py-2 rounded font-bold flex items-center gap-2">
+                        <i data-feather="save" class="w-5 h-5"></i> 
+                        Print / Save PDF
+                    </button>
+                </div>
+                
+                <!-- Countdown timer below edit button (only for shopkeeper) -->
+                {% if current_user.role == 'shopkeeper' and is_editable and remaining_edit_time %}
+                <div class="text-xs text-orange-600 font-medium" id="countdown">
+                    Edit expires in: <span id="timer">{{ remaining_edit_time.minutes }}:{{ '%02d'|format(remaining_edit_time.seconds) }}</span>
+                </div>
                 {% endif %}
-                {% endif %}
-                <button onclick="printToPDF()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded ml-2">
-                    Print / Save PDF
-                </button>
             </div>
         </div>
 
@@ -104,12 +201,12 @@
         <!-- GST Summary Table (Only show for GST bills) -->
         <h2 class="text-lg font-semibold mb-2">GST Summary</h2>
         <div class="overflow-x-auto">
-            <table class="w-full border text-sm text-left">
+            <table class="w-full border text-sm text-left gst-table">
                 <thead class="bg-orange-100 text-orange-700">
                     <tr>
                         <th class="p-2 border">Item</th>
                         <th class="p-2 border">HSN Code</th>
-                        <th class="p-2 border text-right">Quantity</th>
+                        <th class="p-2 border text-right">Qty</th>
                         <th class="p-2 border text-right">Unit Price</th>
                         <th class="p-2 border text-right">Discount</th>
                         <th class="p-2 border text-right">Discounted Price</th>
@@ -189,7 +286,7 @@
         <!-- Non-GST Bill Items Table (Simplified for Non-GST) -->
         <h2 class="text-lg font-semibold mb-2">Bill Items</h2>
         <div class="overflow-x-auto">
-            <table class="w-full border text-sm text-left">
+            <table class="w-full border text-sm text-left non-gst-table">
                 <thead class="bg-orange-100 text-orange-700">
                     <tr>
                         <th class="p-2 border">Item</th>
@@ -249,22 +346,27 @@
     </div>
 
     <script>
-        function showEditRestriction() {
-            // Create and show a temporary alert message
+
+        feather.replace();
+
+
+
+        function showTimeExpiredMessage() {
+            // Create and show a temporary alert message for expired edit time
             const alertDiv = document.createElement('div');
-            alertDiv.className = 'fixed top-4 right-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg z-50';
+            alertDiv.className = 'fixed top-4 right-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-lg z-50';
             alertDiv.innerHTML = `
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <p class="text-sm font-medium">Only Shop Owner can Edit bills.</p>
+                        <p class="text-sm font-medium">Edit time has expired! Bills can only be edited within 60 minutes of creation.</p>
                     </div>
                     <div class="ml-auto pl-3">
-                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-yellow-500 hover:text-yellow-600">
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-600">
                             <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
                             </svg>
@@ -274,26 +376,106 @@
             `;
             document.body.appendChild(alertDiv);
             
-            // Auto-remove after 5 seconds
+            // Auto-remove after 7 seconds
             setTimeout(() => {
                 if (alertDiv.parentElement) {
                     alertDiv.remove();
                 }
-            }, 5000);
+            }, 7000);
         }
 
         function printToPDF() {
+            // Store original layout state
+            const originalLayout = document.documentElement.scrollTop;
+            const originalDisplay = [];
+            
             // Hide edit buttons and forms
-            document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.no-print').forEach((el, index) => {
+                originalDisplay[index] = el.style.display;
+                el.style.display = 'none';
+            });
             
-            // Print
+            // Add print class for additional styling control
+            document.body.classList.add('printing');
+            
+            // Store the beforeprint and afterprint event handlers
+            const beforePrintHandler = () => {
+                // Ensure all styles are applied before printing
+                document.body.style.overflow = 'visible';
+                document.documentElement.style.overflow = 'visible';
+            };
+            
+            const afterPrintHandler = () => {
+                // Clean up after printing
+                document.body.classList.remove('printing');
+                
+                // Restore original display properties
+                document.querySelectorAll('.no-print').forEach((el, index) => {
+                    el.style.display = originalDisplay[index] || 'block';
+                });
+                
+                // Reset body styles
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                
+                // Restore scroll position
+                document.documentElement.scrollTop = originalLayout;
+                
+                // Remove event listeners
+                window.removeEventListener('beforeprint', beforePrintHandler);
+                window.removeEventListener('afterprint', afterPrintHandler);
+                
+                // Reload page after a short delay to ensure layout is restored
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1);
+            };
+            
+            // Add event listeners
+            window.addEventListener('beforeprint', beforePrintHandler);
+            window.addEventListener('afterprint', afterPrintHandler);
+            
+            // Trigger print
             window.print();
-            
-            // Show buttons again after printing
-            setTimeout(() => {
-                document.querySelectorAll('.no-print').forEach(el => el.style.display = 'block');
-            }, 100);
         }
+
+        // Countdown timer for edit button
+        function startEditCountdown() {
+            const timerElement = document.getElementById('timer');
+            if (!timerElement) return;
+            
+            {% if remaining_edit_time %}
+            let remainingSeconds = {{ remaining_edit_time.minutes * 60 + remaining_edit_time.seconds }};
+            {% else %}
+            let remainingSeconds = 0;
+            {% endif %}
+            
+            function updateCountdown() {
+                if (remainingSeconds <= 0) {
+                    // Time expired - reload page to show expired state
+                    window.location.reload();
+                    return;
+                }
+                
+                const minutes = Math.floor(remainingSeconds / 60);
+                const seconds = remainingSeconds % 60;
+                
+                timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                remainingSeconds--;
+            }
+            
+            // Update immediately and then every second
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start countdown timer if edit button is available (only for shopkeeper)
+            {% if current_user.role == 'shopkeeper' and is_editable and remaining_edit_time %}
+            startEditCountdown();
+            {% endif %}
+        });
     </script>
 </body>
 </html>

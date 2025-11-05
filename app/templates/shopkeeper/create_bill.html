@@ -158,10 +158,10 @@
             <p class="text-gray-600 text-sm md:text-base mt-1">Generate a new bill for your customer</p>
         </div>
         <div class="flex items-center space-x-2 md:space-x-4">
-            <a href="{{ url_for('shopkeeper.manage_bills') }}" 
+            <a href="{{ url_for('shopkeeper.sales_bills') }}" 
                class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
                 <i data-feather="file-text" class="w-4 h-4"></i>
-                <span class="hidden md:inline">Manage Bills</span>
+                <span class="hidden md:inline">Sales Bills</span>
                 <span class="md:hidden">Bills</span>
             </a>
             <a href="{{ url_for('shopkeeper.dashboard') }}" 
@@ -1128,6 +1128,54 @@
         feather.replace();
     }
 
+    // Function to get URL parameters
+    function getURLParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    // Function to auto-select customer type based on URL parameter
+    function autoSelectCustomerType() {
+        const customerTypeParam = getURLParameter('customer_type');
+        
+        if (customerTypeParam && (customerTypeParam === 'existing' || customerTypeParam === 'new')) {
+            const radioButton = document.querySelector(`input[name="customer_type"][value="${customerTypeParam}"]`);
+            if (radioButton) {
+                radioButton.checked = true;
+                
+                // Hide the customer type toggle container since it's auto-selected
+                const customerTypeContainer = document.querySelector('.customer-type-container').parentElement;
+                if (customerTypeContainer) {
+                    customerTypeContainer.style.display = 'none';
+                }
+                
+                // Update visual states immediately
+                document.querySelectorAll('.customer-type-label').forEach(label => {
+                    label.classList.remove('active');
+                });
+                
+                const activeLabel = document.querySelector(`label[data-type="${customerTypeParam}"]`);
+                if (activeLabel) {
+                    activeLabel.classList.add('active');
+                }
+                
+                // Trigger the toggle functionality
+                setTimeout(() => {
+                    toggleCustomerFields();
+                }, 50);
+                
+                // Show a subtle notification
+                setTimeout(() => {
+                    const customerTypeName = customerTypeParam === 'existing' ? 'Existing Customer' : 'New Customer';
+                    showSuccess(`${customerTypeName} mode selected`);
+                }, 800);
+                
+                return true; // Indicate that auto-selection occurred
+            }
+        }
+        return false; // No auto-selection occurred
+    }
+
     // Load customers when page loads
     document.addEventListener('DOMContentLoaded', function() {
         loadCustomers();
@@ -1137,27 +1185,33 @@
         initializeCustomerTypeToggle();
         initializeCustomToggleSwitch();
         
+        // Auto-select customer type based on URL parameter first
+        const autoSelected = autoSelectCustomerType();
+        
         // Initialize payment radio visuals
         const defaultRadio = document.querySelector('input[name="payment_status"]:checked');
         if (defaultRadio) {
             updatePaymentRadioVisual(defaultRadio);
         }
         
-        // Force initial customer type visual state
-        setTimeout(() => {
-            const checkedCustomerType = document.querySelector('input[name="customer_type"]:checked');
-            if (checkedCustomerType) {
-                const checkedValue = checkedCustomerType.value;
-                document.querySelectorAll('.customer-type-label').forEach(label => {
-                    label.classList.remove('active');
-                });
-                const activeLabel = document.querySelector(`label[data-type="${checkedValue}"]`);
-                if (activeLabel) {
-                    activeLabel.classList.add('active');
+        // Force initial customer type visual state (only if no auto-selection occurred)
+        if (!autoSelected) {
+            setTimeout(() => {
+                const checkedCustomerType = document.querySelector('input[name="customer_type"]:checked');
+                if (checkedCustomerType) {
+                    const checkedValue = checkedCustomerType.value;
+                    document.querySelectorAll('.customer-type-label').forEach(label => {
+                        label.classList.remove('active');
+                    });
+                    const activeLabel = document.querySelector(`label[data-type="${checkedValue}"]`);
+                    if (activeLabel) {
+                        activeLabel.classList.add('active');
+                    }
+                    toggleCustomerFields();
                 }
-            }
-            feather.replace(); // Re-initialize icons after DOM changes
-        }, 100);
+                feather.replace(); // Re-initialize icons after DOM changes
+            }, 100);
+        }
     });
 
     // Custom notification functions

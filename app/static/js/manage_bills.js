@@ -943,5 +943,60 @@ document.addEventListener('DOMContentLoaded', function () {
         updatePageNumbers('purchase');
     });
 
-    console.log('Manage Bills: All functionality including pagination initialized successfully');
+    // Edit Button Countdown Timer
+    function updateEditButtonCountdowns() {
+        const editButtons = document.querySelectorAll('[data-remaining-time]');
+        const editLinks = document.querySelectorAll('a[href*="edit_bill"]');
+        
+        editButtons.forEach(button => {
+            const remainingSeconds = parseInt(button.dataset.remainingTime);
+            if (remainingSeconds > 0) {
+                const newRemaining = remainingSeconds - 1;
+                button.dataset.remainingTime = newRemaining;
+                
+                const minutes = Math.floor(newRemaining / 60);
+                const seconds = newRemaining % 60;
+                
+                // Update tooltip
+                const tooltip = `Edit Bill (${minutes}m ${seconds}s left)`;
+                button.setAttribute('title', tooltip);
+                
+                // If time expired, disable the button
+                if (newRemaining <= 0) {
+                    button.classList.remove('text-green-600', 'hover:text-green-900');
+                    button.classList.add('text-gray-400', 'cursor-not-allowed');
+                    button.removeAttribute('href');
+                    button.setAttribute('title', 'Edit time expired (60 minutes)');
+                    button.onclick = (e) => e.preventDefault();
+                }
+            }
+        });
+        
+        editLinks.forEach(link => {
+            const titleMatch = link.getAttribute('title')?.match(/(\d+)m (\d+)s left/);
+            if (titleMatch) {
+                const minutes = parseInt(titleMatch[1]);
+                const seconds = parseInt(titleMatch[2]);
+                const totalSeconds = minutes * 60 + seconds - 1;
+                
+                if (totalSeconds > 0) {
+                    const newMinutes = Math.floor(totalSeconds / 60);
+                    const newSeconds = totalSeconds % 60;
+                    link.setAttribute('title', `Edit Bill (${newMinutes}m ${newSeconds}s left)`);
+                } else {
+                    // Convert to disabled state
+                    link.classList.remove('text-green-600', 'hover:text-green-900');
+                    link.classList.add('text-gray-400', 'cursor-not-allowed');
+                    link.removeAttribute('href');
+                    link.setAttribute('title', 'Edit time expired (60 minutes)');
+                    link.onclick = (e) => e.preventDefault();
+                }
+            }
+        });
+    }
+    
+    // Update countdown every second
+    setInterval(updateEditButtonCountdowns, 1000);
+
+    console.log('Manage Bills: All functionality including pagination and edit countdown initialized successfully');
 });

@@ -147,7 +147,7 @@ def register_routes(bp):
             # Shopkeepers can only view their own bills
             if bill.shopkeeper.user_id != current_user.user_id:
                 flash('Access denied: You can only view your own bills.', 'danger')
-                return redirect(url_for('shopkeeper.manage_bills'))
+                return redirect(url_for('shopkeeper.sales_bills'))
         else:
             flash('Access denied: Invalid role.', 'danger')
             return redirect(url_for('auth.login'))
