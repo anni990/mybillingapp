@@ -122,6 +122,14 @@
                         <i data-feather="save" class="w-5 h-5"></i> 
                         Print / Save PDF
                     </button>
+                    <!-- Remark button for CA users -->
+                    {% if current_user.role == 'CA' %}
+                    <button onclick="openRemarkModal({{ bill.bill_id }}, '{{ bill.bill_number }}', '{{ bill.total_amount }}', '{{ bill.bill_date.strftime('%Y-%m-%d') if bill.bill_date }}')" 
+                            class="bg-orange-100 hover:bg-orange-200 text-orange-600 px-4 py-2 rounded font-bold flex items-center gap-2">
+                        <i data-feather="message-circle" class="w-5 h-5"></i>
+                        Add Remark
+                    </button>
+                    {% endif %}
                 </div>
                 
                 <!-- Countdown timer below edit button (only for shopkeeper) -->
@@ -477,5 +485,149 @@
             {% endif %}
         });
     </script>
+
+    <!-- Remark Modal for CA users -->
+    {% if current_user.role == 'CA' %}
+    <div id="remark-modal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Add Remark to Bill</h3>
+                <button id="close-remark-modal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="remark-bill-info" class="mb-4 p-3 bg-gray-50 rounded-lg">
+                <!-- Bill info will be populated here -->
+            </div>
+
+            <div class="mb-4">
+                <label for="remark-text" class="block text-sm font-medium text-gray-700 mb-2">Your Remark</label>
+                <textarea 
+                    id="remark-text" 
+                    rows="4" 
+                    maxlength="500"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Add your remark about this bill..."></textarea>
+                <p class="text-xs text-gray-500 mt-1">
+                    <span id="remark-char-count">0</span>/500 characters
+                </p>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-remark" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button id="submit-remark" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                    Send Remark
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Remark modal functionality for CA users
+        let currentBillData = null;
+
+        function openRemarkModal(billId, billNumber, totalAmount, billDate) {
+            const modal = document.getElementById('remark-modal');
+            const billInfo = document.getElementById('remark-bill-info');
+            const remarkText = document.getElementById('remark-text');
+            const charCount = document.getElementById('remark-char-count');
+
+            // Store current bill data
+            currentBillData = {
+                id: billId,
+                number: billNumber,
+                amount: totalAmount,
+                date: billDate
+            };
+
+            // Update bill info
+            billInfo.innerHTML = `
+                <h4 class="font-medium text-gray-900">Bill #${billNumber}</h4>
+                <p class="text-sm text-gray-600">Amount: ₹${totalAmount} • Date: ${billDate}</p>
+            `;
+
+            // Reset form
+            remarkText.value = '';
+            charCount.textContent = '0';
+
+            // Show modal
+            modal.classList.remove('hidden');
+            remarkText.focus();
+        }
+
+        function closeRemarkModal() {
+            document.getElementById('remark-modal').classList.add('hidden');
+            currentBillData = null;
+        }
+
+        async function submitRemark() {
+            const remarkText = document.getElementById('remark-text');
+            const message = remarkText.value.trim();
+
+            if (!message) {
+                alert('Please enter a remark');
+                return;
+            }
+
+            if (!currentBillData) {
+                alert('No bill selected');
+                return;
+            }
+
+            try {
+                const shopkeeperId = {{ bill.shopkeeper.user_id }};
+                
+                const response = await fetch('/api/messages/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        receiver_id: shopkeeperId,
+                        message: message,
+                        message_type: 'remark',
+                        bill_id: currentBillData.id
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Remark sent successfully!');
+                    closeRemarkModal();
+                } else {
+                    const error = await response.json();
+                    alert('Failed to send remark: ' + (error.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error sending remark:', error);
+                alert('Failed to send remark. Please try again.');
+            }
+        }
+
+        // Event listeners for remark modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeBtn = document.getElementById('close-remark-modal');
+            const cancelBtn = document.getElementById('cancel-remark');
+            const submitBtn = document.getElementById('submit-remark');
+            const remarkText = document.getElementById('remark-text');
+            const charCount = document.getElementById('remark-char-count');
+
+            if (closeBtn) closeBtn.addEventListener('click', closeRemarkModal);
+            if (cancelBtn) cancelBtn.addEventListener('click', closeRemarkModal);
+            if (submitBtn) submitBtn.addEventListener('click', submitRemark);
+
+            // Character count update
+            if (remarkText) {
+                remarkText.addEventListener('input', function() {
+                    charCount.textContent = this.value.length;
+                });
+            }
+        });
+    </script>
+    {% endif %}
 </body>
 </html>

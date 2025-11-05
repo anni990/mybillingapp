@@ -2,13 +2,15 @@
 
 ## 🏗️ Architecture Overview
 
-MyBillingApp is a **multi-tenant Flask ERP system** connecting Shopkeepers, Chartered Accountants (CAs), and CA Employees in a billing and GST management ecosystem. The app uses **modular blueprint architecture** with role-based access control.
+MyBillingApp is a **multi-tenant Flask ERP system** connecting Shopkeepers, Chartered Accountants (CAs), and CA Employees in a billing and GST management ecosystem. The app uses **modular blueprint architecture** with role-based access control and service layer pattern.
 
 **Core Business Flow:**
 - **Shopkeepers**: Create bills, manage products/inventory, customer ledgers (khata system), connect with CAs
 - **CAs**: Manage multiple shopkeeper clients, delegate to employees, track GST filing status
 - **CA Employees**: Handle assigned shopkeeper accounts via delegation
 - **Connection System**: Approval-based relationships between shopkeepers and CAs
+
+**Service Layer Architecture:** Business logic is extracted into service classes in `app/{role}/services/` (e.g., `BillService`, `CustomerService`, `GeminiService` for AI integrations)
 
 ## 🚨 Critical Foreign Key Patterns (Most Important!)
 
@@ -60,7 +62,20 @@ bills.register_routes(shopkeeper_bp)
 
 ## 💾 Data & Business Logic
 
+**Database:** MySQL with PyMySQL driver. Environment configured via `.env` file with `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT` (default 3307).
+
 **Payment Fields:** Bills use `paid_amount`/`due_amount` (legacy `amount_paid`/`amount_unpaid` removed)
+
+**Service Layer Pattern:** Business logic is in service classes using static methods:
+```python
+# app/shopkeeper/services/bill_service.py
+class BillService:
+    @staticmethod
+    def calculate_gst_amount(price: Decimal, gst_rate: Decimal) -> Decimal:
+        return (price * gst_rate / Decimal('100')).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP
+        )
+```
 
 **Customer Ledger System (Khata):**
 ```python
@@ -80,6 +95,8 @@ def create_ledger_entry(customer_id, transaction_type, debit_amount, credit_amou
 
 **GST Calculations:** Use `Decimal` for money math: `Decimal(str(price)) * Decimal(str(gst_rate)) / Decimal('100')`
 
+**External AI Integration:** Gemini AI service for purchase bill OCR in `app/shopkeeper/services/gemini_service.py` using Google's generative AI API
+
 ## 🎨 Frontend Patterns
 
 **Responsive Design:** Dual desktop/mobile views with Tailwind classes:
@@ -98,6 +115,21 @@ def create_ledger_entry(customer_id, transaction_type, debit_amount, credit_amou
 ```
 
 **Dynamic Search:** 300ms debounced search with product suggestions in `create_bill.js`
+
+**Responsive Forms:** Dual desktop/mobile input handling - mobile inputs disable desktop inputs to prevent duplicate form submissions:
+```javascript
+function handleFormInputDuplicates() {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        desktopRows.forEach(row => {
+            row.querySelectorAll('input[name]').forEach(input => {
+                input.disabled = true;
+                input.removeAttribute('name');
+            });
+        });
+    }
+}
+```
 
 **Icons:** Feather icons with `feather.replace()` initialization
 
@@ -119,13 +151,17 @@ python -c "from app import create_app, db; app = create_app(); app.app_context()
 
 **Database:** MySQL with PyMySQL driver. Session storage in `flask_session/` directory.
 
+**Environment Setup:** Requires `.env` file with database credentials and API keys (especially `GEMINI_API_KEY` for AI features).
+
 ## 🔧 Critical Development Rules
 
-1. **Always use role decorators:** `@login_required` + `@shopkeeper_required`/`@ca_required`
+1. **Always use role decorators:** `@login_required` + `@shopkeeper_required`/`@ca_required` from `app/{role}/utils.py`
 2. **Template naming:** Extend role-specific base templates (`shopkeeper/s_base.html`, `ca/ca_base.html`)
 3. **Transaction safety:** Always commit or rollback database transactions explicitly
 4. **File uploads:** Store in `app/static/uploads/` (shopkeeper) or `app/static/ca_upload/` (CA)
 5. **Error handling:** Use Flask flash messages, not browser alerts
+6. **Mobile responsiveness:** Always implement dual desktop/mobile views with proper input handling
+7. **Service layer:** Keep business logic in service classes, not in route handlers
 
 ## 📁 Key Files
 

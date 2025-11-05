@@ -1,16 +1,11 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Host: 127.0.0.1
--- Generation Time: Oct 02, 2025 at 02:28 PM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- phpMySQL SQL Dump
+-- Generated from current database schema
+-- Database: mybillingapp
+-- Generated on: November 6, 2025 - Updated to match current models.py
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -18,7 +13,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `mybillingapp1`
+-- Database: `mybillingapp`
 --
 
 -- --------------------------------------------------------
@@ -37,12 +32,14 @@ CREATE TABLE `bills` (
   `customer_contact` varchar(20) DEFAULT NULL,
   `bill_date` datetime NOT NULL,
   `gst_type` enum('GST','Non-GST') NOT NULL,
+  `gst_mode` enum('INCLUSIVE','EXCLUSIVE') DEFAULT 'EXCLUSIVE',
   `total_amount` decimal(12,2) NOT NULL,
   `payment_status` enum('Paid','Unpaid','Partial') NOT NULL DEFAULT 'Paid',
-  `pdf_file_path` varchar(255) DEFAULT NULL,
-  `customer_id` int(11) DEFAULT NULL,
   `paid_amount` decimal(10,2) DEFAULT 0.00,
-  `due_amount` decimal(10,2) DEFAULT 0.00
+  `due_amount` decimal(10,2) DEFAULT 0.00,
+  `date_with_time` tinyint(1) DEFAULT 0,
+  `pdf_file_path` varchar(255) DEFAULT NULL,
+  `customer_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -60,7 +57,15 @@ CREATE TABLE `bill_items` (
   `custom_hsn_code` varchar(20) DEFAULT NULL,
   `quantity` int(11) NOT NULL,
   `price_per_unit` decimal(10,2) NOT NULL,
-  `total_price` decimal(12,2) NOT NULL
+  `total_price` decimal(12,2) NOT NULL,
+  `discount_percent` decimal(5,2) DEFAULT 0.00,
+  `discount_amount` decimal(10,2) DEFAULT 0.00,
+  `taxable_amount` decimal(12,2) DEFAULT 0.00,
+  `cgst_rate` decimal(5,2) DEFAULT 0.00,
+  `sgst_rate` decimal(5,2) DEFAULT 0.00,
+  `cgst_amount` decimal(10,2) DEFAULT 0.00,
+  `sgst_amount` decimal(10,2) DEFAULT 0.00,
+  `total_gst_amount` decimal(10,2) DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -136,6 +141,7 @@ CREATE TABLE `customers` (
   `phone` varchar(15) NOT NULL,
   `email` varchar(100) DEFAULT NULL,
   `address` text DEFAULT NULL,
+  `gstin` varchar(15) DEFAULT NULL,
   `created_date` datetime DEFAULT current_timestamp(),
   `updated_date` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `is_active` tinyint(1) DEFAULT 1,
@@ -222,6 +228,23 @@ CREATE TABLE `gst_filing_status` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `messages`
+--
+
+CREATE TABLE `messages` (
+  `id` int(11) NOT NULL,
+  `sender_id` varchar(50) NOT NULL,
+  `receiver_id` varchar(50) NOT NULL,
+  `message` text NOT NULL,
+  `timestamp` datetime DEFAULT current_timestamp(),
+  `bill_id` int(11) DEFAULT NULL,
+  `message_type` varchar(10) DEFAULT 'chat',
+  `read` tinyint(1) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `products`
 --
 
@@ -236,6 +259,51 @@ CREATE TABLE `products` (
   `gst_rate` decimal(5,2) DEFAULT 0.00,
   `hsn_code` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `purchase_bills`
+--
+
+CREATE TABLE `purchase_bills` (
+  `purchase_bill_id` int(11) NOT NULL,
+  `shopkeeper_id` int(11) NOT NULL,
+  `vendor_name` varchar(200) DEFAULT NULL,
+  `vendor_address` text DEFAULT NULL,
+  `vendor_gst_number` varchar(20) DEFAULT NULL,
+  `vendor_phone` varchar(20) DEFAULT NULL,
+  `vendor_email` varchar(100) DEFAULT NULL,
+  `invoice_number` varchar(100) DEFAULT NULL,
+  `bill_date` date DEFAULT NULL,
+  `total_amount` decimal(12,2) DEFAULT NULL,
+  `tax_amount` decimal(10,2) DEFAULT NULL,
+  `discount_amount` decimal(10,2) DEFAULT NULL,
+  `scanned_at` datetime DEFAULT current_timestamp(),
+  `file_path` varchar(255) DEFAULT NULL,
+  `raw_llm_response` text DEFAULT NULL,
+  `processing_status` enum('processing','completed','failed') DEFAULT 'processing',
+  `error_message` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `purchase_bill_items`
+--
+
+CREATE TABLE `purchase_bill_items` (
+  `item_id` int(11) NOT NULL,
+  `purchase_bill_id` int(11) NOT NULL,
+  `item_name` varchar(200) NOT NULL,
+  `quantity` decimal(10,3) DEFAULT NULL,
+  `unit_price` decimal(10,2) DEFAULT NULL,
+  `total_price` decimal(12,2) DEFAULT NULL,
+  `gst_rate` decimal(5,2) DEFAULT NULL,
+  `hsn_code` varchar(20) DEFAULT NULL,
+  `matched_product_id` int(11) DEFAULT NULL,
+  `is_new_product` tinyint(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -267,7 +335,10 @@ CREATE TABLE `shopkeepers` (
   `template_choice` varchar(20) DEFAULT 'template2',
   `city` varchar(100) DEFAULT NULL,
   `state` varchar(100) DEFAULT NULL,
-  `pincode` varchar(20) DEFAULT NULL
+  `pincode` varchar(20) DEFAULT NULL,
+  `invoice_prefix` varchar(20) DEFAULT 'INV',
+  `invoice_starting_number` int(11) DEFAULT 1,
+  `current_invoice_number` int(11) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -298,7 +369,8 @@ CREATE TABLE `users` (
   `password_hash` varchar(255) NOT NULL,
   `role` enum('shopkeeper','CA','employee') NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `plain_password` varchar(255) DEFAULT NULL
+  `plain_password` varchar(255) DEFAULT NULL,
+  `walkthrough_completed` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -342,7 +414,9 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 ALTER TABLE `bills`
   ADD PRIMARY KEY (`bill_id`),
   ADD KEY `idx_shopkeeper_id_bills` (`shopkeeper_id`),
-  ADD KEY `IX_bills_customer` (`customer_id`);
+  ADD KEY `FK_bills_customer` (`customer_id`),
+  ADD KEY `idx_bills_gst_mode` (`gst_mode`),
+  ADD KEY `idx_bills_gst_type` (`gst_type`);
 
 --
 -- Indexes for table `bill_items`
@@ -350,14 +424,16 @@ ALTER TABLE `bills`
 ALTER TABLE `bill_items`
   ADD PRIMARY KEY (`bill_item_id`),
   ADD KEY `idx_bill_id` (`bill_id`),
-  ADD KEY `idx_product_id` (`product_id`);
+  ADD KEY `idx_product_id` (`product_id`),
+  ADD KEY `idx_bill_items_discount` (`discount_percent`);
 
 --
 -- Indexes for table `ca_connections`
 --
 ALTER TABLE `ca_connections`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_connection` (`shopkeeper_id`,`ca_id`);
+  ADD UNIQUE KEY `unique_connection` (`shopkeeper_id`,`ca_id`),
+  ADD KEY `ca_id` (`ca_id`);
 
 --
 -- Indexes for table `ca_employees`
@@ -417,11 +493,39 @@ ALTER TABLE `gst_filing_status`
   ADD KEY `employee_id` (`employee_id`);
 
 --
+-- Indexes for table `messages`
+--
+ALTER TABLE `messages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `ix_messages_timestamp` (`timestamp`),
+  ADD KEY `idx_bill_messages` (`bill_id`,`message_type`),
+  ADD KEY `idx_conversation` (`sender_id`,`receiver_id`,`timestamp`),
+  ADD KEY `idx_unread_messages` (`receiver_id`,`read`,`timestamp`);
+
+--
 -- Indexes for table `products`
 --
 ALTER TABLE `products`
   ADD PRIMARY KEY (`product_id`),
   ADD KEY `idx_shopkeeper_id` (`shopkeeper_id`);
+
+--
+-- Indexes for table `purchase_bills`
+--
+ALTER TABLE `purchase_bills`
+  ADD PRIMARY KEY (`purchase_bill_id`),
+  ADD KEY `idx_shopkeeper_id` (`shopkeeper_id`),
+  ADD KEY `idx_processing_status` (`processing_status`),
+  ADD KEY `idx_scanned_at` (`scanned_at`);
+
+--
+-- Indexes for table `purchase_bill_items`
+--
+ALTER TABLE `purchase_bill_items`
+  ADD PRIMARY KEY (`item_id`),
+  ADD KEY `idx_purchase_bill_id` (`purchase_bill_id`),
+  ADD KEY `idx_matched_product_id` (`matched_product_id`),
+  ADD KEY `idx_is_new_product` (`is_new_product`);
 
 --
 -- Indexes for table `shopkeepers`
@@ -443,7 +547,8 @@ ALTER TABLE `shop_connections`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_users_walkthrough_completed` (`walkthrough_completed`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -510,10 +615,28 @@ ALTER TABLE `gst_filing_status`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `messages`
+--
+ALTER TABLE `messages`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
   MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `purchase_bills`
+--
+ALTER TABLE `purchase_bills`
+  MODIFY `purchase_bill_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `purchase_bill_items`
+--
+ALTER TABLE `purchase_bill_items`
+  MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `shopkeepers`
@@ -550,6 +673,13 @@ ALTER TABLE `bills`
 ALTER TABLE `bill_items`
   ADD CONSTRAINT `bill_items_ibfk_1` FOREIGN KEY (`bill_id`) REFERENCES `bills` (`bill_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `bill_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `ca_connections`
+--
+ALTER TABLE `ca_connections`
+  ADD CONSTRAINT `ca_connections_ibfk_1` FOREIGN KEY (`shopkeeper_id`) REFERENCES `shopkeepers` (`shopkeeper_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `ca_connections_ibfk_2` FOREIGN KEY (`ca_id`) REFERENCES `chartered_accountants` (`ca_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `ca_employees`
@@ -600,10 +730,29 @@ ALTER TABLE `gst_filing_status`
   ADD CONSTRAINT `gst_filing_status_ibfk_2` FOREIGN KEY (`employee_id`) REFERENCES `ca_employees` (`employee_id`);
 
 --
+-- Constraints for table `messages`
+--
+ALTER TABLE `messages`
+  ADD CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`bill_id`) REFERENCES `bills` (`bill_id`);
+
+--
 -- Constraints for table `products`
 --
 ALTER TABLE `products`
   ADD CONSTRAINT `products_ibfk_1` FOREIGN KEY (`shopkeeper_id`) REFERENCES `shopkeepers` (`shopkeeper_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `purchase_bills`
+--
+ALTER TABLE `purchase_bills`
+  ADD CONSTRAINT `fk_purchase_bills_shopkeeper` FOREIGN KEY (`shopkeeper_id`) REFERENCES `shopkeepers` (`shopkeeper_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `purchase_bill_items`
+--
+ALTER TABLE `purchase_bill_items`
+  ADD CONSTRAINT `fk_purchase_bill_items_bill` FOREIGN KEY (`purchase_bill_id`) REFERENCES `purchase_bills` (`purchase_bill_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_purchase_bill_items_product` FOREIGN KEY (`matched_product_id`) REFERENCES `products` (`product_id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `shopkeepers`
