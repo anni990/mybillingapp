@@ -6,58 +6,58 @@
 
 {% block ca_content %}
 
-<div class="bg-slate-50 p-4 sm:p-6 lg:p-8 min-h-full -mt-5">
+<div class="bg-slate-50 p-3 sm:p-4 lg:p-8 min-h-full -mt-5">
   <!-- Header -->
-  <div class="mb-8">
-    <h1 class="text-3xl font-bold text-slate-800">Billing Center</h1>
-    <p class="text-slate-500 mt-1">Monitor, filter, and manage all client bills and payments.</p>
+  <div class="mb-6 sm:mb-8">
+    <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">Billing Center</h1>
+    <p class="text-slate-500 mt-1 text-sm sm:text-base">Monitor, filter, and manage all client bills and payments.</p>
   </div>
 
   <!-- Financial Metrics Row -->
   {% set total_billed = bills|sum(attribute='total_amount') %}
   {% set total_paid = bills|sum(attribute='paid_amount') %}
   {% set total_due = bills|sum(attribute='due_amount') %}
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
     <!-- Total Billed -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+    <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
       <div class="flex justify-between items-start">
-        <div>
-          <p class="text-sm font-medium text-slate-500">Total Billed</p>
-          <p class="text-4xl font-bold text-slate-800 mt-2">₹{{ "%.2f"|format(total_billed) }}</p>
-          <p class="text-xs text-slate-400 mt-1">Across {{ bills|length }} bills</p>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs sm:text-sm font-medium text-slate-500">Total Billed</p>
+          <p class="text-2xl sm:text-4xl font-bold text-slate-800 mt-1 sm:mt-2 truncate">₹{{ "%.2f"|format(total_billed) }}</p>
+          <p class="text-xs text-slate-400 mt-0.5 sm:mt-1">Across {{ bills|length }} bills</p>
         </div>
-        <div class="p-3 bg-blue-100 rounded-xl">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <div class="p-2 sm:p-3 bg-blue-100 rounded-xl flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
       </div>
     </div>
     <!-- Amount Received -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+    <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
       <div class="flex justify-between items-start">
-        <div>
-          <p class="text-sm font-medium text-slate-500">Amount Received</p>
-          <p class="text-4xl font-bold text-green-600 mt-2">₹{{ "%.2f"|format(total_paid) }}</p>
-          <p class="text-xs text-slate-400 mt-1">From clients</p>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs sm:text-sm font-medium text-slate-500">Amount Received</p>
+          <p class="text-2xl sm:text-4xl font-bold text-green-600 mt-1 sm:mt-2 truncate">₹{{ "%.2f"|format(total_paid) }}</p>
+          <p class="text-xs text-slate-400 mt-0.5 sm:mt-1">From clients</p>
         </div>
-        <div class="p-3 bg-green-100 rounded-xl">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <div class="p-2 sm:p-3 bg-green-100 rounded-xl flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
         </div>
       </div>
     </div>
     <!-- Outstanding Amount -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+    <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm sm:col-span-2 xl:col-span-1">
       <div class="flex justify-between items-start">
-        <div>
-          <p class="text-sm font-medium text-slate-500">Outstanding Amount</p>
-          <p class="text-4xl font-bold text-red-600 mt-2">₹{{ "%.2f"|format(total_due) }}</p>
-          <p class="text-xs text-slate-400 mt-1">Across all clients</p>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs sm:text-sm font-medium text-slate-500">Outstanding Amount</p>
+          <p class="text-2xl sm:text-4xl font-bold text-red-600 mt-1 sm:mt-2 truncate">₹{{ "%.2f"|format(total_due) }}</p>
+          <p class="text-xs text-slate-400 mt-0.5 sm:mt-1">Across all clients</p>
         </div>
-        <div class="p-3 bg-red-100 rounded-xl">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <div class="p-2 sm:p-3 bg-red-100 rounded-xl flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
         </div>
@@ -66,40 +66,79 @@
   </div>
 
   <!-- Bills Table Card -->
-  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm text-md">
-    <!-- ** CORRECTED & FULLY RESPONSIVE TOOLBAR ** -->
-    <div class="p-4 sm:p-6 border-b border-slate-200/80 space-y-4">
-      <!-- Top row for search on small screens, integrated bar on large -->
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div class="relative w-full lg:max-w-xs">
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+    <!-- ** RESPONSIVE TOOLBAR WITH PROPER DESKTOP ALIGNMENT ** -->
+    <div class="p-3 sm:p-4 lg:p-6 border-b border-slate-200/80">
+      <!-- Mobile Layout (stacked) -->
+      <div class="lg:hidden space-y-3">
+        <!-- Search Input -->
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
+          <input type="text" id="localSearchInput" placeholder="Search by bill number or shopkeeper..." class="w-full pl-9 sm:pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition">
+        </div>
+        
+        <!-- Filters Form -->
+        <form method="get" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label for="shopkeeper_id" class="block text-xs sm:text-sm font-medium text-slate-600 mb-1">Shopkeeper</label>
+              <select name="shopkeeper_id" id="shopkeeper_id" class="w-full text-xs sm:text-sm border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition py-2 px-3">
+                <option value="">All Shopkeepers</option>
+                {% for sk in shopkeepers %}
+                <option value="{{ sk.shopkeeper_id }}" {% if request.args.get('shopkeeper_id')==sk.shopkeeper_id|string %}selected{% endif %}>{{ sk.shop_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label for="start_date" class="block text-xs sm:text-sm font-medium text-slate-600 mb-1">From Date</label>
+              <input type="date" name="start_date" id="start_date" class="w-full text-xs sm:text-sm border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition py-2 px-3" value="{{ request.args.get('start_date', '') }}">
+            </div>
+            <div>
+              <label for="end_date" class="block text-xs sm:text-sm font-medium text-slate-600 mb-1">To Date</label>
+              <input type="date" name="end_date" id="end_date" class="w-full text-xs sm:text-sm border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition py-2 px-3" value="{{ request.args.get('end_date', '') }}">
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2 pt-2">
+            <a href="{{ url_for('ca.bills_panel') }}" class="flex-1 sm:flex-none text-center bg-white text-slate-700 font-medium py-2 px-4 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors">Clear</a>
+            <button type="submit" class="flex-1 sm:flex-none bg-[#ed6a3e] text-white font-medium py-2 px-4 text-sm rounded-lg hover:bg-orange-600 transition-colors">Filter Bills</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Desktop Layout (horizontal alignment) -->
+      <div class="hidden lg:flex lg:items-end lg:justify-between lg:gap-6">
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-md">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg class="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
-          <input type="text" id="localSearchInput" placeholder="Search loaded bills..." class="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition">
+          <input type="text" id="localSearchInputDesktop" placeholder="Search by bill number or shopkeeper..." class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition">
         </div>
-        <hr class="lg:hidden border-slate-200">
+        
         <!-- Filters Form -->
-        <form method="get" class="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-4">
-          <div class="p-3">
-            <label for="shopkeeper_id" class="block text-sm font-medium text-slate-600 mb-1 p-2">Shopkeeper</label>
-            <select name="shopkeeper_id" id="shopkeeper_id" class="w-full sm:w-auto text-sm border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition p-2">
+        <form method="get" class="flex items-end gap-4">
+          <div class="min-w-0">
+            <label for="shopkeeper_id_desktop" class="block text-sm font-medium text-slate-600 mb-1">Shopkeeper</label>
+            <select name="shopkeeper_id" id="shopkeeper_id_desktop" class="min-w-[180px] text-sm border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition py-2.5 px-3">
               <option value="">All Shopkeepers</option>
               {% for sk in shopkeepers %}
               <option value="{{ sk.shopkeeper_id }}" {% if request.args.get('shopkeeper_id')==sk.shopkeeper_id|string %}selected{% endif %}>{{ sk.shop_name }}</option>
               {% endfor %}
             </select>
           </div>
-          <div class="p-3">
-            <label for="start_date" class="block text-sm font-medium text-slate-600 mb-1 p-2">From</label>
-            <input type="date" name="start_date" id="start_date" class="w-full text-sm border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition p-2" value="{{ request.args.get('start_date', '') }}">
+          <div class="min-w-0">
+            <label for="start_date_desktop" class="block text-sm font-medium text-slate-600 mb-1">From Date</label>
+            <input type="date" name="start_date" id="start_date_desktop" class="text-sm border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition py-2.5 px-3" value="{{ request.args.get('start_date', '') }}">
           </div>
-          <div class="p-3">
-            <label for="end_date" class="block text-sm font-medium text-slate-600 mb-1 p-2">To</label>
-            <input type="date" name="end_date" id="end_date" class="w-full text-sm border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition p-2" value="{{ request.args.get('end_date', '') }}">
+          <div class="min-w-0">
+            <label for="end_date_desktop" class="block text-sm font-medium text-slate-600 mb-1">To Date</label>
+            <input type="date" name="end_date" id="end_date_desktop" class="text-sm border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#ed6a3e]/50 focus:border-[#ed6a3e] transition py-2.5 px-3" value="{{ request.args.get('end_date', '') }}">
           </div>
-          <div class="flex gap-2 flex-shrink-0">
-            <a href="{{ url_for('ca.bills_panel') }}" class="w-full sm:w-auto text-center bg-white text-slate-700 font-semibold py-2 px-4 rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors shadow-sm">Clear</a>
-            <button type="submit" class="w-full sm:w-auto bg-[#ed6a3e] text-white font-semibold py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors shadow-sm">Filter</button>
+          <div class="flex gap-2">
+            <a href="{{ url_for('ca.bills_panel') }}" class="bg-white text-slate-700 font-medium py-2.5 px-4 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors whitespace-nowrap">Clear Filters</a>
+            <button type="submit" class="bg-[#ed6a3e] text-white font-medium py-2.5 px-4 text-sm rounded-lg hover:bg-orange-600 transition-colors whitespace-nowrap">Apply Filters</button>
           </div>
         </form>
       </div>
@@ -119,7 +158,7 @@
             <th class="py-3 px-6 text-center text-sm font-semibold uppercase text-slate-500">Action</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-200/80">
+        <tbody class="divide-y divide-slate-200/80" id="desktop-bills-container">
           {% for bill in bills %}
           <tr class="bill-row hover:bg-slate-50 transition-colors" data-search-term="{{ bill.shopkeeper_name|lower }} {{ bill.bill_number }}">
             <td class="p-4 px-6 font-medium text-slate-800">{{ bill.shopkeeper_name }}</td>
@@ -150,94 +189,397 @@
     </div>
 
     <!-- Mobile Card View -->
-    <div class="md:hidden divide-y divide-slate-200/80 p-2">
+    <div class="md:hidden space-y-3 p-3" id="mobile-bills-container">
       {% for bill in bills %}
-      <div class="bill-row p-3 hover:bg-slate-50 transition-colors" data-search-term="{{ bill.shopkeeper_name|lower }} {{ bill.bill_number }}">
-        <div class="flex justify-between items-start mb-2">
-            <div>
-                <h3 class="font-bold text-slate-800">{{ bill.shopkeeper_name }}</h3>
-                <p class="text-xs text-slate-500">{{ bill.bill_number }} &bull; {{ bill.bill_date.strftime('%d %b %Y') }}</p>
+      <div class="bill-row bg-white rounded-xl border border-slate-200/80 p-4 hover:bg-slate-50 transition-colors shadow-sm" data-search-term="{{ bill.shopkeeper_name|lower }} {{ bill.bill_number }}">
+        <div class="flex justify-between items-start mb-3">
+            <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-slate-800 text-sm truncate">{{ bill.shopkeeper_name }}</h3>
+                <p class="text-xs text-slate-500 mt-0.5">{{ bill.bill_number }} &bull; {{ bill.bill_date.strftime('%d %b %Y') }}</p>
             </div>
-            <span class="flex-shrink-0 ml-2 inline-flex px-2 py-1 rounded-full text-xs font-semibold
+            <span class="flex-shrink-0 ml-3 inline-flex px-2 py-1 rounded-full text-xs font-medium
                 {% if bill.payment_status == 'Paid' %} bg-green-100 text-green-800
                 {% elif bill.payment_status == 'Unpaid' %} bg-red-100 text-red-800
                 {% else %} bg-yellow-100 text-yellow-800 {% endif %}">
                 {{ bill.payment_status }}
             </span>
         </div>
-        <div class="grid grid-cols-3 gap-2 text-center text-sm border-t border-slate-200 pt-2">
-            <div>
-                <p class="text-xs text-slate-500">Total</p>
-                <p class="font-semibold text-slate-800">₹{{ "%.2f"|format(bill.total_amount) }}</p>
+        <div class="grid grid-cols-3 gap-3 border-t border-slate-100 pt-3 mb-3">
+            <div class="text-center">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Total</p>
+                <p class="font-semibold text-slate-800 text-sm mt-1 truncate">₹{{ "%.2f"|format(bill.total_amount) }}</p>
             </div>
-            <div>
-                <p class="text-xs text-slate-500">Paid</p>
-                <p class="font-medium text-green-600">₹{{ "%.2f"|format(bill.paid_amount) }}</p>
+            <div class="text-center">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Paid</p>
+                <p class="font-semibold text-green-600 text-sm mt-1 truncate">₹{{ "%.2f"|format(bill.paid_amount) }}</p>
             </div>
-            <div>
-                <p class="text-xs text-slate-500">Due</p>
-                <p class="font-medium text-red-600">₹{{ "%.2f"|format(bill.due_amount) }}</p>
+            <div class="text-center">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Due</p>
+                <p class="font-semibold text-red-600 text-sm mt-1 truncate">₹{{ "%.2f"|format(bill.due_amount) }}</p>
             </div>
         </div>
-        <div class="mt-2">
-            <a href="{{ url_for('ca.view_bill', bill_id=bill.bill_id) }}" class="w-full text-center py-1.5 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-100 transition-colors flex items-center justify-center">View Details</a>
+        <div>
+            <a href="{{ url_for('ca.view_bill', bill_id=bill.bill_id) }}" class="w-full text-center py-2.5 border border-slate-300 text-sm font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-100 transition-colors flex items-center justify-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                <span>View Details</span>
+            </a>
         </div>
       </div>
       {% endfor %}
     </div>
+
+    <!-- Pagination Controls -->
+    <div class="flex flex-col gap-3 p-3 sm:p-4 lg:p-6 border-t border-slate-200/80 bg-slate-50/50" id="pagination-container" style="display: none;">
+      <!-- Results Info -->
+      <div class="text-xs sm:text-sm text-slate-600 text-center">
+        Showing <span id="page-start">1</span> to <span id="page-end">10</span> of <span id="total-results">0</span> results
+      </div>
+      
+      <!-- Pagination Controls -->
+      <div class="flex items-center justify-center space-x-1">
+        <!-- Previous Button -->
+        <button id="prev-btn" class="flex items-center justify-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[60px] sm:min-w-[80px]" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-4 sm:w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span class="hidden xs:inline">Prev</span>
+        </button>
+        
+        <!-- Page Numbers -->
+        <div id="page-numbers" class="flex items-center space-x-1 overflow-x-auto scrollbar-hide max-w-[180px] sm:max-w-none">
+          <!-- Page numbers will be inserted here -->
+        </div>
+        
+        <!-- Next Button -->
+        <button id="next-btn" class="flex items-center justify-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[60px] sm:min-w-[80px]">
+          <span class="hidden xs:inline">Next</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-4 sm:w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    </div>
     
     <!-- Empty State / No Results Message -->
     {% if not bills %}
-    <div id="empty-state" class="py-24 text-center">
-      <svg class="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-      <h3 class="text-lg font-medium text-slate-500">No bills match your criteria</h3>
-      <p class="text-slate-400 mt-1">Try adjusting the filters to find what you're looking for.</p>
+    <div id="empty-state" class="py-16 sm:py-24 text-center px-4">
+      <svg class="w-12 h-12 sm:w-16 sm:h-16 text-slate-300 mx-auto mb-3 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+      <h3 class="text-base sm:text-lg font-medium text-slate-500">No bills match your criteria</h3>
+      <p class="text-slate-400 mt-1 text-sm sm:text-base">Try adjusting the filters to find what you're looking for.</p>
     </div>
     {% endif %}
-    <div id="no-results-message" class="hidden py-24 text-center">
-      <svg class="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-      <h3 class="text-lg font-medium text-slate-500">No loaded bills match your search</h3>
-      <p class="text-slate-400 mt-1">Clear the search bar to see all loaded results.</p>
+    <div id="no-results-message" class="hidden py-16 sm:py-24 text-center px-4">
+      <svg class="w-12 h-12 sm:w-16 sm:h-16 text-slate-300 mx-auto mb-3 sm:mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      <h3 class="text-base sm:text-lg font-medium text-slate-500">No loaded bills match your search</h3>
+      <p class="text-slate-400 mt-1 text-sm sm:text-base">Clear the search bar to see all loaded results.</p>
     </div>
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const searchInput = document.getElementById('localSearchInput');
+  const searchInputMobile = document.getElementById('localSearchInput');
+  const searchInputDesktop = document.getElementById('localSearchInputDesktop');
   const billRows = document.querySelectorAll('.bill-row');
   const noResultsMessage = document.getElementById('no-results-message');
+  const paginationContainer = document.getElementById('pagination-container');
+  const pageStartSpan = document.getElementById('page-start');
+  const pageEndSpan = document.getElementById('page-end');
+  const totalResultsSpan = document.getElementById('total-results');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const pageNumbersContainer = document.getElementById('page-numbers');
 
-  function localSearchBills() {
-    const searchTerm = searchInput.value.toLowerCase();
-    let visibleCount = 0;
+  let currentPage = 1;
+  let itemsPerPage = 10;
+  let filteredBills = [];
 
-    billRows.forEach(row => {
-      const rowSearchTerm = row.dataset.searchTerm || '';
+  // Pagination functions
+  function showPage(page) {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
 
-      if (rowSearchTerm.includes(searchTerm)) {
-        // Show the row in both desktop and mobile views
-        if (row.tagName === 'TR') { // Desktop table row
-          row.style.display = '';
-        } else { // Mobile card div
-          row.style.display = 'block';
-        }
-        visibleCount++;
-      } else {
-        row.style.display = 'none';
+    // Hide all bills first - both desktop and mobile
+    const allDesktopRows = document.querySelectorAll('#desktop-bills-container .bill-row');
+    const allMobileCards = document.querySelectorAll('#mobile-bills-container .bill-row');
+    
+    allDesktopRows.forEach(row => {
+      row.style.display = 'none';
+    });
+    
+    allMobileCards.forEach(card => {
+      card.style.display = 'none';
+    });
+
+    // Show bills for current page from filtered results
+    const currentPageBills = filteredBills.slice(startIndex, endIndex);
+    
+    currentPageBills.forEach(desktopRow => {
+      // Show desktop version
+      if (desktopRow) {
+        desktopRow.style.display = '';
+      }
+      
+      // Find and show corresponding mobile version
+      const searchTerm = desktopRow.dataset.searchTerm;
+      const mobileCard = document.querySelector(`#mobile-bills-container .bill-row[data-search-term="${searchTerm}"]`);
+      if (mobileCard) {
+        mobileCard.style.display = 'block';
       }
     });
 
-    if (visibleCount === 0 && billRows.length > 0) {
-      noResultsMessage.style.display = 'block';
+    updatePaginationInfo();
+    updatePaginationButtons();
+    updatePageNumbers();
+  }
+
+  function updatePaginationInfo() {
+    const totalItems = filteredBills.length;
+    const startIndex = (currentPage - 1) * itemsPerPage + 1;
+    const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
+
+    pageStartSpan.textContent = totalItems > 0 ? startIndex : 0;
+    pageEndSpan.textContent = endIndex;
+    totalResultsSpan.textContent = totalItems;
+
+    // Show/hide pagination container - only show if more than 10 items
+    if (totalItems > itemsPerPage) {
+      paginationContainer.style.display = 'flex';
     } else {
-      noResultsMessage.style.display = 'none';
+      paginationContainer.style.display = 'none';
     }
   }
-  
-  if(searchInput) {
-    searchInput.addEventListener('input', localSearchBills);
+
+  function updatePaginationButtons() {
+    const totalPages = Math.ceil(filteredBills.length / itemsPerPage);
+    
+    prevBtn.disabled = currentPage <= 1;
+    nextBtn.disabled = currentPage >= totalPages;
   }
+
+  function updatePageNumbers() {
+    const totalPages = Math.ceil(filteredBills.length / itemsPerPage);
+    pageNumbersContainer.innerHTML = '';
+
+    // Don't show page numbers if only one page or less
+    if (totalPages <= 1) return;
+
+    // Determine how many pages to show based on screen size
+    const isMobile = window.innerWidth < 640; // sm breakpoint
+    const maxVisiblePages = isMobile ? 3 : 5;
+
+    // Calculate which page numbers to show based on total pages and screen size
+    let startPage, endPage;
+
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if within limit
+      startPage = 1;
+      endPage = totalPages;
+    } else {
+      // Show limited pages with current page in center when possible
+      const halfVisible = Math.floor(maxVisiblePages / 2);
+      startPage = Math.max(1, currentPage - halfVisible);
+      endPage = Math.min(totalPages, currentPage + halfVisible);
+
+      // Adjust if we're near the beginning
+      if (currentPage <= halfVisible + 1) {
+        startPage = 1;
+        endPage = Math.min(maxVisiblePages, totalPages);
+      }
+      
+      // Adjust if we're near the end
+      if (currentPage >= totalPages - halfVisible) {
+        startPage = Math.max(1, totalPages - maxVisiblePages + 1);
+        endPage = totalPages;
+      }
+    }
+
+    // Add first page and ellipsis if needed
+    if (startPage > 1) {
+      addPageButton(1);
+      if (startPage > 2) {
+        addEllipsis();
+      }
+    }
+
+    // Add page number buttons
+    for (let i = startPage; i <= endPage; i++) {
+      addPageButton(i);
+    }
+
+    // Add ellipsis and last page if needed
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        addEllipsis();
+      }
+      addPageButton(totalPages);
+    }
+  }
+
+  function addPageButton(pageNum) {
+    const button = document.createElement('button');
+    button.className = `px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md sm:rounded-lg transition-colors min-w-[28px] sm:min-w-[36px] flex-shrink-0 ${
+      pageNum === currentPage
+        ? 'bg-[#ed6a3e] text-white shadow-sm'
+        : 'text-slate-500 bg-white border border-slate-300 hover:bg-slate-50 hover:text-slate-700'
+    }`;
+    button.textContent = pageNum;
+    button.addEventListener('click', () => {
+      currentPage = pageNum;
+      showPage(currentPage);
+    });
+    pageNumbersContainer.appendChild(button);
+  }
+
+  function addEllipsis() {
+    const ellipsis = document.createElement('span');
+    ellipsis.className = 'px-1 sm:px-2 py-1.5 sm:py-2 text-xs sm:text-sm text-slate-400 min-w-[20px] sm:min-w-[24px] text-center flex-shrink-0';
+    ellipsis.textContent = '...';
+    pageNumbersContainer.appendChild(ellipsis);
+  }
+
+  function localSearchBills(searchValue = '') {
+    // Get search term from the provided value or from active input
+    let searchTerm = searchValue.toLowerCase().trim();
+    if (!searchValue) {
+      // Get search term from mobile or desktop input
+      if (searchInputMobile && searchInputMobile.value) {
+        searchTerm = searchInputMobile.value.toLowerCase().trim();
+      } else if (searchInputDesktop && searchInputDesktop.value) {
+        searchTerm = searchInputDesktop.value.toLowerCase().trim();
+      }
+    }
+    
+    // Get all bills from both desktop and mobile containers
+    const desktopBillRows = document.querySelectorAll('#desktop-bills-container .bill-row');
+    const mobileBillCards = document.querySelectorAll('#mobile-bills-container .bill-row');
+    
+    // If no search term, show all bills
+    if (searchTerm === '') {
+      // Reset filtered bills to include all bills
+      filteredBills = Array.from(desktopBillRows);
+      
+      // Show all desktop rows
+      desktopBillRows.forEach(row => {
+        row.style.display = '';
+      });
+      
+      // Show all mobile cards
+      mobileBillCards.forEach(card => {
+        card.style.display = 'block';
+      });
+      
+      // Hide no results message and show pagination
+      noResultsMessage.style.display = 'none';
+      currentPage = 1;
+      showPage(currentPage);
+      return;
+    }
+    
+    // Filter bills based on search term
+    filteredBills = [];
+    let matchCount = 0;
+    
+    // Process desktop rows
+    desktopBillRows.forEach(row => {
+      const rowSearchTerm = row.dataset.searchTerm || '';
+      const matches = rowSearchTerm.includes(searchTerm);
+      
+      if (matches) {
+        filteredBills.push(row);
+        matchCount++;
+      }
+    });
+    
+    // Reset to first page when searching
+    currentPage = 1;
+    
+    // Show results or no results message
+    if (matchCount === 0) {
+      // Hide all rows and show no results message
+      desktopBillRows.forEach(row => {
+        row.style.display = 'none';
+      });
+      mobileBillCards.forEach(card => {
+        card.style.display = 'none';
+      });
+      
+      noResultsMessage.style.display = 'block';
+      paginationContainer.style.display = 'none';
+    } else {
+      // Hide no results message and show filtered results
+      noResultsMessage.style.display = 'none';
+      showPage(currentPage);
+    }
+  }
+
+  // Debounce function to improve performance
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  // Sync search inputs - when one changes, update the other
+  function syncSearchInputs(sourceInput, targetInput) {
+    if (targetInput) {
+      targetInput.value = sourceInput.value;
+    }
+    localSearchBills(sourceInput.value);
+  }
+
+  // Debounced search function (300ms delay)
+  const debouncedSearch = debounce((sourceInput, targetInput) => {
+    syncSearchInputs(sourceInput, targetInput);
+  }, 300);
+
+  // Event listeners for both search inputs with debouncing
+  if (searchInputMobile) {
+    searchInputMobile.addEventListener('input', function() {
+      debouncedSearch(this, searchInputDesktop);
+    });
+  }
+
+  if (searchInputDesktop) {
+    searchInputDesktop.addEventListener('input', function() {
+      debouncedSearch(this, searchInputMobile);
+    });
+  }
+
+  prevBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      showPage(currentPage);
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    const totalPages = Math.ceil(filteredBills.length / itemsPerPage);
+    if (currentPage < totalPages) {
+      currentPage++;
+      showPage(currentPage);
+    }
+  });
+
+  // Initialize pagination - use only desktop rows to avoid duplication
+  const desktopBillRows = document.querySelectorAll('#desktop-bills-container .bill-row');
+  filteredBills = Array.from(desktopBillRows);
+  
+  // Initial display
+  if (filteredBills.length > 0) {
+    showPage(currentPage);
+  }
+
+  // Listen for window resize to update pagination layout
+  window.addEventListener('resize', function() {
+    updatePageNumbers();
+  });
 });
 </script>
 

@@ -12,6 +12,25 @@ document.addEventListener('DOMContentLoaded', function () {
     let rowCounter = 0;
     let hasInitialBlankRow = false;
     let firstProductAdded = false;
+    
+    // Function to update add button text and styling
+    function updateAddButtonText() {
+        const remainingRows = productRows.querySelectorAll('.product-row');
+        const hasProducts = remainingRows.length > 0;
+        
+        if (hasProducts) {
+            // Has products - show "Add Another Product"
+            addBtn.classList.remove('bg-blue-100', 'text-blue-600', 'hover:bg-blue-200');
+            addBtn.classList.add('bg-orange-100', 'text-orange-600', 'hover:bg-orange-200');
+            addBtn.innerHTML = '<i data-feather="plus" class="mr-2 w-4 h-4"></i>Add Another Product';
+        } else {
+            // No products - show "Add Your First Product"
+            addBtn.classList.remove('bg-orange-100', 'text-orange-600', 'hover:bg-orange-200');
+            addBtn.classList.add('bg-blue-100', 'text-blue-600', 'hover:bg-blue-200');
+            addBtn.innerHTML = '<i data-feather="plus" class="mr-2 w-5 h-5"></i>Add Your First Product';
+        }
+        feather.replace();
+    }
 
     // Function to disable duplicate form inputs based on screen size
     function handleFormInputDuplicates() {
@@ -160,6 +179,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     productSearch.value = '';
                     productSuggestions.classList.add('hidden');
                     
+                    // Update add button text after adding product
+                    updateAddButtonText();
+                    
                     // Reset processing flag after a short delay
                     setTimeout(() => {
                         this.dataset.processing = 'false';
@@ -180,6 +202,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     productSearch.value = '';
                     productSuggestions.classList.add('hidden');
                     
+                    // Update add button text after adding product
+                    updateAddButtonText();
+                    
                     // Reset processing flag after a short delay
                     setTimeout(() => {
                         this.dataset.processing = 'false';
@@ -191,7 +216,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function updateTotal() {
+    // Make updateTotal globally accessible
+    window.updateTotal = function updateTotal() {
         const rows = document.querySelectorAll('.product-row');
         if (rows.length === 0) {
             billTotal.textContent = '0.00';
@@ -319,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
         billTotal.textContent = total.toFixed(2);
-    }
+    };
 
     function updateGSTSummaryDisplay(gstSummary, totals) {
         // Update GST summary display if elements exist on the page
@@ -400,12 +426,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 mobileNoProducts.style.display = 'block';
             }
             
-            // Change add button styling
-            addBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-            addBtn.classList.remove('bg-[#ed6a3e]', 'hover:bg-orange-700');
-            addBtn.innerHTML = '<i data-feather="plus" class="mr-2 w-5 h-5"></i>Add Your First Product';
-            feather.replace();
+            // Reset first product added flag
+            firstProductAdded = false;
         }
+        
+        // Update add button text
+        updateAddButtonText();
     }
 
     function addProductRow(productData = null, productName = '', isInitialBlank = false, fromSearch = false) {
@@ -438,6 +464,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 blankRow.remove();
                 hasInitialBlankRow = false;
             }
+        }
+        
+        // Mark that first product has been added (unless this is the initial blank row)
+        if (!isInitialBlank) {
             firstProductAdded = true;
         }
         
@@ -491,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="col-span-1">
                     <input name="discount" type="number" min="0" max="100" step="0.01" value="0" 
                            class="discount w-full border border-gray-300 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#ed6a3e]" 
-                           placeholder="0">
+                           placeholder="0%" title="Discount Percentage">
                 </div>
                 <div class="col-span-2 gst-col">
                     <input name="gst_rate" type="number" min="0" max="100" step="0.01" value="${gstRate}" 
@@ -755,34 +785,77 @@ document.addEventListener('DOMContentLoaded', function () {
         // Handle form input duplicates for the new row
         handleFormInputDuplicates();
         
-        // Reset the add button styling if it was changed
-        if (addBtn.classList.contains('bg-blue-500')) {
-            addBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-            addBtn.classList.add('bg-[#ed6a3e]', 'hover:bg-orange-700');
-            addBtn.innerHTML = '<i data-feather="plus" class="mr-2 w-4 h-4"></i>Add Another Product';
-            feather.replace();
-        }
+        // Apply GST visibility to the new row
+        handleGSTTypeChange();
+        
+        // Update add button text
+        updateAddButtonText();
     }
 
     // Event listeners
     addBtn.addEventListener('click', () => addProductRow());
     
-    // Initial setup
-    billGstType.addEventListener('change', function() {
-        updateTotal(); // Recalculate when GST type changes
-        
-        // Toggle GST column visibility for desktop and mobile
+    // Function to handle GST type visibility
+    function handleGSTTypeChange() {
         const gstCols = document.querySelectorAll('.gst-col');
         const gstSectionsMobile = document.querySelectorAll('.gst-section-mobile');
-        if (this.value === 'GST') {
+        
+        if (billGstType.value === 'GST') {
             gstCols.forEach(col => col.style.display = '');
             gstSectionsMobile.forEach(section => section.style.display = '');
+            
+            // Restore original GST rates when switching back to GST
+            const allRows = document.querySelectorAll('.product-row');
+            allRows.forEach(row => {
+                const gstInput = row.querySelector('.gst-rate-input');
+                const mobileGstInput = row.querySelector('.gst-rate-input-mobile');
+                const productId = row.querySelector('.product-id').value;
+                
+                if (gstInput && productId) {
+                    // Find the original product GST rate
+                    const product = PRODUCTS.find(p => p.id.toString() === productId);
+                    if (product) {
+                        gstInput.value = product.gst_rate || 0;
+                        if (mobileGstInput) {
+                            mobileGstInput.value = product.gst_rate || 0;
+                        }
+                    }
+                }
+            });
         } else {
             gstCols.forEach(col => col.style.display = 'none');
             gstSectionsMobile.forEach(section => section.style.display = 'none');
+            
+            // Clear all GST rate input values when switching to Non-GST
+            const allGstInputs = document.querySelectorAll('.gst-rate-input, .gst-rate-input-mobile');
+            allGstInputs.forEach(input => {
+                input.value = '0';
+            });
         }
-    });
+        
+        updateTotal(); // Recalculate when GST type changes
+    }
+
+    // Function to handle GST mode changes
+    function handleGSTModeChange() {
+        updateTotal(); // Recalculate when GST mode changes
+    }
+
+    // Initial setup
+    billGstType.addEventListener('change', handleGSTTypeChange);
+    
+    // Add GST Mode listener
+    const gstModeSelect = document.getElementById('gst_mode');
+    if (gstModeSelect) {
+        gstModeSelect.addEventListener('change', handleGSTModeChange);
+    }
 
     // Don't add initial product row automatically
     // User will add products via search or manually via button
+    
+    // Set initial add button text
+    updateAddButtonText();
+    
+    // Initialize GST visibility on page load
+    handleGSTTypeChange();
 });

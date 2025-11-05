@@ -49,7 +49,7 @@
             <div class="text-right">
                 <p class="text-xl font-semibold text-gray-800">Invoice</p>
                 <p class="text-gray-600">{{ bill.bill_number }}</p>
-                <p class="text-gray-600">Date: {{ bill.bill_date }}</p>
+                <p class="text-gray-600">Date: {{ bill.bill_date|format_bill_date(bill.date_with_time) }}</p>
             </div>
         </div>
         {% elif shopkeeper.template_choice == 'template3' %}
@@ -63,7 +63,7 @@
             </div>
             <div class="flex gap-4 text-sm">
                 <p><span class="font-semibold">Invoice #:</span> {{ bill.bill_number }}</p>
-                <p><span class="font-semibold">Date:</span> {{ bill.bill_date }}</p>
+                <p><span class="font-semibold">Date:</span> {{ bill.bill_date|format_bill_date(bill.date_with_time) }}</p>
             </div>
         </div>
         {% else %}
@@ -74,7 +74,7 @@
             {% endif %}
             <h1 class="text-3xl font-bold text-gray-900">{{ shopkeeper.shop_name }}</h1>
             <p class="text-gray-600">Invoice {{ bill.bill_number }}</p>
-            <p class="text-gray-600">Date: {{ bill.bill_date }}</p>
+            <p class="text-gray-600">Date: {{ bill.bill_date|format_bill_date(bill.date_with_time) }}</p>
         </div>
         {% endif %}
 
@@ -100,7 +100,8 @@
             </div>
         </div>
 
-        <!-- GST Summary Table -->
+        {% if bill.gst_type == 'GST' %}
+        <!-- GST Summary Table (Only show for GST bills) -->
         <h2 class="text-lg font-semibold mb-2">GST Summary</h2>
         <div class="overflow-x-auto">
             <table class="w-full border text-sm text-left">
@@ -134,7 +135,7 @@
                     {% for item_data in bill_items_data %}
                     <tr class="border-t">
                         <td class="p-2 border">{{ item_data.product.product_name }}</td>
-                        <td class="p-2 border">{{ item_data.hsn_code }}</td>
+                        <td class="p-2 border">{{ item_data.hsn_code or '-' }}</td>
                         <td class="p-2 border text-right">{{ item_data.quantity }}</td>
                         <td class="p-2 border text-right">₹{{ item_data.unit_price|round(2) }}</td>
                         <td class="p-2 border text-right">₹{{ item_data.discount_amount|round(2) }} ({{ item_data.discount_percent }}%)</td>
@@ -150,7 +151,7 @@
             </table>
         </div>
 
-        <!-- Summary Table (Totals) -->
+        <!-- GST Summary Table (Totals) -->
         <table class="w-full text-sm mt-4 border">
             <thead class="bg-gray-100">
                 <tr>
@@ -184,6 +185,48 @@
                 </tr>
             </tbody>
         </table>
+        {% else %}
+        <!-- Non-GST Bill Items Table (Simplified for Non-GST) -->
+        <h2 class="text-lg font-semibold mb-2">Bill Items</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full border text-sm text-left">
+                <thead class="bg-orange-100 text-orange-700">
+                    <tr>
+                        <th class="p-2 border">Item</th>
+                        <th class="p-2 border text-right">Quantity</th>
+                        <th class="p-2 border text-right">Unit Price</th>
+                        <th class="p-2 border text-right">Discount</th>
+                        <th class="p-2 border text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item_data in bill_items_data %}
+                    <tr class="border-t">
+                        <td class="p-2 border">{{ item_data.product.product_name }}</td>
+                        <td class="p-2 border text-right">{{ item_data.quantity }}</td>
+                        <td class="p-2 border text-right">₹{{ item_data.unit_price|round(2) }}</td>
+                        <td class="p-2 border text-right">₹{{ item_data.discount_amount|round(2) }} ({{ item_data.discount_percent }}%)</td>
+                        <td class="p-2 border text-right">₹{{ (item_data.unit_price * item_data.quantity - item_data.discount_amount)|round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Non-GST Total Table -->
+        <table class="w-full text-sm mt-4 border">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="p-2 border text-right">Grand Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="bg-gray-50 font-bold">
+                    <td class="p-2 border font-bold text-right text-lg">₹{{ bill.total_amount|round(2) }}</td>
+                </tr>
+            </tbody>
+        </table>
+        {% endif %}
 
         <!-- Bank details -->
         <div class="mt-6 text-sm">

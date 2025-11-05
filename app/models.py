@@ -139,10 +139,12 @@ class Bill(db.Model):
     customer_contact = db.Column(db.String(20))
     bill_date = db.Column(db.DateTime, nullable=False)
     gst_type = db.Column(db.Enum('GST', 'Non-GST'), nullable=False)
+    gst_mode = db.Column(db.Enum('INCLUSIVE', 'EXCLUSIVE'), default='EXCLUSIVE')  # New field for GST calculation mode
     total_amount = db.Column(db.Numeric(12,2), nullable=False)
     payment_status = db.Column(db.String(20), default='PAID')  # 'PAID', 'PARTIAL', 'UNPAID'
     paid_amount = db.Column(db.Numeric(10,2), default=0.00)  # Tracking payments
     due_amount = db.Column(db.Numeric(10,2), default=0.00)   # Tracking dues
+    date_with_time = db.Column(db.Boolean, default=False)    # Toggle for date display: False=date only, True=date with time
     # Relationships
     bill_items = db.relationship('BillItem', backref='bill', cascade='all, delete-orphan')
 
@@ -158,6 +160,15 @@ class BillItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     price_per_unit = db.Column(db.Numeric(10,2), nullable=False)
     total_price = db.Column(db.Numeric(12,2), nullable=False)
+    # New fields for discount and GST calculations
+    discount_percent = db.Column(db.Numeric(5,2), default=0.00)  # Discount percentage applied
+    discount_amount = db.Column(db.Numeric(10,2), default=0.00)  # Calculated discount amount
+    taxable_amount = db.Column(db.Numeric(12,2), default=0.00)  # Amount after discount, before GST
+    cgst_rate = db.Column(db.Numeric(5,2), default=0.00)  # CGST rate applied
+    sgst_rate = db.Column(db.Numeric(5,2), default=0.00)  # SGST rate applied  
+    cgst_amount = db.Column(db.Numeric(10,2), default=0.00)  # CGST amount
+    sgst_amount = db.Column(db.Numeric(10,2), default=0.00)  # SGST amount
+    total_gst_amount = db.Column(db.Numeric(10,2), default=0.00)  # Total GST (CGST + SGST)
 
 class CAConnection(db.Model):
     """Connection between shopkeepers and CAs."""
@@ -210,6 +221,7 @@ class Customer(db.Model):
     phone = db.Column(db.String(15), nullable=False)
     email = db.Column(db.String(100), nullable=True)
     address = db.Column(db.Text, nullable=True)
+    gstin = db.Column(db.String(15), nullable=True)
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
     updated_date = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)

@@ -696,3 +696,71 @@ CREATE TABLE `purchase_bill_items` (
   CONSTRAINT `fk_purchase_bill_items_bill` FOREIGN KEY (`purchase_bill_id`) REFERENCES `purchase_bills` (`purchase_bill_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_purchase_bill_items_product` FOREIGN KEY (`matched_product_id`) REFERENCES `products` (`product_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- 1. Add discount_percent column to bill_items table
+-- This will store the discount percentage applied to each line item
+ALTER TABLE `bill_items` 
+ADD COLUMN `discount_percent` DECIMAL(5,2) DEFAULT 0.00 
+COMMENT 'Discount percentage applied to this line item';
+
+-- 2. Add gst_mode column to bills table  
+-- This will store whether the bill uses INCLUSIVE or EXCLUSIVE GST calculation
+ALTER TABLE `bills` 
+ADD COLUMN `gst_mode` ENUM('INCLUSIVE', 'EXCLUSIVE') DEFAULT 'EXCLUSIVE' 
+COMMENT 'GST calculation mode - INCLUSIVE or EXCLUSIVE';
+
+-- 3. Update bill_items to include discount amount storage (optional but recommended)
+-- This helps with faster retrieval and audit trails
+ALTER TABLE `bill_items` 
+ADD COLUMN `discount_amount` DECIMAL(10,2) DEFAULT 0.00 
+COMMENT 'Calculated discount amount in rupees';
+
+-- 4. Add taxable_amount column to bill_items for better GST calculation storage
+-- This stores the amount after discount but before GST
+ALTER TABLE `bill_items` 
+ADD COLUMN `taxable_amount` DECIMAL(12,2) DEFAULT 0.00 
+COMMENT 'Taxable amount after discount, before GST';
+
+-- 5. Add GST breakdown columns to bill_items for complete audit trail
+ALTER TABLE `bill_items` 
+ADD COLUMN `cgst_rate` DECIMAL(5,2) DEFAULT 0.00 
+COMMENT 'CGST rate applied',
+ADD COLUMN `sgst_rate` DECIMAL(5,2) DEFAULT 0.00 
+COMMENT 'SGST rate applied',
+ADD COLUMN `cgst_amount` DECIMAL(10,2) DEFAULT 0.00 
+COMMENT 'CGST amount calculated',
+ADD COLUMN `sgst_amount` DECIMAL(10,2) DEFAULT 0.00 
+COMMENT 'SGST amount calculated',
+ADD COLUMN `total_gst_amount` DECIMAL(10,2) DEFAULT 0.00 
+COMMENT 'Total GST amount (CGST + SGST)';
+
+-- 6. Create index for better performance on bill queries
+CREATE INDEX `idx_bills_gst_mode` ON `bills` (`gst_mode`);
+CREATE INDEX `idx_bills_gst_type` ON `bills` (`gst_type`);
+CREATE INDEX `idx_bill_items_discount` ON `bill_items` (`discount_percent`);
+
+-- 7. Update existing data with default values (run after adding columns)
+UPDATE `bill_items` SET 
+    `discount_percent` = 0.00,
+    `discount_amount` = 0.00,
+    `taxable_amount` = `total_price`,
+    `cgst_rate` = 0.00,
+    `sgst_rate` = 0.00,
+    `cgst_amount` = 0.00,
+    `sgst_amount` = 0.00,
+    `total_gst_amount` = 0.00
+WHERE `discount_percent` IS NULL;
+
+UPDATE `bills` SET `gst_mode` = 'EXCLUSIVE' WHERE `gst_mode` IS NULL;
+
+ALTER TABLE bills 
+ADD date_with_time BOOLEAN DEFAULT FALSE;
+
+-- Update existing bills to show date only by default
+UPDATE bills SET date_with_time = FALSE WHERE date_with_time IS NULL;
+
+-- Add gstin column to customers table
+ALTER TABLE customers 
+ADD COLUMN gstin VARCHAR(15) NULL 
+COMMENT 'Customer GST Identification Number (15 characters max)';

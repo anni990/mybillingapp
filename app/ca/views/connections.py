@@ -50,24 +50,41 @@ def register_routes(bp):
     @bp.route('/shopkeeper_marketplace', methods=['GET', 'POST'])
     @login_required
     def shopkeeper_marketplace():
-        """Shopkeeper marketplace - preserves original logic."""
+        """Shopkeeper marketplace - shows only available shopkeepers (not connected to any CA)."""
         if current_user.role != 'CA':
             return redirect(url_for('ca.dashboard'))
         ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
         firm_name = ca.firm_name
+        
+        # Get all shopkeeper IDs that are already connected to any CA with approved status
+        connected_shopkeeper_ids = db.session.query(CAConnection.shopkeeper_id).filter(
+            CAConnection.status == 'approved'
+        ).distinct().all()
+        connected_ids = [row[0] for row in connected_shopkeeper_ids]
+        
         shopkeepers = []
         if request.method == 'POST':
             area = request.form.get('area')
             domain = request.form.get('domain')
             query = Shopkeeper.query
+            # Filter out shopkeepers who are already connected to any CA
+            if connected_ids:
+                query = query.filter(~Shopkeeper.shopkeeper_id.in_(connected_ids))
+            else:
+                query = query  # No connected shopkeepers yet
             if area:
                 query = query.filter(Shopkeeper.address.ilike(f'%{area}%'))
             if domain:
                 query = query.filter(Shopkeeper.domain.ilike(f'%{domain}%'))
             shopkeepers = query.all()
         else:
-            shopkeepers = Shopkeeper.query.all()
-        # Get connection status for each shopkeeper
+            # Show all shopkeepers who are NOT connected to any CA
+            if connected_ids:
+                shopkeepers = Shopkeeper.query.filter(~Shopkeeper.shopkeeper_id.in_(connected_ids)).all()
+            else:
+                shopkeepers = Shopkeeper.query.all()
+        
+        # Get connection status for each shopkeeper (only for current CA)
         connections = {c.shopkeeper_id: c for c in CAConnection.query.filter_by(ca_id=ca.ca_id).all()}
         return render_template('ca/shopkeeper_marketplace.html', shopkeepers=shopkeepers, connections=connections, firm_name=firm_name)
 

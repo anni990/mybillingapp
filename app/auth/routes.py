@@ -4,6 +4,7 @@ from app.extensions import db, bcrypt, login_manager
 from app.models import User,Shopkeeper,CharteredAccountant 
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask import session
+from .utils import redirect_to_dashboard
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField
@@ -36,10 +37,15 @@ def load_user(user_id):
 
 @auth_bp.route('/')
 def auth_root():
+    # The before_request handler already redirects authenticated users
+    # No need to check again here
     return redirect(url_for('auth.login'))
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    # The before_request handler already redirects authenticated users
+    # No need to check again here
+    
     form = RegisterForm()
     if form.validate_on_submit():
         hashed_pw = generate_password_hash(form.password.data)
@@ -79,6 +85,9 @@ def register():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    # The before_request handler already redirects authenticated users
+    # No need to check again here
+    
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
@@ -95,13 +104,8 @@ def login():
                     session.permanent_session_lifetime = current_app.config['PERMANENT_SESSION_LIFETIME']
             
             flash('Logged in successfully.', 'success')
-            # Redirect based on role
-            if user.role == 'shopkeeper':
-                return redirect(url_for('shopkeeper.dashboard'))
-            elif user.role == 'CA':
-                return redirect(url_for('ca.dashboard'))
-            else:
-                return redirect(url_for('ca.employee_dashboard'))
+            # Redirect based on role using the utility function
+            return redirect_to_dashboard()
         else:
             flash('Invalid email or password.', 'danger')
     return render_template('auth/login.html', form=form)

@@ -99,27 +99,77 @@ def register_routes(bp):
                 # print(f"Added bill {bill.bill_id} to bills_data")
             except Exception as e:
                 print(f"Error processing bill: {e}")
-        # Shopkeepers for filter dropdown
-        shopkeepers = Shopkeeper.query.join(CAConnection, and_(CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id, CAConnection.ca_id == ca.ca_id)).all()
+        # Shopkeepers for filter dropdown - only approved connections
+        shopkeepers = Shopkeeper.query.join(CAConnection, and_(CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id, CAConnection.ca_id == ca.ca_id, CAConnection.status == 'approved')).all()
         return render_template('ca/bills.html', bills=bills_data, shopkeepers=shopkeepers, firm_name=firm_name)
     
     @bp.route('/bill/<int:bill_id>')
     @login_required
     def view_bill(bill_id):
         bill = Bill.query.get_or_404(bill_id)
+        shopkeeper = bill.shopkeeper
+        
+        # Access control: Check if current user can access this bill
+        if current_user.role == 'CA':
+            ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
+            if not ca:
+                flash('Access denied: CA profile not found.', 'danger')
+                return redirect(url_for('ca.bills_panel'))
+            
+            # Check if the bill's shopkeeper is connected to this CA
+            ca_connection = CAConnection.query.filter_by(
+                shopkeeper_id=bill.shopkeeper_id,
+                ca_id=ca.ca_id,
+                status='approved'
+            ).first()
+            
+            if not ca_connection:
+                flash('Access denied: You can only view bills from connected shopkeepers.', 'danger')
+                return redirect(url_for('ca.bills_panel'))
+                
+        elif current_user.role == 'employee':
+            employee = CAEmployee.query.filter_by(user_id=current_user.user_id).first()
+            if not employee:
+                flash('Access denied: Employee profile not found.', 'danger')
+                return redirect(url_for('ca.bills_panel'))
+            
+            # Check if the bill's shopkeeper is assigned to this employee
+            employee_client = EmployeeClient.query.filter_by(
+                shopkeeper_id=bill.shopkeeper_id,
+                employee_id=employee.employee_id
+            ).first()
+            
+            if not employee_client:
+                flash('Access denied: You can only view bills from assigned shopkeepers.', 'danger')
+                return redirect(url_for('ca.bills_panel'))
+                
+        elif current_user.role == 'shopkeeper':
+            # Shopkeepers can only view their own bills
+            if bill.shopkeeper.user_id != current_user.user_id:
+                flash('Access denied: You can only view your own bills.', 'danger')
+                return redirect(url_for('shopkeeper.manage_bills'))
+        else:
+            flash('Access denied: Invalid role.', 'danger')
+            return redirect(url_for('auth.login'))
         
         bill_items = BillItem.query.filter_by(bill_id=bill.bill_id).all()
-        shopkeeper = bill.shopkeeper
         products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
         products_dict = {str(p.product_id): p for p in products}
         
-        # Check if user can edit - Only shopkeepers can edit bills
+        # Check if user can edit
         is_editable = False
         if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id == current_user.user_id:
             is_editable = True
-        # CA and employees cannot edit bills - only view them
+        elif current_user.role == 'CA':
+            # ca_conn = CAConnection.query.filter_by(shopkeeper_id=bill.shopkeeper_id, ca_id=current_user.ca.ca_id, status='approved').first()
+            # is_editable = bool(ca_conn)
+            is_editable = False
+        elif current_user.role == 'employee':
+            # emp_client = EmployeeClient.query.filter_by(shopkeeper_id=bill.shopkeeper_id, employee_id=current_user.ca_employee.employee_id).first()
+            # is_editable = bool(emp_client)
+            is_editable = False
         
-        # Calculate GST summary using new engine
+        # Calculate GST summary using stored data or calculation engine
         bill_items_data = []
         calculated_items = []
         
@@ -154,82 +204,128 @@ def register_routes(bp):
             base_price = float(item.price_per_unit)
             quantity = int(item.quantity)
             
-            # For viewing existing bills, assume discount = 0 unless stored elsewhere
-            discount_percent = 0  # You can extend this if discount is stored
-            
-            # Use new GST calculation engine
-            try:
-                gst_calc = calc_line(
-                    price=base_price,
-                    qty=quantity,
-                    gst_rate=gst_rate,
-                    discount_percent=discount_percent,
-                    mode=gst_mode
-                )
+            # Check if we have stored discount and GST data (new bills) or need to calculate (old bills)
+            if hasattr(item, 'discount_percent') and item.discount_percent is not None:
+                # Use stored calculations from new bills
+                discount_percent = float(item.discount_percent or 0)
+                discount_amount = float(item.discount_amount or 0)
+                taxable_amount = float(item.taxable_amount or 0)
+                cgst_amount = float(item.cgst_amount or 0)
+                sgst_amount = float(item.sgst_amount or 0)
+                total_gst = float(item.total_gst_amount or 0)
+                final_total = float(item.total_price)
                 
-                # Prepare item data for template with all GST details
+                # Prepare item data using stored values
                 item_data = {
                     'product': product,
                     'is_custom': is_custom,
                     'quantity': quantity,
                     'unit_price': base_price,
-                    'unit_price_base': float(gst_calc['unit_price_base']),
-                    'line_base_total': float(gst_calc['line_base_total']),
                     'discount_percent': discount_percent,
-                    'discount_amount': float(gst_calc['discount_amount']),
-                    'taxable_amount': float(gst_calc['taxable_amount']),
-                    'gst_rate': float(gst_calc['gst_rate']),
-                    'cgst_rate': float(gst_calc['cgst_rate']),
-                    'sgst_rate': float(gst_calc['sgst_rate']),
-                    'cgst_amount': float(gst_calc['cgst_amount']),
-                    'sgst_amount': float(gst_calc['sgst_amount']),
-                    'total_gst': float(gst_calc['total_gst']),
-                    'final_total': float(gst_calc['final_total']),
-                    'mode': gst_calc['mode'],
+                    'discount_amount': discount_amount,
+                    'taxable_amount': taxable_amount,
+                    'gst_rate': gst_rate,
+                    'cgst_rate': gst_rate / 2,
+                    'sgst_rate': gst_rate / 2,
+                    'cgst_amount': cgst_amount,
+                    'sgst_amount': sgst_amount,
+                    'total_gst': total_gst,
+                    'final_total': final_total,
+                    'mode': gst_mode,
                     'hsn_code': hsn_code
+                }
+                
+                # Create gst_calc for summary generation
+                gst_calc = {
+                    'taxable_amount': taxable_amount,
+                    'cgst_amount': cgst_amount,
+                    'sgst_amount': sgst_amount,
+                    'total_gst': total_gst,
+                    'final_total': final_total,
+                    'gst_rate': gst_rate
                 }
                 
                 bill_items_data.append(item_data)
                 calculated_items.append(gst_calc)
                 
-            except Exception as e:
-                current_app.logger.error(f"Error calculating GST for bill item {item.bill_item_id}: {str(e)}")
-                # Fallback to simple display
-                item_data = {
-                    'product': product,
-                    'is_custom': is_custom,
-                    'quantity': quantity,
-                    'unit_price': base_price,
-                    'line_base_total': base_price * quantity,
-                    'discount_percent': 0,
-                    'discount_amount': 0,
-                    'taxable_amount': base_price * quantity,
-                    'gst_rate': gst_rate,
-                    'cgst_rate': gst_rate / 2,
-                    'sgst_rate': gst_rate / 2,
-                    'cgst_amount': 0,
-                    'sgst_amount': 0,
-                    'total_gst': 0,
-                    'final_total': float(item.total_price),
-                    'mode': gst_mode,
-                    'hsn_code': hsn_code
-                }
-                bill_items_data.append(item_data)
+            else:
+                # Calculate for old bills (backward compatibility)
+                discount_percent = 0  # Old bills don't have discount data
+                
+                try:
+                    from app.utils.gst import calc_line
+                    gst_calc = calc_line(
+                        price=base_price,
+                        qty=quantity,
+                        gst_rate=gst_rate,
+                        discount_percent=discount_percent,
+                        mode=gst_mode
+                    )
+                    
+                    # Prepare item data for template with all GST details
+                    item_data = {
+                        'product': product,
+                        'is_custom': is_custom,
+                        'quantity': quantity,
+                        'unit_price': base_price,
+                        'unit_price_base': float(gst_calc['unit_price_base']),
+                        'line_base_total': float(gst_calc['line_base_total']),
+                        'discount_percent': discount_percent,
+                        'discount_amount': float(gst_calc['discount_amount']),
+                        'taxable_amount': float(gst_calc['taxable_amount']),
+                        'gst_rate': float(gst_calc['gst_rate']),
+                        'cgst_rate': float(gst_calc['cgst_rate']),
+                        'sgst_rate': float(gst_calc['sgst_rate']),
+                        'cgst_amount': float(gst_calc['cgst_amount']),
+                        'sgst_amount': float(gst_calc['sgst_amount']),
+                        'total_gst': float(gst_calc['total_gst']),
+                        'final_total': float(gst_calc['final_total']),
+                        'mode': gst_calc['mode'],
+                        'hsn_code': hsn_code
+                    }
+                    
+                    bill_items_data.append(item_data)
+                    calculated_items.append(gst_calc)
+                    
+                except Exception as e:
+                    current_app.logger.error(f"Error calculating GST for bill item {item.bill_item_id}: {str(e)}")
+                    # Fallback to simple display
+                    item_data = {
+                        'product': product,
+                        'is_custom': is_custom,
+                        'quantity': quantity,
+                        'unit_price': base_price,
+                        'line_base_total': base_price * quantity,
+                        'discount_percent': 0,
+                        'discount_amount': 0,
+                        'taxable_amount': base_price * quantity,
+                        'gst_rate': gst_rate,
+                        'cgst_rate': gst_rate / 2,
+                        'sgst_rate': gst_rate / 2,
+                        'cgst_amount': 0,
+                        'sgst_amount': 0,
+                        'total_gst': 0,
+                        'final_total': float(item.total_price),
+                        'mode': gst_mode,
+                        'hsn_code': hsn_code
+                    }
+                    bill_items_data.append(item_data)
         
         # Generate GST summary and totals using new engine
         if calculated_items:
+            from app.utils.gst import generate_gst_summary, calculate_bill_totals
             gst_summary = generate_gst_summary(calculated_items)
             bill_totals = calculate_bill_totals(calculated_items)
             
             # Convert summary for template (maintain backward compatibility)
             gst_summary_by_rate = {}
             for rate_str, summary_data in gst_summary.items():
-                rate_float = float(rate_str)
-                gst_summary_by_rate[rate_float] = {
+                gst_summary_by_rate[rate_str] = {
                     'taxable_amount': float(summary_data['taxable_amount']),
                     'cgst_amount': float(summary_data['cgst_amount']),
                     'sgst_amount': float(summary_data['sgst_amount']),
-                    'total_gst_amount': float(summary_data['total_gst'])
+                    'total_gst_amount': float(summary_data['total_gst']),
+                    'final_total': float(summary_data['final_total'])
                 }
             
             # Set totals
@@ -246,6 +342,7 @@ def register_routes(bp):
             total_cgst_amount = 0
             total_sgst_amount = 0
             total_gst_amount = 0
+
 
         return render_template('shopkeeper/bill_receipt.html',
             bill=bill,

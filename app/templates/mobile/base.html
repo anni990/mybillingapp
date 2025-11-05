@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="light-content">
+    <meta name="theme-color" content="#ed6a3e">
+    <title>{% block title %}MyBillingApp - Mobile{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Mobile Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile/styles.css') }}">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 font-sans overflow-hidden">
+    <!-- Mobile App Container -->
+    <div id="mobile-app" class="mobile-app-container">
+        
+        <!-- Header Component (Fixed) -->
+        <div class="mobile-header safe-area-top">
+            {% include 'mobile/components/header.html' %}
+        </div>
+        
+        <!-- Main Content Area -->
+        <main class="mobile-main">
+            {% block content %}{% endblock %}
+        </main>
+        
+        <!-- Bottom Navigation (Fixed) -->
+        <div class="mobile-bottom-nav safe-area-bottom">
+            {% include 'mobile/components/bottom_nav.html' %}
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    {% include 'mobile/components/modals.html' %}
+    
+    <!-- Mobile JavaScript -->
+    <script src="{{ url_for('static', filename='js/mobile/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mobile/navigation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mobile/features.js') }}"></script>
+    
+    {% block extra_scripts %}{% endblock %}
+    
+    <script>
+        // Initialize mobile app
+        MobileApp.init();
+    </script>
+</body>
+</html>

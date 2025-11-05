@@ -33,8 +33,13 @@ def register_routes(bp):
         
         # Calculate customer statistics
         active_customers_count = len([c for c in customers if c.total_balance > 0])
-        total_sales = sum(float(c.total_balance) for c in customers if c.total_balance > 0)
-        avg_order_value = total_sales / len(customers) if customers else 0
+        
+        # Calculate total sales from all credit amounts in customer ledger
+        total_sales_query = db.session.query(db.func.sum(CustomerLedger.credit_amount)).filter_by(shopkeeper_id=shopkeeper.user_id).scalar()
+        total_sales = float(total_sales_query or 0)
+        
+        # Calculate total remaining balance (sum of all customer balances)
+        total_remaining_balance = sum(float(c.total_balance) for c in customers if c.total_balance > 0)
         
         # Get unique locations
         unique_locations = list(set([c.address for c in customers if c.address]))
@@ -52,7 +57,7 @@ def register_routes(bp):
                             customers=customers,
                             active_customers_count=active_customers_count,
                             total_sales=total_sales,
-                            avg_order_value=avg_order_value,
+                            total_remaining_balance=total_remaining_balance,
                             unique_locations=unique_locations)
 
     @bp.route('/add_customer', methods=['POST'])
@@ -78,7 +83,8 @@ def register_routes(bp):
                 name=request.form.get('name'),
                 phone=request.form.get('phone'),
                 email=request.form.get('email') or None,
-                address=request.form.get('address') or None
+                address=request.form.get('address') or None,
+                gstin=request.form.get('gstin') or None
             )
             
             db.session.add(customer)
@@ -107,7 +113,8 @@ def register_routes(bp):
                 'name': customer.name,
                 'phone': customer.phone,
                 'email': customer.email,
-                'address': customer.address
+                'address': customer.address,
+                'gstin': customer.gstin
             }
         })
 
@@ -137,6 +144,7 @@ def register_routes(bp):
             customer.phone = new_phone
             customer.email = request.form.get('email') or None
             customer.address = request.form.get('address') or None
+            customer.gstin = request.form.get('gstin') or None
             customer.updated_date = datetime.datetime.now()
             
             db.session.commit()
@@ -204,6 +212,7 @@ def register_routes(bp):
                 'phone': customer.phone,
                 'email': customer.email,
                 'address': customer.address,
+                'gstin': customer.gstin,
                 'total_balance': float(customer.total_balance)
             },
             'orders': orders
@@ -213,16 +222,27 @@ def register_routes(bp):
     @login_required
     @shopkeeper_required
     def customer_ledger(customer_id):
+        print(f"🔍 Customer ledger route called for customer ID: {customer_id}")
+        
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         shop_name = shopkeeper.shop_name
         customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
         
         if not customer:
+            print(f"❌ Customer not found: ID {customer_id}")
             flash('Customer not found.', 'error')
             return redirect(url_for('shopkeeper.customer_management'))
         
+        print(f"✅ Customer found: {customer.name}, Balance: ₹{customer.total_balance}")
+        
         # Get ledger entries
         ledger_entries = CustomerLedger.query.filter_by(customer_id=customer_id).order_by(desc(CustomerLedger.transaction_date)).all()
+        
+        print(f"📝 Found {len(ledger_entries)} ledger entries for customer {customer.name}")
+        
+        # Debug: Print recent entries
+        for i, entry in enumerate(ledger_entries[:3]):
+            print(f"   Entry {i+1}: {entry.transaction_date} - {entry.transaction_type} - Credit: ₹{entry.credit_amount} - Debit: ₹{entry.debit_amount}")
         
         return render_template('shopkeeper/customer_ledger.html', 
                             shop_name=shop_name,
@@ -277,6 +297,66 @@ def register_routes(bp):
             db.session.rollback()
             return jsonify({'success': False, 'message': str(e)})
 
+    @bp.route('/complete_payment/<int:customer_id>', methods=['POST'])
+    @login_required
+    @shopkeeper_required
+    def complete_payment(customer_id):
+        print(f"🔍 Complete payment route called for customer ID: {customer_id}")
+        
+        shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
+        
+        if not customer:
+            print(f"❌ Customer not found: ID {customer_id}, Shopkeeper ID {shopkeeper.user_id if shopkeeper else 'None'}")
+            return jsonify({'success': False, 'message': 'Customer not found'})
+        
+        print(f"✅ Customer found: {customer.name}, Balance: ₹{customer.total_balance}")
+        
+        try:
+            current_balance = customer.total_balance or Decimal('0')
+            print(f"💰 Current balance: ₹{current_balance}")
+            
+            # Check if customer has any outstanding balance
+            if current_balance <= 0:
+                print("❌ No outstanding balance to clear")
+                return jsonify({'success': False, 'message': 'No outstanding balance to clear'})
+            
+            print("📝 Creating ledger entry...")
+            
+            # Create ledger entry for complete payment
+            ledger_entry = CustomerLedger(
+                customer_id=customer_id,
+                shopkeeper_id=shopkeeper.user_id,
+                transaction_date=datetime.datetime.now(),  # Explicitly set current timestamp
+                invoice_no=f"PAY{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}",
+                particulars="Complete Balance Payment - Cash Received",
+                debit_amount=Decimal('0'),
+                credit_amount=current_balance,
+                balance_amount=Decimal('0'),
+                transaction_type='PAYMENT',
+                notes="Full outstanding balance paid in cash"
+            )
+            
+            # Clear customer balance
+            customer.total_balance = Decimal('0')
+            customer.updated_date = datetime.datetime.now()
+            
+            db.session.add(ledger_entry)
+            db.session.commit()
+            
+            print(f"✅ Complete payment processed successfully! Ledger entry ID: {ledger_entry.ledger_id}")
+            
+            return jsonify({
+                'success': True, 
+                'message': f'Complete payment of ₹{current_balance:.2f} recorded successfully',
+                'amount_cleared': float(current_balance)
+            })
+        
+        except Exception as e:
+            print(f"❌ Error during complete payment: {e}")
+            db.session.rollback()
+            return jsonify({'success': False, 'message': str(e)})
+
     @bp.route('/get_customers_list')
     @login_required
     @shopkeeper_required
@@ -296,6 +376,7 @@ def register_routes(bp):
                 'phone': customer.phone,
                 'email': customer.email,
                 'address': customer.address,
+                'gstin': customer.gstin,
                 'balance': float(customer.total_balance)
             })
         
@@ -319,7 +400,7 @@ def register_routes(bp):
         writer = csv.writer(output)
         
         # Write header
-        writer.writerow(['Name', 'Phone', 'Email', 'Address', 'Balance', 'Created Date'])
+        writer.writerow(['Name', 'Phone', 'Email', 'Address', 'GSTIN', 'Balance', 'Created Date'])
         
         # Write customer data
         for customer in customers:
@@ -328,6 +409,7 @@ def register_routes(bp):
                 customer.phone,
                 customer.email or '',
                 customer.address or '',
+                customer.gstin or '',
                 f"{customer.total_balance:.2f}",
                 customer.created_date.strftime('%Y-%m-%d')
             ])
