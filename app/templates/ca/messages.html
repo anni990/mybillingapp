@@ -20,7 +20,16 @@
             <div class="w-1/3 border-r border-gray-200 flex flex-col">
                 <!-- Clients Header -->
                 <div class="p-4 bg-gray-50 border-b border-gray-200">
-                    <h2 class="font-semibold text-gray-900">Connected Clients</h2>
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="font-semibold text-gray-900">Connected Clients</h2>
+                        <button id="refresh-messages" 
+                                class="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors duration-200" 
+                                title="Refresh messages (R key)">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="mt-2">
                         <input type="text" id="client-search" placeholder="Search clients..." 
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
@@ -172,6 +181,10 @@ document.addEventListener('DOMContentLoaded', function() {
         feather.replace();
     }
 });
+</script>
+
+<script>
+    feather.replace();
 </script>
 
 {% endblock %}

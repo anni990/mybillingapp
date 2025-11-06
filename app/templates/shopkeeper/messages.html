@@ -34,14 +34,23 @@
                 <div class="flex-1 flex flex-col">
                     <!-- Chat Header -->
                     <div class="p-4 bg-gray-50 border-b border-gray-200">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                                {{ connected_ca.firm_name[:1].upper() }}
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                                    {{ connected_ca.firm_name[:1].upper() }}
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">{{ connected_ca.firm_name }}</h3>
+                                    <p class="text-sm text-gray-500">Your Chartered Accountant</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900">{{ connected_ca.firm_name }}</h3>
-                                <p class="text-sm text-gray-500">Your Chartered Accountant</p>
-                            </div>
+                            <button id="refresh-messages" 
+                                    class="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors duration-200" 
+                                    title="Refresh messages (R key)">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                     
@@ -148,4 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endif %}
+<script>
+    feather.replace();
+</script>
 {% endblock %}

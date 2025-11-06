@@ -10,7 +10,8 @@ const MessagesApp = {
         selectedClientId: null,
         currentMessageType: 'chat', // 'chat' or 'remark'
         pollInterval: null,
-        pollFrequency: 5000 // 5 seconds
+        pollFrequency: 60000, // 60 seconds (reduced from 5 seconds)
+        enablePolling: false // Disabled by default to reduce server load
     },
 
     elements: {},
@@ -22,7 +23,10 @@ const MessagesApp = {
         this.bindEvents();
         console.log('About to load clients, userRole:', this.config.userRole);
         this.loadClients();
-        this.startPolling();
+        // Only start polling if explicitly enabled
+        if (this.config.enablePolling) {
+            this.startPolling();
+        }
     },
 
     cacheElements() {
@@ -73,6 +77,22 @@ const MessagesApp = {
         // Client search
         this.elements.clientSearch?.addEventListener('input', (e) => {
             this.filterClients(e.target.value);
+        });
+
+        // Manual refresh button
+        document.getElementById('refresh-messages')?.addEventListener('click', () => {
+            this.refreshMessages();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // R key for refresh (when not typing in input fields)
+            if (e.key === 'r' || e.key === 'R') {
+                if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                    e.preventDefault();
+                    this.refreshMessages();
+                }
+            }
         });
 
         // Tab switching
@@ -529,6 +549,35 @@ const MessagesApp = {
         }
     },
 
+    // Manual refresh method to replace automatic polling
+    refreshMessages() {
+        console.log('Manual refresh triggered');
+        
+        // Show loading state on refresh button
+        const refreshBtn = document.getElementById('refresh-messages');
+        if (refreshBtn) {
+            const originalHTML = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = `
+                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+            `;
+            refreshBtn.disabled = true;
+            
+            // Restore button after 2 seconds
+            setTimeout(() => {
+                refreshBtn.innerHTML = originalHTML;
+                refreshBtn.disabled = false;
+            }, 2000);
+        }
+        
+        this.loadClients();
+        
+        if (this.config.selectedClientId) {
+            this.loadConversation(this.config.selectedClientId);
+        }
+    },
+
     showError(message) {
         // You can implement a toast notification system here
         console.error(message);
@@ -558,7 +607,7 @@ window.openRemarkModal = function(billId, billNumber, totalAmount, billDate) {
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
         MessagesApp.stopPolling();
-    } else {
+    } else if (MessagesApp.config.enablePolling) {
         MessagesApp.startPolling();
     }
 });
