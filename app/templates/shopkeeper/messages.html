@@ -3,108 +3,130 @@
 {% block title %}Messages - MyBillingApp{% endblock %}
 
 {% block content %}
-<div class="p-6 min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Messages</h1>
-        {% if connected_ca %}
-            <p class="text-gray-600">Chat with your connected CA: {{ connected_ca.firm_name }}</p>
-        {% else %}
-            <p class="text-gray-600">Connect with a CA to start messaging</p>
-        {% endif %}
-    </div>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/messages.css') }}">
+
+<div class="p-4 sm:p-6 min-h-screen bg-slate-50 -mt-8">
+    <!-- Professional Header -->
+    <!-- <div class="mb-6 sm:mb-8">
+        <div class="flex items-center space-x-3 mb-3">
+            <div class="p-2 bg-blue-100 rounded-xl">
+                <i data-feather="message-circle" class="w-6 h-6 text-blue-600"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">Messages</h1>
+                {% if connected_ca %}
+                    <p class="text-sm sm:text-base text-slate-600">Chat with your CA: <span class="font-semibold text-blue-600">{{ connected_ca.firm_name }}</span></p>
+                {% else %}
+                    <p class="text-sm sm:text-base text-slate-600">Connect with a CA to start messaging</p>
+                {% endif %}
+            </div>
+        </div>
+    </div> -->
     
     {% if not connected_ca %}
-        <!-- No CA Connected State -->
-        <div class="bg-white rounded-xl shadow-lg p-8 text-center">
-            <i data-feather="message-circle" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">No CA Connected</h3>
-            <p class="text-gray-600 mb-6">To use the messaging feature, you need to connect with a Chartered Accountant first.</p>
-            <a href="{{ url_for('shopkeeper.ca_marketplace') }}" 
-               class="inline-flex items-center px-6 py-3 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition-colors">
-                <i data-feather="briefcase" class="w-5 h-5 mr-2"></i>
-                Browse CA Marketplace
-            </a>
+        <!-- Professional No CA Connected State -->
+        <div class="chat-container rounded-2xl shadow-xl p-8 sm:p-12 text-center max-w-2xl mx-auto">
+            <div class="mb-6">
+                <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-feather="message-circle" class="w-10 h-10 text-blue-600"></i>
+                </div>
+                <h3 class="text-xl sm:text-2xl font-bold text-slate-800 mb-3">No CA Connected</h3>
+                <p class="text-slate-600 mb-8 max-w-md mx-auto leading-relaxed">
+                    To use the messaging feature, you need to connect with a Chartered Accountant first. 
+                    Browse our marketplace to find the perfect CA for your business.
+                </p>
+                <a href="{{ url_for('shopkeeper.ca_marketplace') }}" 
+                   class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    <i data-feather="briefcase" class="w-5 h-5 mr-2"></i>
+                    Browse CA Marketplace
+                </a>
+            </div>
         </div>
     {% else %}
-        <!-- Chat Interface -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden" style="height: calc(100vh - 200px);">
-            <div class="flex h-full">
-                <!-- Chat Window (Full Width for Shopkeeper) -->
-                <div class="flex-1 flex flex-col">
-                    <!-- Chat Header -->
-                    <div class="p-4 bg-gray-50 border-b border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+        <!-- Professional Chat Interface -->
+        <div class="chat-container rounded-2xl overflow-hidden shadow-xl" style="height: calc(100vh - 180px); min-height: 600px;">
+            <div class="flex flex-col h-full">
+                <!-- Enhanced Chat Header -->
+                <div class="messages-header p-4 sm:p-6 border-b border-slate-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="relative">
+                                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-200 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
                                     {{ connected_ca.firm_name[:1].upper() }}
                                 </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900">{{ connected_ca.firm_name }}</h3>
-                                    <p class="text-sm text-gray-500">Your Chartered Accountant</p>
+                                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                            </div>
+                            <div>
+                                <h3 class="text-lg sm:text-xl font-bold text-slate-800">{{ connected_ca.firm_name }}</h3>
+                                <p class="text-sm text-slate-600 font-medium">Your Chartered Accountant</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Professional Chat/Remarks Toggle between CA name and refresh button -->
+                        <div class="flex items-center space-x-4">
+                            <div id="chat-toggle" class="flex items-center">
+                                <div class="flex bg-slate-200 rounded-xl p-1">
+                                    <button id="chat-tab" class="tab-button flex-1 py-2 px-4 text-sm font-semibold text-slate-700 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2">
+                                        <i data-feather="message-circle" class="w-5 h-5"></i>
+                                        <span>Chat</span>
+                                    </button>
+                                    <button id="remarks-tab" class="tab-button flex-1 py-2 px-4 text-sm font-semibold text-slate-700 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2">
+                                        <i data-feather="pen-tool" class="w-10 h-10"></i>
+                                        <span>Remarks</span>
+                                    </button>
                                 </div>
                             </div>
+                            
                             <button id="refresh-messages" 
-                                    class="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors duration-200" 
+                                    class="refresh-button p-3 text-slate-600 hover:text-white transition-all duration-300"
                                     title="Refresh messages (R key)">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                 </svg>
                             </button>
                         </div>
                     </div>
-                    
-                    <!-- Chat/Remarks Toggle -->
-                    <div class="p-4 bg-white border-b border-gray-200">
-                        <div class="flex bg-gray-100 rounded-lg p-1">
-                            <button id="chat-tab" class="flex-1 py-2 px-4 text-sm font-medium text-gray-700 bg-white rounded-lg shadow-sm transition-all duration-200">
-                                Chat
-                            </button>
-                            <button id="remarks-tab" class="flex-1 py-2 px-4 text-sm font-medium text-gray-700 transition-all duration-200">
-                                Remarks
-                            </button>
-                        </div>
+                </div>
+                
+                <!-- Enhanced Messages Area -->
+                <div class="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-b from-slate-50 to-white" id="messages-container">
+                    <div id="messages-list" class="p-4 sm:p-6 space-y-4">
+                        <!-- Messages will be loaded here -->
                     </div>
-                    
-                    <!-- Messages Area -->
-                    <div class="flex-1 overflow-y-auto custom-scrollbar" id="messages-container">
-                        <div id="messages-list" class="p-4 space-y-4">
-                            <!-- Messages will be loaded here -->
+                </div>
+                
+                <!-- Professional Message Input -->
+                <div class="message-input-container p-4 sm:p-6 bg-white border-t border-slate-200">
+                    <div class="flex items-end space-x-3 max-w-4xl mx-auto">
+                        <div class="flex-1">
+                            <textarea id="message-input" 
+                                      placeholder="Type your message..." 
+                                      rows="1"
+                                      class="w-full px-4 py-3 border border-slate-300 rounded-xl resize-none focus:outline-none focus:border-blue-500 text-sm sm:text-base transition-all duration-300"
+                                      maxlength="2000"></textarea>
                         </div>
+                        <button id="send-btn" 
+                                class="send-button p-4 text-white rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled>
+                            <i data-feather="send" class="w-5 h-5"></i>
+                        </button>
                     </div>
-                    
-                    <!-- Message Input -->
-                    <div class="p-4 bg-white border-t border-gray-200">
-                        <div class="flex items-center space-x-3">
-                            <div class="flex-1">
-                                <textarea id="message-input" 
-                                          placeholder="Type your message..." 
-                                          rows="1"
-                                          class="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                          maxlength="2000"></textarea>
-                            </div>
-                            <button id="send-btn" 
-                                    class="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled>
-                                <i data-feather="send" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                        <div class="mt-2 text-right">
-                            <span id="char-count" class="text-xs text-gray-500">0/2000</span>
-                        </div>
-                    </div>
+                    <!-- <div class="mt-3 text-right max-w-4xl mx-auto">
+                        <span id="char-count" class="text-xs text-slate-500 font-medium">0/2000</span>
+                    </div> -->
                 </div>
             </div>
         </div>
     {% endif %}
 </div>
 
-<!-- Remark Modal -->
-<div id="remark-modal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+<!-- Enhanced Remark Modal with responsive design -->
+<div id="remark-modal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl p-4 sm:p-6 max-w-md w-full mx-4">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">Add Remark to Bill</h3>
-            <button id="close-remark-modal" class="text-gray-400 hover:text-gray-600">
+            <button id="close-remark-modal" class="text-gray-400 hover:text-gray-600 p-1">
                 <i data-feather="x" class="w-5 h-5"></i>
             </button>
         </div>
@@ -116,7 +138,7 @@
             <textarea id="remark-text" 
                       placeholder="Enter your remark..." 
                       rows="4"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
                       maxlength="2000"></textarea>
             <div class="mt-2 text-right">
                 <span id="remark-char-count" class="text-xs text-gray-500">0/2000</span>
@@ -124,10 +146,10 @@
         </div>
         
         <div class="flex justify-end space-x-3">
-            <button id="cancel-remark" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button id="cancel-remark" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 Cancel
             </button>
-            <button id="submit-remark" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50">
+            <button id="submit-remark" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 transition-colors">
                 Add Remark
             </button>
         </div>
