@@ -23,6 +23,7 @@ const MessagesApp = {
         this.bindEvents();
         console.log('About to load clients, userRole:', this.config.userRole);
         this.loadClients();
+        this.refreshMessages();
         // Only start polling if explicitly enabled
         if (this.config.enablePolling) {
             this.startPolling();
