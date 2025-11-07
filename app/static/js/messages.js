@@ -144,32 +144,54 @@ const MessagesApp = {
 
     async loadClients() {
         console.log('loadClients called, userRole:', this.config.userRole);
-        if (this.config.userRole !== 'CA') {
-            console.log('Not CA role, skipping client loading');
-            return;
-        }
-
-        console.log('Making API call to load clients...');
-        try {
-            const response = await fetch('/api/messages/clients');
-            console.log('API response received:', response.status, response.statusText);
-            if (response.ok) {
-                const clients = await response.json();
-                console.log('Clients data received:', clients);
-                this.renderClients(clients);
-                this.updateUnreadBadge(clients);
-            } else {
-                const errorText = await response.text();
-                console.error('Failed to load clients:', response.status, errorText);
+        
+        if (this.config.userRole === 'CA') {
+            console.log('Making API call to load clients...');
+            try {
+                const response = await fetch('/api/messages/clients');
+                console.log('API response received:', response.status, response.statusText);
+                if (response.ok) {
+                    const clients = await response.json();
+                    console.log('Clients data received:', clients);
+                    this.renderClients(clients);
+                    this.updateUnreadBadge(clients);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Failed to load clients:', response.status, errorText);
+                    this.showError('Failed to load clients');
+                }
+            } catch (error) {
+                console.error('Error loading clients:', error);
                 this.showError('Failed to load clients');
             }
-        } catch (error) {
-            console.error('Error loading clients:', error);
-            this.showError('Failed to load clients');
-        }
 
-        if (this.elements.clientsLoading) {
-            this.elements.clientsLoading.style.display = 'none';
+            if (this.elements.clientsLoading) {
+                this.elements.clientsLoading.style.display = 'none';
+            }
+        } else if (this.config.userRole === 'shopkeeper') {
+            console.log('Shopkeeper role - loading connected CA...');
+            await this.loadShopkeeperConnectedCA();
+        } else {
+            console.log('Unknown role, skipping client loading');
+            return;
+        }
+    },
+
+    async loadShopkeeperConnectedCA() {
+        // For shopkeepers, we'll load the connected CA information
+        // This method can be enhanced to fetch CA details if needed
+        try {
+            const response = await fetch('/api/messages/connected_cas');
+            if (response.ok) {
+                const caData = await response.json();
+                console.log('Connected CA data:', caData);
+                // For shopkeepers, this is mainly for consistency
+                // The actual CA selection is handled in the template
+            } else {
+                console.error('Failed to load connected CA');
+            }
+        } catch (error) {
+            console.error('Error loading connected CA:', error);
         }
     },
 
@@ -197,25 +219,28 @@ const MessagesApp = {
 
     createClientElement(client) {
         const div = document.createElement('div');
-        div.className = 'p-4 hover:bg-gray-50 cursor-pointer transition-colors duration-200 client-item';
+        div.className = 'p-4 sm:p-5 hover:bg-slate-50 cursor-pointer transition-all duration-300 client-item border-l-4 border-transparent';
         div.dataset.clientId = client.user_id;
         div.dataset.clientName = client.shop_name;
 
         const unreadBadge = client.unread_count > 0 ? 
-            `<span class="ml-auto bg-orange-500 text-white text-xs rounded-full px-2 py-1">${client.unread_count}</span>` : '';
+            `<span class="ml-auto bg-blue-500 text-white text-xs font-semibold rounded-full px-2 py-1 shadow-md">${client.unread_count}</span>` : '';
 
         const lastMessage = client.last_message ? 
-            `<p class="text-sm text-gray-500 truncate">${client.last_message.text}</p>` :
-            '<p class="text-sm text-gray-500 italic">No messages yet</p>';
+            `<p class="text-sm text-slate-500 truncate font-medium">${client.last_message.text}</p>` :
+            '<p class="text-sm text-slate-400 italic">No messages yet</p>';
 
         div.innerHTML = `
             <div class="flex items-center justify-between">
-                <div class="flex items-center flex-1 min-w-0">
-                    <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                        ${client.shop_name.charAt(0).toUpperCase()}
+                <div class="flex items-center flex-1 min-w-0 space-x-3">
+                    <div class="relative flex-shrink-0">
+                        <div class="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                            ${client.shop_name.charAt(0).toUpperCase()}
+                        </div>
+                        ${client.unread_count > 0 ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>' : ''}
                     </div>
                     <div class="min-w-0 flex-1">
-                        <h3 class="font-medium text-gray-900 truncate">${client.shop_name}</h3>
+                        <h3 class="font-semibold text-slate-800 truncate text-base">${client.shop_name}</h3>
                         ${lastMessage}
                     </div>
                 </div>
@@ -265,9 +290,19 @@ const MessagesApp = {
         // Show chat interface
         this.elements.welcomeState.style.display = 'none';
         this.elements.chatHeader.style.display = 'block';
-        this.elements.chatToggle.style.display = 'block';
         this.elements.messageInputArea.style.display = 'block';
         this.elements.messagesList.style.display = 'block';
+
+        // Mobile navigation: Show chat panel on mobile when client is selected
+        if (window.innerWidth < 768) {
+            const clientsPanel = document.getElementById('clients-panel');
+            const chatPanel = document.getElementById('chat-panel');
+            if (clientsPanel && chatPanel) {
+                clientsPanel.classList.add('hidden');
+                chatPanel.classList.remove('hidden');
+                chatPanel.classList.add('flex');
+            }
+        }
 
         // Load conversation
         await this.loadConversation(clientId);
@@ -279,12 +314,24 @@ const MessagesApp = {
     async loadConversation(clientId) {
         try {
             const url = `/api/messages/conversation/${clientId}?type=${this.config.currentMessageType}&limit=50`;
+            console.log('Loading conversation from URL:', url);
             const response = await fetch(url);
             
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+            
             if (response.ok) {
-                const messages = await response.json();
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                // Handle both array response and object response with messages property
+                const messages = Array.isArray(data) ? data : (data.messages || []);
+                console.log('Processed messages:', messages);
+                
                 this.renderMessages(messages);
             } else {
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
                 this.showError('Failed to load conversation');
             }
         } catch (error) {
@@ -294,28 +341,41 @@ const MessagesApp = {
     },
 
     renderMessages(messages) {
+        console.log('renderMessages called with:', messages);
         const container = this.elements.messagesList;
         container.innerHTML = '';
 
+        // Ensure messages is an array
+        if (!Array.isArray(messages)) {
+            console.error('Messages is not an array:', messages);
+            messages = [];
+        }
+
         if (messages.length === 0) {
             container.innerHTML = `
-                <div class="text-center text-gray-500 py-8">
-                    <i data-feather="message-circle" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
-                    <p>No ${this.config.currentMessageType === 'chat' ? 'messages' : 'remarks'} yet</p>
-                    <p class="text-sm">Start the conversation!</p>
+                <div class="text-center text-slate-500 py-12 px-4">
+                    <div class="max-w-sm mx-auto">
+                        <i data-feather="message-circle" class="w-16 h-16 mx-auto mb-4 text-slate-300"></i>
+                        <h3 class="text-lg font-medium mb-2">No ${this.config.currentMessageType === 'chat' ? 'messages' : 'remarks'} yet</h3>
+                        <p class="text-sm text-slate-400">Start the conversation by sending a message!</p>
+                    </div>
                 </div>
             `;
             feather.replace();
             return;
         }
 
-        messages.forEach(message => {
+        // Sort messages by timestamp (oldest first - normal chronological order)
+        const sortedMessages = messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        
+        // Add messages in normal order (oldest to newest) with proper spacing
+        sortedMessages.forEach(message => {
             const messageElement = this.createMessageElement(message);
             container.appendChild(messageElement);
         });
 
-        // Scroll to bottom
-        container.scrollTop = container.scrollHeight;
+        // Scroll to bottom to show latest messages (like WhatsApp)
+        this.scrollToBottomInstant();
         feather.replace();
     },
 
@@ -324,8 +384,8 @@ const MessagesApp = {
         const isOwn = message.sender_id == this.config.userId;
         const messageClass = isOwn ? 'sent' : 'received';
         
-        // Add responsive styling for message bubbles
-        div.className = `message-bubble ${messageClass} ${message.message_type === 'remark' ? 'remark' : ''} mb-4 flex ${isOwn ? 'justify-end' : 'justify-start'}`;
+        // Clean responsive styling for message bubbles
+        div.className = `message-bubble ${messageClass} ${message.message_type === 'remark' ? 'remark' : ''} mb-4 flex ${isOwn ? 'justify-end' : 'justify-start'} px-3 sm:px-4`;
 
         const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
             hour: '2-digit',
@@ -338,14 +398,19 @@ const MessagesApp = {
             const billDate = message.bill.bill_date ? 
                 new Date(message.bill.bill_date).toLocaleDateString() : 'N/A';
             
+            // Determine the correct route based on user role
+            const billRoute = this.config.userRole === 'CA' ? 
+                `/ca/bill/${message.bill.id}` : 
+                `/shopkeeper/bill/${message.bill.id}`;
+            
             billPreview = `
-                <div class="bill-preview mt-2 p-3 bg-gray-50 rounded-lg border">
+                <div class="bill-preview mt-3 p-3 bg-white bg-opacity-15 rounded-lg border border-white border-opacity-25">
                     <div class="flex items-center justify-between">
                         <div>
-                            <a href="/ca/bills?bill_id=${message.bill.id}" class="text-orange-600 hover:text-orange-700 font-medium">
+                            <a href="${billRoute}" class="text-gray-600 hover:text-gray-700 font-medium text-sm p-2">
                                 📄 View Bill #${message.bill.bill_number || message.bill.id}
                             </a>
-                            <p class="text-sm text-gray-600 mt-1">
+                            <p class="text-xs text-gray-600 text-opacity-90 mt-1 p-1">
                                 ₹${message.bill.total_amount} • ${billDate}
                             </p>
                         </div>
@@ -354,13 +419,34 @@ const MessagesApp = {
             `;
         }
 
+        // Professional message bubble design with consistent app styling
+        let bubbleClasses = isOwn 
+            ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg border border-blue-400' 
+            : 'bg-white text-slate-800 shadow-md border border-slate-200';
+        
+        const bubbleShape = isOwn 
+            ? 'rounded-2xl rounded-br-sm' 
+            : 'rounded-2xl rounded-bl-sm';
+
+        // Remark styling override
+        if (message.message_type === 'remark') {
+            if (isOwn) {
+                bubbleClasses = 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg border border-purple-400';
+            } else {
+                bubbleClasses = 'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-800 shadow-md border border-slate-300';
+            }
+        }
+
         div.innerHTML = `
-            <div class="message-content max-w-xs lg:max-w-md xl:max-w-lg p-3 rounded-lg ${isOwn ? 'bg-orange-500 text-white rounded-br-none' : 'bg-gray-100 text-gray-900 rounded-bl-none'}">
-                <p class="whitespace-pre-wrap break-words">${this.escapeHtml(message.message)}</p>
-                ${billPreview}
-                <div class="message-time text-xs mt-2 opacity-70">
-                    ${time}
-                    ${message.message_type === 'remark' ? ' • Remark' : ''}
+            <div class="message-content relative max-w-[80%] sm:max-w-sm md:max-w-lg lg:max-w-xl p-4 ${bubbleClasses} ${bubbleShape}">
+                <div class="message-text pr-14">
+                    <p class="whitespace-pre-wrap break-words text-sm sm:text-base leading-relaxed">${this.escapeHtml(message.message)}</p>
+                    ${billPreview}
+                </div>
+                <div class="absolute bottom-2 right-2">
+                    <div class="message-time text-xs ${isOwn ? 'text-white text-opacity-80' : 'text-slate-500'} flex items-center space-x-1">
+                        <span>${time}</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -406,8 +492,9 @@ const MessagesApp = {
                 this.toggleSendButton();
                 this.autoResizeTextarea(this.elements.messageInput);
                 
-                // Reload conversation
+                // Reload conversation and scroll to new message
                 await this.loadConversation(this.config.selectedClientId);
+                this.scrollToBottom();
             } else {
                 const error = await response.json();
                 this.showError(error.error || 'Failed to send message');
@@ -489,6 +576,7 @@ const MessagesApp = {
                 this.switchTab('remark');
                 if (this.config.selectedClientId) {
                     await this.loadConversation(this.config.selectedClientId);
+                    this.scrollToBottom();
                 }
             } else {
                 const error = await response.json();
@@ -576,6 +664,29 @@ const MessagesApp = {
         
         if (this.config.selectedClientId) {
             this.loadConversation(this.config.selectedClientId);
+        }
+    },
+
+    // Smooth scroll to bottom for new messages
+    scrollToBottom() {
+        const container = this.elements.messagesContainer;
+        if (container) {
+            setTimeout(() => {
+                container.scrollTo({
+                    top: container.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        }
+    },
+
+    // Instant scroll to bottom for initial load
+    scrollToBottomInstant() {
+        const container = this.elements.messagesContainer;
+        if (container) {
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            },1);
         }
     },
 

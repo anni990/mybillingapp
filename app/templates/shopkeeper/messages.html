@@ -2,95 +2,128 @@
 
 {% block title %}Messages - MyBillingApp{% endblock %}
 
+{% block shop_name %} {{ shop_name }} {% endblock %}
+
 {% block content %}
-<div class="p-6 min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Messages</h1>
-        {% if connected_ca %}
-            <p class="text-gray-600">Chat with your connected CA: {{ connected_ca.firm_name }}</p>
-        {% else %}
-            <p class="text-gray-600">Connect with a CA to start messaging</p>
-        {% endif %}
-    </div>
-    
+
+<style>
+/* Blue Custom Scrollbar for Messages */
+.messages-custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.messages-custom-scrollbar::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.messages-custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #3b82f6, #2563eb);
+    border-radius: 10px;
+}
+
+.messages-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #2563eb, #1d4ed8);
+}
+
+/* Firefox scrollbar styling */
+.messages-custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #528ce9 #e2e8f0;
+}
+</style>
+
+<div class="bg-slate-50 lg:-mt-8" style="height: calc(100vh - 100px); overflow: hidden;">
     {% if not connected_ca %}
-        <!-- No CA Connected State -->
-        <div class="bg-white rounded-xl shadow-lg p-8 text-center">
-            <i data-feather="message-circle" class="w-16 h-16 mx-auto mb-4 text-gray-300"></i>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">No CA Connected</h3>
-            <p class="text-gray-600 mb-6">To use the messaging feature, you need to connect with a Chartered Accountant first.</p>
-            <a href="{{ url_for('shopkeeper.ca_marketplace') }}" 
-               class="inline-flex items-center px-6 py-3 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition-colors">
-                <i data-feather="briefcase" class="w-5 h-5 mr-2"></i>
-                Browse CA Marketplace
-            </a>
+        <!-- Professional No CA Connected State - Responsive -->
+        <div class="flex items-center justify-center h-full p-4 sm:p-6 md:p-8">
+            <div class="chat-container rounded-xl sm:rounded-2xl shadow-3xl p-6 sm:p-8 md:p-12 text-center max-w-md sm:max-w-lg md:max-w-2xl mx-auto bg-white">
+                <div class="mb-4 sm:mb-6">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <i data-feather="message-circle" class="w-8 h-8 sm:w-10 sm:h-10 text-blue-600"></i>
+                    </div>
+                    <h3 class="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-2 sm:mb-3">No CA Connected</h3>
+                    <p class="text-slate-600 mb-6 sm:mb-8 max-w-xs sm:max-w-md mx-auto leading-relaxed text-sm sm:text-base">
+                        To use the messaging feature, you need to connect with a Chartered Accountant first. 
+                        Browse our marketplace to find the perfect CA for your business.
+                    </p>
+                    <a href="{{ url_for('shopkeeper.ca_marketplace') }}" 
+                       class="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-sm sm:text-base">
+                        <i data-feather="briefcase" class="w-4 h-4 sm:w-5 sm:h-5 mr-2"></i>
+                        Browse CA Marketplace
+                    </a>
+                </div>
+            </div>
         </div>
     {% else %}
-        <!-- Chat Interface -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden" style="height: calc(100vh - 200px);">
-            <div class="flex h-full">
-                <!-- Chat Window (Full Width for Shopkeeper) -->
-                <div class="flex-1 flex flex-col">
-                    <!-- Chat Header -->
-                    <div class="p-4 bg-gray-50 border-b border-gray-200">
+        <!-- Professional Chat Interface - Fully Responsive -->
+        <div class="h-full p-2 sm:p-4 md:p-6">
+            <div class="chat-container rounded-xl md:rounded-2xl overflow-hidden shadow-xl bg-white h-full">
+                <div class="flex flex-col h-full">
+                    <!-- Enhanced Chat Header - Responsive -->
+                    <div class="messages-header p-3 sm:p-4 md:p-6 border-b border-slate-200 flex-shrink-0">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                                    {{ connected_ca.firm_name[:1].upper() }}
+                            <div class="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+                                <div class="relative flex-shrink-0">
+                                    <div class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-200 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm sm:text-base md:text-lg shadow-lg">
+                                        {{ connected_ca.firm_name[:1].upper() }}
+                                    </div>
+                                    <div class="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white"></div>
                                 </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900">{{ connected_ca.firm_name }}</h3>
-                                    <p class="text-sm text-gray-500">Your Chartered Accountant</p>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm sm:text-lg md:text-xl font-bold text-slate-800 truncate">{{ connected_ca.firm_name }}</h3>
+                                    <p class="text-xs sm:text-sm text-slate-600 font-medium truncate">Your Chartered Accountant</p>
                                 </div>
                             </div>
-                            <button id="refresh-messages" 
-                                    class="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors duration-200" 
-                                    title="Refresh messages (R key)">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                </svg>
-                            </button>
+                            
+                            <!-- Professional Chat/Remarks Toggle - Responsive -->
+                            <div class="flex items-center space-x-2 sm:space-x-4">
+                                <div id="chat-toggle" class="flex items-center">
+                                    <div class="flex bg-slate-200 rounded-lg md:rounded-xl p-0.5 sm:p-1">
+                                        <button id="chat-tab" class="tab-button flex-1 py-1.5 px-2 sm:py-2 sm:px-3 md:px-4 text-xs sm:text-sm font-semibold rounded-md md:rounded-lg transition-all duration-300 flex items-center justify-center space-x-1 sm:space-x-2">
+                                            <i data-feather="message-circle" class="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5"></i>
+                                            <span class="hidden sm:inline">Chat</span>
+                                        </button>
+                                        <button id="remarks-tab" class="tab-button flex-1 py-1.5 px-2 sm:py-2 sm:px-3 md:px-4 text-xs sm:text-sm font-semibold rounded-md md:rounded-lg transition-all duration-300 flex items-center justify-center space-x-1 sm:space-x-2">
+                                            <i data-feather="edit-3" class="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5"></i>
+                                            <span class="hidden sm:inline">Remarks</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <button id="refresh-messages" 
+                                        class="refresh-button p-2 sm:p-3 text-slate-600 hover:text-white transition-all duration-300 rounded-lg flex-shrink-0"
+                                        title="Refresh messages (R key)">
+                                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Chat/Remarks Toggle -->
-                    <div class="p-4 bg-white border-b border-gray-200">
-                        <div class="flex bg-gray-100 rounded-lg p-1">
-                            <button id="chat-tab" class="flex-1 py-2 px-4 text-sm font-medium text-gray-700 bg-white rounded-lg shadow-sm transition-all duration-200">
-                                Chat
-                            </button>
-                            <button id="remarks-tab" class="flex-1 py-2 px-4 text-sm font-medium text-gray-700 transition-all duration-200">
-                                Remarks
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Messages Area -->
-                    <div class="flex-1 overflow-y-auto custom-scrollbar" id="messages-container">
-                        <div id="messages-list" class="p-4 space-y-4">
+                    <!-- Enhanced Messages Area - Responsive -->
+                    <div class="flex-1 overflow-y-auto messages-custom-scrollbar bg-gradient-to-b from-slate-50 to-white" id="messages-container">
+                        <div id="messages-list" class="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
                             <!-- Messages will be loaded here -->
                         </div>
                     </div>
                     
-                    <!-- Message Input -->
-                    <div class="p-4 bg-white border-t border-gray-200">
-                        <div class="flex items-center space-x-3">
+                    <!-- Professional Message Input - Responsive -->
+                    <div class="message-input-container p-3 sm:p-4 md:p-6 bg-white border-t border-slate-200 flex-shrink-0">
+                        <div class="flex items-end space-x-2 sm:space-x-3 max-w-4xl mx-auto">
                             <div class="flex-1">
                                 <textarea id="message-input" 
                                           placeholder="Type your message..." 
                                           rows="1"
-                                          class="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                          class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-slate-300 rounded-lg md:rounded-xl resize-none focus:outline-none focus:border-blue-500 text-sm sm:text-base transition-all duration-300"
                                           maxlength="2000"></textarea>
                             </div>
                             <button id="send-btn" 
-                                    class="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    class="send-button p-2.5 sm:p-3 md:p-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg md:rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                                     disabled>
-                                <i data-feather="send" class="w-4 h-4"></i>
+                                <i data-feather="send" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                             </button>
-                        </div>
-                        <div class="mt-2 text-right">
-                            <span id="char-count" class="text-xs text-gray-500">0/2000</span>
                         </div>
                     </div>
                 </div>
@@ -99,12 +132,12 @@
     {% endif %}
 </div>
 
-<!-- Remark Modal -->
-<div id="remark-modal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+<!-- Enhanced Remark Modal with responsive design -->
+<div id="remark-modal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl p-4 sm:p-6 max-w-md w-full mx-4">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">Add Remark to Bill</h3>
-            <button id="close-remark-modal" class="text-gray-400 hover:text-gray-600">
+            <button id="close-remark-modal" class="text-gray-400 hover:text-gray-600 p-1">
                 <i data-feather="x" class="w-5 h-5"></i>
             </button>
         </div>
@@ -116,7 +149,7 @@
             <textarea id="remark-text" 
                       placeholder="Enter your remark..." 
                       rows="4"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
                       maxlength="2000"></textarea>
             <div class="mt-2 text-right">
                 <span id="remark-char-count" class="text-xs text-gray-500">0/2000</span>
@@ -124,10 +157,10 @@
         </div>
         
         <div class="flex justify-end space-x-3">
-            <button id="cancel-remark" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button id="cancel-remark" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 Cancel
             </button>
-            <button id="submit-remark" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50">
+            <button id="submit-remark" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 transition-colors">
                 Add Remark
             </button>
         </div>
@@ -140,22 +173,85 @@
 <script>
 // Initialize messages page for Shopkeeper
 document.addEventListener('DOMContentLoaded', function() {
+    // Check URL parameters FIRST before initializing MessagesApp
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    const isRemarksMode = tabParam === 'remarks';
+    
     if (typeof MessagesApp !== 'undefined') {
+        // CRITICAL: Set the correct message type before init
+        const initialMessageType = isRemarksMode ? 'remark' : 'chat';
+        
         MessagesApp.init({
             userRole: 'shopkeeper',
             userId: {{ current_user.user_id }},
             selectedClientId: {{ connected_ca.user.user_id }}, // Pre-select the CA
-            connectedCAName: '{{ connected_ca.firm_name }}'
+            connectedCAName: '{{ connected_ca.firm_name }}',
+            currentMessageType: initialMessageType  // Pass the correct type during init
         });
         
-        // Automatically load conversation with CA
+        // Verify the type was set correctly
+        console.log('MessagesApp initialized with currentMessageType:', MessagesApp.config.currentMessageType);
+        
+        // Always call selectClient to set up the UI, but it will use the correct message type
         MessagesApp.selectClient({{ connected_ca.user.user_id }}, '{{ connected_ca.firm_name }}');
+        
+        // Handle tab visual state based on URL parameter  
+        const chatTab = document.getElementById('chat-tab');
+        const remarksTab = document.getElementById('remarks-tab');
+        
+        // Function to update tab styles
+        function updateTabStyles(activeTab) {
+            if (chatTab && remarksTab) {
+                // Reset both tabs to default state
+                chatTab.classList.remove('bg-white-600', 'text-gray-600');
+                chatTab.classList.add('text-slate-700', 'bg-white-600');
+                
+                remarksTab.classList.remove('bg-white-600', 'text-gray-600');
+                remarksTab.classList.add('text-slate-700', 'bg-white-600');
+                
+                // Apply active styles
+                if (activeTab === 'chat') {
+                    chatTab.classList.remove('text-slate-700', 'bg-white-600');
+                    chatTab.classList.add('bg-white-600', 'text-gray-600');
+                } else if (activeTab === 'remarks') {
+                    remarksTab.classList.remove('text-slate-700', 'bg-white-600');
+                    remarksTab.classList.add('bg-white-600', 'text-gray-600');
+                }
+            }
+        }
+        
+        // Set initial tab state based on URL
+        updateTabStyles(isRemarksMode ? 'remarks' : 'chat');
+        
+        // Add click listeners for manual tab switching
+        if (chatTab) {
+            chatTab.addEventListener('click', function() {
+                MessagesApp.config.currentMessageType = 'chat';
+                updateTabStyles('chat');
+                if (MessagesApp.config.selectedClientId) {
+                    MessagesApp.loadConversation(MessagesApp.config.selectedClientId);
+                }
+            });
+        }
+        
+        if (remarksTab) {
+            remarksTab.addEventListener('click', function() {
+                MessagesApp.config.currentMessageType = 'remark';
+                updateTabStyles('remarks');
+                if (MessagesApp.config.selectedClientId) {
+                    MessagesApp.loadConversation(MessagesApp.config.selectedClientId);
+                }
+            });
+        }
     }
     
     // Initialize feather icons for dynamically added content
     feather.replace();
 });
 </script>
+
+
 {% endif %}
 <script>
     feather.replace();

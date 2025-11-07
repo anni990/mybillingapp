@@ -8,21 +8,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         .custom-scrollbar::-webkit-scrollbar {
-            width: 10px;
+            width: 6px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #e2582a;
-            /* border-radius: 10px; */
+            background: #f1f1f1;
+            border-radius: 10px;
         }
-        
+
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #db4d1a;
-            /* border-radius: 10px; */
+            background: #ed6a3e;
+            border-radius: 10px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #a54927;
+            background: #d45f34;
         }
 
         @keyframes fadeIn {
@@ -239,6 +239,25 @@
         }
 
         .sidebar-collapsed .purchase-bills-arrow {
+            display: none;
+        }
+
+        /* Messages Dropdown Styles */
+        .messages-dropdown-content.open {
+            max-height: 200px;
+            opacity: 1;
+            margin-top: 0.25rem;
+        }
+
+        .messages-arrow.rotated {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-collapsed .messages-dropdown-content {
+            display: none;
+        }
+
+        .sidebar-collapsed .messages-arrow {
             display: none;
         }
 
@@ -565,12 +584,32 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('shopkeeper.messages') }}"
-                            class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-                            <i data-feather="message-square" class="w-5 h-5 flex-shrink-0"></i>
-                            <span class="sidebar-text ml-3 whitespace-nowrap">Messages</span>
-                            <span id="msg-unread-badge" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1 hidden">0</span>
-                        </a>
+                        <!-- Messages Dropdown -->
+                        <div class="messages-dropdown hover:bg-white/10 rounded-xl">
+                            <button onclick="toggleMessagesDropdown(event)" 
+                                    class="w-full flex items-center justify-between px-3 py-3 rounded-xl transition duration-300 group">
+                                <div class="flex items-center">
+                                    <i data-feather="message-square" class="w-5 h-5 flex-shrink-0"></i>
+                                    <span class="sidebar-text ml-3 whitespace-nowrap">Messages</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span id="msg-unread-badge" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 hidden mr-2">0</span>
+                                    <i data-feather="chevron-down" class="messages-arrow w-6 h-6 flex-shrink-0 transition-transform duration-300 sidebar-text"></i>
+                                </div>
+                            </button>
+                            <div class="messages-dropdown-content ml-8 mt-1 space-y-1 overflow-hidden transition-all duration-300 max-h-0 opacity-0">
+                                <a href="{{ url_for('shopkeeper.messages') }}?tab=chat" 
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/20 group">
+                                    <i data-feather="message-circle" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">Chats</span>
+                                </a>
+                                <a href="{{ url_for('shopkeeper.messages') }}?tab=remarks" 
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/20 group">
+                                    <i data-feather="edit-3" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">Remarks</span>
+                                </a>
+                            </div>
+                        </div>
                     </li>
                     <li>
                         <a href="{{ url_for('shopkeeper.ca_marketplace') }}"
@@ -910,10 +949,25 @@
             }
         }
 
+        // Messages Dropdown functionality
+        function toggleMessagesDropdown(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const dropdownContent = document.querySelector('.messages-dropdown-content');
+            const arrow = document.querySelector('.messages-arrow');
+            
+            if (dropdownContent && arrow) {
+                dropdownContent.classList.toggle('open');
+                arrow.classList.toggle('rotated');
+            }
+        }
+
         // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const createBillDropdown = document.querySelector('.create-bill-dropdown');
             const purchaseBillsDropdown = document.querySelector('.purchase-bills-dropdown');
+            const messagesDropdown = document.querySelector('.messages-dropdown');
             
             // Handle Create Bill dropdown
             if (createBillDropdown && !createBillDropdown.contains(event.target)) {
@@ -930,6 +984,17 @@
             if (purchaseBillsDropdown && !purchaseBillsDropdown.contains(event.target)) {
                 const dropdownContent = document.querySelector('.purchase-bills-dropdown-content');
                 const arrow = document.querySelector('.purchase-bills-arrow');
+                
+                if (dropdownContent && arrow) {
+                    dropdownContent.classList.remove('open');
+                    arrow.classList.remove('rotated');
+                }
+            }
+            
+            // Handle Messages dropdown
+            if (messagesDropdown && !messagesDropdown.contains(event.target)) {
+                const dropdownContent = document.querySelector('.messages-dropdown-content');
+                const arrow = document.querySelector('.messages-arrow');
                 
                 if (dropdownContent && arrow) {
                     dropdownContent.classList.remove('open');
@@ -957,6 +1022,15 @@
                 if (purchaseBillsDropdownContent && purchaseBillsArrow) {
                     purchaseBillsDropdownContent.classList.remove('open');
                     purchaseBillsArrow.classList.remove('rotated');
+                }
+
+                // Close Messages dropdown
+                const messagesDropdownContent = document.querySelector('.messages-dropdown-content');
+                const messagesArrow = document.querySelector('.messages-arrow');
+                
+                if (messagesDropdownContent && messagesArrow) {
+                    messagesDropdownContent.classList.remove('open');
+                    messagesArrow.classList.remove('rotated');
                 }
             }
         }
