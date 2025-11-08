@@ -76,12 +76,19 @@ class CharteredAccountant(db.Model):
     city = db.Column(db.String(100))
     state = db.Column(db.String(100))
     pincode = db.Column(db.String(20))
+    # Professional profile fields
+    ca_name = db.Column(db.String(100))  # CA's personal name
+    ca_email_id = db.Column(db.String(100))  # CA's professional email
+    domain_expertise = db.Column(db.Text)  # JSON string of expertise areas
+    experience = db.Column(db.Integer)  # Years of experience
+    industries_served = db.Column(db.Text)  # JSON string of industries
+    about_me = db.Column(db.Text)  # Professional summary
     # New fields for document uploads and GSTIN
     aadhaar_file = db.Column(db.String(255))
     pan_file = db.Column(db.String(255))
     icai_certificate_file = db.Column(db.String(255))
     cop_certificate_file = db.Column(db.String(255))
-    gstin = db.Column(db.String(30))
+    # gstin = db.Column(db.String(30))
     business_reg_file = db.Column(db.String(255))
     bank_details_file = db.Column(db.String(255))
     photo_file = db.Column(db.String(255))

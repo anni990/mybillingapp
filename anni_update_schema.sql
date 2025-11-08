@@ -117,3 +117,36 @@
 -- ALTER TABLE customers 
 -- ADD COLUMN gstin VARCHAR(15) NULL 
 -- COMMENT 'Customer GST Identification Number (15 characters max)';
+
+
+-- Add new columns to chartered_accountants table
+ALTER TABLE chartered_accountants 
+ADD ca_name VARCHAR(100) NULL COMMENT 'CA personal name',
+ADD ca_email_id VARCHAR(100) NULL COMMENT 'CA professional email address',
+ADD domain_expertise TEXT NULL COMMENT 'JSON array of expertise areas',
+ADD experience INT NULL COMMENT 'Years of experience',
+ADD industries_served TEXT NULL COMMENT 'JSON array of industries served',
+ADD about_me TEXT NULL COMMENT 'Professional summary';
+
+-- Update existing records with default values if needed
+-- Note: These fields are optional and can remain NULL for existing records
+
+-- Optional: Add indexes for better performance
+CREATE INDEX idx_ca_experience ON chartered_accountants(experience);
+CREATE INDEX idx_ca_email ON chartered_accountants(ca_email_id);
+
+-- Verify the changes
+DESCRIBE chartered_accountants;
+
+-- Show sample data structure
+SELECT 
+    ca_id,
+    firm_name,
+    ca_name,
+    ca_email_id,
+    experience,
+    domain_expertise,
+    industries_served,
+    about_me
+FROM chartered_accountants 
+LIMIT 5;

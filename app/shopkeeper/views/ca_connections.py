@@ -5,6 +5,7 @@ Extracted from original routes.py - maintaining all original logic.
 from flask import render_template, request, flash, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime
+import json
 
 from ..utils import shopkeeper_required
 from app.models import (
@@ -12,6 +13,94 @@ from app.models import (
     EmployeeClient, CAEmployee
 )
 from app.extensions import db
+
+
+def mask_contact_number(contact):
+    """Mask contact number to show only first 2 and last 2 digits."""
+    if not contact or len(contact) < 4:
+        return contact
+    return contact[:2] + '*' * (len(contact) - 4) + contact[-2:]
+
+
+def mask_email(email):
+    """Mask email to show only first 2 characters and domain."""
+    if not email or '@' not in email:
+        return email
+    local, domain = email.split('@', 1)
+    if len(local) <= 2:
+        return email
+    return local[:2] + '*' * (len(local) - 2) + '@' + domain
+
+
+def parse_json_field(json_str):
+    """Parse JSON string and return list, return empty list if invalid."""
+    if not json_str:
+        return []
+    try:
+        return json.loads(json_str)
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+
+def format_experience(experience):
+    """Format experience years into readable string."""
+    if not experience:
+        return "Not specified"
+    
+    exp_map = {
+        1: "1-2 years",
+        3: "3-5 years", 
+        6: "6-10 years",
+        11: "11-15 years",
+        16: "16-20 years",
+        21: "20+ years"
+    }
+    
+    return exp_map.get(experience, f"{experience} years")
+
+
+def format_domain_expertise(expertise_list):
+    """Format domain expertise list into readable strings."""
+    expertise_map = {
+        'taxation': 'Taxation',
+        'audit': 'Audit & Assurance',
+        'financial_planning': 'Financial Planning',
+        'corporate_law': 'Corporate Law',
+        'gst': 'GST Compliance',
+        'income_tax': 'Income Tax',
+        'company_formation': 'Company Formation',
+        'accounting': 'Accounting Services',
+        'compliance': 'Regulatory Compliance',
+        'investment_advisory': 'Investment Advisory',
+        'mergers_acquisitions': 'Mergers & Acquisitions',
+        'forensic_accounting': 'Forensic Accounting'
+    }
+    
+    return [expertise_map.get(exp, exp.title()) for exp in expertise_list]
+
+
+def format_industries_served(industries_list):
+    """Format industries served list into readable strings."""
+    industries_map = {
+        'retail': 'Retail & E-commerce',
+        'manufacturing': 'Manufacturing',
+        'healthcare': 'Healthcare',
+        'real_estate': 'Real Estate',
+        'hospitality': 'Hospitality',
+        'education': 'Education',
+        'technology': 'Technology',
+        'agriculture': 'Agriculture',
+        'automotive': 'Automotive',
+        'textiles': 'Textiles',
+        'pharmaceuticals': 'Pharmaceuticals',
+        'food_beverage': 'Food & Beverage',
+        'construction': 'Construction',
+        'logistics': 'Logistics & Transportation',
+        'financial_services': 'Financial Services',
+        'startups': 'Startups & SMEs'
+    }
+    
+    return [industries_map.get(industry, industry.title()) for industry in industries_list]
 
 
 def register_routes(bp):
@@ -52,10 +141,43 @@ def register_routes(bp):
         # Get connection status for each CA
         connections = {c.ca_id: c for c in ShopConnection.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()}
         
+        # Get pending requests for statistics
+        pending_requests = ShopConnection.query.filter_by(
+            shopkeeper_id=shopkeeper.shopkeeper_id,
+            status='pending'
+        ).all()
+        
+        # Get connected CA if exists
+        connected_ca = None
+        if approved_connection:
+            connected_ca = CharteredAccountant.query.get(approved_connection.ca_id)
+        
+        # Get unique areas for filter
+        unique_areas = db.session.query(CharteredAccountant.area).distinct().filter(
+            CharteredAccountant.area.isnot(None)
+        ).all()
+        unique_areas = [area[0] for area in unique_areas if area[0]]
+        
+        # Enhance CA data with formatted fields
+        enhanced_cas = []
+        for ca in cas:
+            ca_data = {
+                'ca': ca,
+                'domain_expertise': format_domain_expertise(parse_json_field(ca.domain_expertise)),
+                'industries_served': format_industries_served(parse_json_field(ca.industries_served)),
+                'experience_formatted': format_experience(ca.experience),
+                'masked_contact': mask_contact_number(ca.contact_number),
+                'masked_email': mask_email(ca.ca_email_id)
+            }
+            enhanced_cas.append(ca_data)
+        
         return render_template('shopkeeper/ca_marketplace.html', 
                              shop_name=shop_name,
-                             cas=cas, 
+                             cas=enhanced_cas, 
                              connections=connections,
+                             pending_requests=pending_requests,
+                             connected_ca=connected_ca,
+                             unique_areas=unique_areas,
                              has_approved_connection=bool(approved_connection))
     
     @bp.route('/ca_profile/<int:ca_id>')
@@ -221,7 +343,7 @@ def register_routes(bp):
     def connected_ca_profile(ca_id):
         """View connected CA profile - preserves original logic."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-        
+        shop_name = shopkeeper.shop_name
         # Verify connection exists
         ca_conn = CAConnection.query.filter_by(
             shopkeeper_id=shopkeeper.shopkeeper_id,
@@ -242,8 +364,19 @@ def register_routes(bp):
             .filter(EmployeeClient.shopkeeper_id == shopkeeper.shopkeeper_id)\
             .all()
         
+        # Prepare enhanced CA data
+        ca_data = {
+            'ca': ca,
+            'domain_expertise': format_domain_expertise(parse_json_field(ca.domain_expertise)),
+            'industries_served': format_industries_served(parse_json_field(ca.industries_served)),
+            'experience_formatted': format_experience(ca.experience),
+            'masked_contact': mask_contact_number(ca.contact_number),
+            'masked_email': mask_email(ca.ca_email_id)
+        }
+        
         return render_template('shopkeeper/connected_ca_profile.html',
-            ca=ca,
+            ca_data=ca_data,
+            shop_name=shop_name,
             assigned_employees=assigned_employees
         )
     
