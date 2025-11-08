@@ -89,6 +89,17 @@ def create_app():
         else:
             # Show date only: dd-mm-yyyy
             return bill_date.strftime('%d-%m-%Y')
+    
+    @app.template_filter('from_json')
+    def from_json(json_str):
+        """Convert JSON string to Python object."""
+        if not json_str:
+            return []
+        try:
+            import json
+            return json.loads(json_str)
+        except (json.JSONDecodeError, TypeError):
+            return []
 
     # Error handlers
     @app.errorhandler(401)

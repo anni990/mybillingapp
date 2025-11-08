@@ -29,11 +29,23 @@ class Shopkeeper(db.Model):
     __tablename__ = 'shopkeepers'
     shopkeeper_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
+    # Personal Information
+    owner_name = db.Column(db.String(100))
+    business_type = db.Column(db.String(50))  # Replaces domain
+    owner_address = db.Column(db.String(255))  # Personal address
+    business_address = db.Column(db.String(255))  # Business address (replaces address)
+    established_year = db.Column(db.Integer)
+    pan_number = db.Column(db.String(20))
+    # Business Information
     shop_name = db.Column(db.String(100), nullable=False)
-    domain = db.Column(db.String(50))
-    address = db.Column(db.String(255))
+    domain = db.Column(db.String(50))  # Keep for backward compatibility
+    address = db.Column(db.String(255))  # Keep for backward compatibility
     gst_number = db.Column(db.String(20))
     contact_number = db.Column(db.String(20))
+    city = db.Column(db.String(100))
+    state = db.Column(db.String(100))
+    pincode = db.Column(db.String(20))
+    # Document paths
     gst_doc_path = db.Column(db.String(255))
     pan_doc_path = db.Column(db.String(255))
     address_proof_path = db.Column(db.String(255))
@@ -44,13 +56,12 @@ class Shopkeeper(db.Model):
     udyam_path = db.Column(db.String(255))
     bank_statement_path = db.Column(db.String(255))
     is_verified = db.Column(db.Boolean, default=False)
+    # Banking & Financial
     bank_name = db.Column(db.String(100))
     account_number = db.Column(db.String(50))
     ifsc_code = db.Column(db.String(20))
+    upi_id = db.Column(db.String(100))
     template_choice = db.Column(db.String(20), default='template2')
-    city = db.Column(db.String(100))
-    state = db.Column(db.String(100))
-    pincode = db.Column(db.String(20))
     # Invoice numbering fields
     invoice_prefix = db.Column(db.String(20), default='INV')
     invoice_starting_number = db.Column(db.Integer, default=1)
@@ -76,12 +87,19 @@ class CharteredAccountant(db.Model):
     city = db.Column(db.String(100))
     state = db.Column(db.String(100))
     pincode = db.Column(db.String(20))
+    # Professional profile fields
+    ca_name = db.Column(db.String(100))  # CA's personal name
+    ca_email_id = db.Column(db.String(100))  # CA's professional email
+    domain_expertise = db.Column(db.Text)  # JSON string of expertise areas
+    experience = db.Column(db.Integer)  # Years of experience
+    industries_served = db.Column(db.Text)  # JSON string of industries
+    about_me = db.Column(db.Text)  # Professional summary
     # New fields for document uploads and GSTIN
     aadhaar_file = db.Column(db.String(255))
     pan_file = db.Column(db.String(255))
     icai_certificate_file = db.Column(db.String(255))
     cop_certificate_file = db.Column(db.String(255))
-    gstin = db.Column(db.String(30))
+    # gstin = db.Column(db.String(30))
     business_reg_file = db.Column(db.String(255))
     bank_details_file = db.Column(db.String(255))
     photo_file = db.Column(db.String(255))

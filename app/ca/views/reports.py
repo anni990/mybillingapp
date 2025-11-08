@@ -120,19 +120,101 @@ def register_routes(bp):
         ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
         firm_name = ca.firm_name
         edit_mode = request.args.get('edit', '0') == '1'
-        form = CAProfileForm(obj=ca)
+        
+        form = CAProfileForm()
+        
+        # Initialize form fields with existing data for GET requests
+        if request.method == 'GET':
+            # Populate form with existing CA data
+            form.firm_name.data = ca.firm_name
+            form.area.data = ca.area
+            form.contact_number.data = ca.contact_number
+            form.gst_number.data = ca.gst_number
+            form.pan_number.data = ca.pan_number
+            form.address.data = ca.address
+            form.about_me.data = ca.about_me
+            form.city.data = ca.city
+            form.state.data = ca.state
+            form.pincode.data = ca.pincode
+            form.ca_name.data = ca.ca_name
+            form.ca_email_id.data = ca.ca_email_id
+            # form.gstin.data = ca.gstin
+            
+            # Initialize form fields with existing JSON data
+            import json
+            if ca.domain_expertise:
+                try:
+                    form.domain_expertise.data = json.loads(ca.domain_expertise)
+                except (json.JSONDecodeError, TypeError):
+                    form.domain_expertise.data = []
+            else:
+                form.domain_expertise.data = []
+            
+            if ca.industries_served:
+                try:
+                    form.industries_served.data = json.loads(ca.industries_served)
+                except (json.JSONDecodeError, TypeError):
+                    form.industries_served.data = []
+            else:
+                form.industries_served.data = []
+            
+            if ca.experience:
+                form.experience.data = str(ca.experience)
+            else:
+                form.experience.data = ''
+            
         if form.validate_on_submit():
+            import json
+            
+            # Debug: Print form data
+            print("DEBUG - Form Domain Expertise Data:", form.domain_expertise.data)
+            print("DEBUG - Form Industries Served Data:", form.industries_served.data)
+            print("DEBUG - Form Experience Data:", form.experience.data)
+            
             ca.firm_name = form.firm_name.data
             ca.area = form.area.data
             ca.contact_number = form.contact_number.data
             ca.gst_number = form.gst_number.data
             ca.pan_number = form.pan_number.data
             ca.address = form.address.data
-            ca.gstin = form.gstin.data
+            # ca.gstin = form.gstin.data
             ca.about_me = form.about_me.data  # Save About Me
             ca.city = form.city.data
             ca.state = form.state.data
             ca.pincode = form.pincode.data
+            
+            # Save new professional profile fields
+            ca.ca_name = form.ca_name.data
+            ca.ca_email_id = form.ca_email_id.data
+            
+            # Handle domain expertise (convert list to JSON string)
+            if form.domain_expertise.data:
+                ca.domain_expertise = json.dumps(form.domain_expertise.data)
+                print("DEBUG - Saving Domain Expertise:", ca.domain_expertise)
+            else:
+                ca.domain_expertise = None
+                print("DEBUG - Domain Expertise is None")
+                
+            # Handle experience (convert to integer)
+            if form.experience.data and form.experience.data != '':
+                try:
+                    ca.experience = int(form.experience.data)
+                    print("DEBUG - Saving Experience:", ca.experience)
+                except ValueError:
+                    ca.experience = None
+                    print("DEBUG - Experience ValueError")
+            else:
+                ca.experience = None
+                print("DEBUG - Experience is None")
+                
+            # Handle industries served (convert list to JSON string)
+            if form.industries_served.data:
+                ca.industries_served = json.dumps(form.industries_served.data)
+                print("DEBUG - Saving Industries Served:", ca.industries_served)
+            else:
+                ca.industries_served = None
+                print("DEBUG - Industries Served is None")
+            
             # Handle file uploads
             upload_folder = os.path.join('app', 'static', 'ca_upload')
             os.makedirs(upload_folder, exist_ok=True)

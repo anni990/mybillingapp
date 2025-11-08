@@ -58,6 +58,29 @@
       overflow: hidden;
     }
 
+    /* Fix icon sizes and layout when sidebar is collapsed */
+    .sidebar-collapsed nav a {
+      justify-content: center;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+
+    .sidebar-collapsed nav a i,
+    .sidebar-collapsed nav a svg {
+      width: 1.25rem !important;
+      height: 1.25rem !important;
+      min-width: 1.25rem;
+      min-height: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    /* Center the header content when collapsed */
+    .sidebar-collapsed > div:first-child {
+      justify-content: center;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+
     .sidebar-overlay {
       background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(4px);

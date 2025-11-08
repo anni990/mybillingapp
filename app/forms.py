@@ -28,12 +28,61 @@ class CAProfileForm(FlaskForm):
     city = StringField('City', validators=[Length(max=100)])
     state = StringField('State', validators=[Length(max=100)])
     pincode = StringField('Pincode', validators=[Length(max=20)])
+    
+    # New professional profile fields
+    ca_name = StringField('CA Name', validators=[Length(max=100)])
+    ca_email_id = StringField('Professional Email', validators=[Email(), Length(max=100)])
+    domain_expertise = SelectMultipleField('Domain Expertise', 
+                                         choices=[
+                                             ('taxation', 'Taxation'),
+                                             ('audit', 'Audit & Assurance'),
+                                             ('financial_planning', 'Financial Planning'),
+                                             ('corporate_law', 'Corporate Law'),
+                                             ('gst', 'GST Compliance'),
+                                             ('income_tax', 'Income Tax'),
+                                             ('company_formation', 'Company Formation'),
+                                             ('accounting', 'Accounting Services'),
+                                             ('compliance', 'Regulatory Compliance'),
+                                             ('investment_advisory', 'Investment Advisory'),
+                                             ('mergers_acquisitions', 'Mergers & Acquisitions'),
+                                             ('forensic_accounting', 'Forensic Accounting')
+                                         ])
+    experience = SelectField('Years of Experience', 
+                           choices=[
+                               ('', 'Select Experience'),
+                               ('1', '1-2 years'),
+                               ('3', '3-5 years'),
+                               ('6', '6-10 years'),
+                               ('11', '11-15 years'),
+                               ('16', '16-20 years'),
+                               ('21', '20+ years')
+                           ])
+    industries_served = SelectMultipleField('Industries Served',
+                                          choices=[
+                                              ('retail', 'Retail & E-commerce'),
+                                              ('manufacturing', 'Manufacturing'),
+                                              ('healthcare', 'Healthcare'),
+                                              ('real_estate', 'Real Estate'),
+                                              ('hospitality', 'Hospitality'),
+                                              ('education', 'Education'),
+                                              ('technology', 'Technology'),
+                                              ('agriculture', 'Agriculture'),
+                                              ('automotive', 'Automotive'),
+                                              ('textiles', 'Textiles'),
+                                              ('pharmaceuticals', 'Pharmaceuticals'),
+                                              ('food_beverage', 'Food & Beverage'),
+                                              ('construction', 'Construction'),
+                                              ('logistics', 'Logistics & Transportation'),
+                                              ('financial_services', 'Financial Services'),
+                                              ('startups', 'Startups & SMEs')
+                                          ])
+    
     # New fields for document uploads and GSTIN
     aadhaar_file = FileField('Aadhaar (PDF/JPG/PNG)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
     pan_file = FileField('PAN (PDF/JPG/PNG)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
     icai_certificate_file = FileField('ICAI Membership Certificate', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
     cop_certificate_file = FileField('Certificate of Practice (COP)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
-    gstin = StringField('GSTIN', validators=[Length(max=30)])
+    # gstin = StringField('GSTIN', validators=[Length(max=30)])
     business_reg_file = FileField('Business Registration Document', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
     bank_details_file = FileField('Bank Details (Cheque/Passbook)', validators=[FileAllowed(['pdf', 'jpg', 'jpeg', 'png'], 'PDF, JPG, PNG only!')])
     photo_file = FileField('Photograph', validators=[FileAllowed(['jpg', 'jpeg', 'png'], 'JPG, PNG only!')])

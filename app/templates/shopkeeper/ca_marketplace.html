@@ -4,9 +4,9 @@
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
-<div class="flex min-h-screen bg-gray-100">
+<div class="flex min-h-screen rounded-2xl shadow-2xl md:p-2 lg:p-4 bg-gray-100">
 
-    <main class="flex-1 p-8 bg-gray-100 min-h-screen">
+    <main class="flex-1 min-h-screen lg:mt-2">
         {% if has_approved_connection %}
         <!-- Connected CA Popup -->
         <div class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
@@ -22,11 +22,11 @@
                         </div>
                     </div>
                     <h2 class="text-3xl font-bold text-gray-900 mb-4">Connected CA</h2>
-                    {% for ca in cas %}
-                    {% set conn = connections.get(ca.ca_id) %}
+                    {% for ca_data in cas %}
+                    {% set conn = connections.get(ca_data.ca.ca_id) %}
                     {% if conn and conn.status == 'approved' %}
-                    <p class="text-2xl font-semibold text-[#ed6a3e] mb-8">{{ ca.firm_name }}</p>
-                    <a href="{{ url_for('shopkeeper.connected_ca_profile', ca_id=ca.ca_id) }}"
+                    <p class="text-2xl font-semibold text-[#ed6a3e] mb-8">{{ ca_data.ca.firm_name }}</p>
+                    <a href="{{ url_for('shopkeeper.connected_ca_profile', ca_id=ca_data.ca.ca_id) }}"
                         class="inline-flex items-center justify-center px-8 py-4 bg-[#ed6a3e] text-white rounded-xl hover:bg-orange-700 transition duration-300 font-semibold text-lg shadow-lg hover:shadow-xl">
                         <span>View CA Profile</span>
                         <i data-feather="arrow-right" class="ml-2 w-6 h-6"></i>
@@ -61,12 +61,76 @@
                         </a>
                         {% endif %}
                         <a href="{{ url_for('shopkeeper.dashboard') }}"
-                            class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
+                            class="flex items-center space-x-2 bg-blue-100 text-blue-600 hover:bg-blue-200 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
                             <i data-feather="home" class="w-4 h-4"></i>
                             <span class="hidden md:inline">Dashboard</span>
                             <span class="md:hidden">Home</span>
                         </a>
                     </div>
+                </div>
+
+                <!-- Statistics Information Boxes -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <!-- Total CAs -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total CAs</p>
+                                <p class="text-2xl font-bold text-gray-900">{{ cas|length }}</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i data-feather="users" class="w-6 h-6 text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connected CAs -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Connected</p>
+                                <p class="text-2xl font-bold text-green-600">{{ 1 if connected_ca else 0 }}</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <i data-feather="check-circle" class="w-6 h-6 text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Requests -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Pending Requests</p>
+                                <p class="text-2xl font-bold text-yellow-600">{{ pending_requests|length if pending_requests else 0 }}</p>
+                            </div>
+                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                <i data-feather="clock" class="w-6 h-6 text-yellow-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Available to Connect -->
+                    <!-- <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Available</p>
+                                <p class="text-2xl font-bold text-orange-600">
+                                    {% set available_count = 0 %}
+                                    {% for ca_data in cas %}
+                                        {% set conn = connections.get(ca_data.ca.ca_id) %}
+                                        {% if not conn %}
+                                            {% set available_count = available_count + 1 %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {{ available_count }}
+                                </p>
+                            </div>
+                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                                <i data-feather="user-plus" class="w-6 h-6 text-orange-600"></i>
+                            </div>
+                        </div>
+                    </div> -->
                 </div>
 
                 <!-- Search and Filter Section -->
@@ -76,12 +140,12 @@
                         <h2 class="text-lg md:text-xl font-bold text-gray-800">Find CAs</h2>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="relative md:col-span-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="relative lg:col-span-2">
                             <label for="ca-search" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
                             <div class="relative">
                                 <input type="text" id="ca-search"
-                                    placeholder="Search by firm name, location, or specialization..."
+                                    placeholder="Search by firm name, CA name, or specialization..."
                                     class="w-full pl-10 pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
                                 <i data-feather="search"
                                     class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
@@ -89,14 +153,43 @@
                         </div>
 
                         <div>
-                            <label for="area-filter"
-                                class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                            <label for="area-filter" class="block text-sm font-medium text-gray-700 mb-2">Area</label>
                             <select id="area-filter"
                                 class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
-                                <option value="">All Locations</option>
+                                <option value="">All Areas</option>
                                 {% for area in unique_areas %}
                                 <option value="{{ area }}">{{ area }}</option>
                                 {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="city-filter" class="block text-sm font-medium text-gray-700 mb-2">City</label>
+                            <select id="city-filter"
+                                class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                                <option value="">All Cities</option>
+                                {% set unique_cities = [] %}
+                                {% for ca_data in cas %}
+                                    {% if ca_data.ca.city and ca_data.ca.city not in unique_cities %}
+                                        {% set _ = unique_cities.append(ca_data.ca.city) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% for city in unique_cities|sort %}
+                                <option value="{{ city }}">{{ city }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="experience-filter" class="block text-sm font-medium text-gray-700 mb-2">Experience</label>
+                            <select id="experience-filter"
+                                class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ed6a3e] focus:border-transparent transition duration-200 text-sm md:text-base">
+                                <option value="">All Experience</option>
+                                <option value="0-2">0-2 years</option>
+                                <option value="3-5">3-5 years</option>
+                                <option value="6-10">6-10 years</option>
+                                <option value="11-15">11-15 years</option>
+                                <option value="16+">16+ years</option>
                             </select>
                         </div>
                     </div>
@@ -139,148 +232,213 @@
                 </div>
                 {% endif %}
 
-                <!-- CAs Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" id="cas-grid">
+                <!-- CAs Table -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     {% if cas %}
-                    {% for ca in cas %}
-                    <div class="ca-card bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition duration-300 transform hover:-translate-y-1"
-                        data-firm-name="{{ ca.firm_name|lower }}" data-area="{{ ca.area|lower }}"
-                        data-specialization="{{ ca.specialization|lower if ca.specialization else '' }}">
+                    <!-- Desktop Table View -->
+                    <div class="hidden lg:block overflow-x-auto">
+                        <table class="w-full" id="cas-table">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <i data-feather="briefcase" class="w-4 h-4 inline mr-2"></i>Firm Details
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <i data-feather="map-pin" class="w-4 h-4 inline mr-2"></i>Location
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <i data-feather="clock" class="w-4 h-4 inline mr-2"></i>Experience
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <i data-feather="phone" class="w-4 h-4 inline mr-2"></i>Contact
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <i data-feather="activity" class="w-4 h-4 inline mr-2"></i>Status
+                                    </th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <i data-feather="settings" class="w-4 h-4 inline mr-2"></i>Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="cas-table-body">
+                                {% for ca_data in cas %}
+                                <tr class="ca-row hover:bg-gray-50 transition-colors duration-200" 
+                                    data-firm-name="{{ ca_data.ca.firm_name|lower }}" 
+                                    data-area="{{ ca_data.ca.area|lower }}"
+                                    data-city="{{ ca_data.ca.city|lower if ca_data.ca.city else '' }}"
+                                    data-experience="{{ ca_data.ca.experience if ca_data.ca.experience else 0 }}"
+                                    data-ca-name="{{ ca_data.ca.ca_name|lower if ca_data.ca.ca_name else '' }}">
+                                    
+                                    <!-- Firm Details -->
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                                                {{ ca_data.ca.firm_name[0]|upper }}
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">{{ ca_data.ca.firm_name }}</div>
+                                                {% if ca_data.ca.ca_name %}
+                                                <div class="text-xs text-gray-600">{{ ca_data.ca.ca_name }}</div>
+                                                {% endif %}
+                                                <!-- {% if ca_data.domain_expertise %}
+                                                <div class="flex flex-wrap gap-1 mt-1">
+                                                    {% for expertise in ca_data.domain_expertise[:2] %}
+                                                        <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">{{ expertise }}</span>
+                                                    {% endfor %}
+                                                    {% if ca_data.domain_expertise|length > 2 %}
+                                                        <span class="text-xs text-gray-400">+{{ ca_data.domain_expertise|length - 2 }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% endif %} -->
+                                            </div>
+                                        </div>
+                                    </td>
 
-                        <!-- CA Header -->
-                        <div class="p-4 md:p-6">
-                            <div class="flex items-start justify-between mb-4">
-                                <div class="flex items-center">
-                                    {% if ca.profile_picture %}
-                                    <img src="{{ url_for('static', filename='ca_upload/' + ca.profile_picture) }}"
-                                        alt="{{ ca.firm_name }}"
-                                        class="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover border-2 border-[#ed6a3e] mr-3">
-                                    {% else %}
-                                    <div
-                                        class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-r from-[#ed6a3e] to-orange-600 flex items-center justify-center text-white font-bold text-lg md:text-xl mr-3">
-                                        {{ ca.firm_name[0]|upper }}
-                                    </div>
-                                    {% endif %}
-                                    <div>
-                                        <h3 class="font-bold text-gray-900 text-lg md:text-xl">{{ ca.firm_name }}</h3>
-                                        <p class="text-sm text-gray-600">{{ ca.contact_person_name or 'Contact Person'
-                                            }}</p>
-                                    </div>
-                                </div>
+                                    <!-- Location -->
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-900">{{ ca_data.ca.area or 'Not specified' }}</div>
+                                        {% if ca_data.ca.city %}
+                                        <div class="text-xs text-gray-600">{{ ca_data.ca.city }}</div>
+                                        {% endif %}
+                                    </td>
 
-                                {% if connected_ca and connected_ca.ca_id == ca.ca_id %}
-                                <span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
-                                    Connected
-                                </span>
-                                {% elif pending_requests and ca.ca_id in pending_requests %}
-                                <span
-                                    class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded-full">
-                                    Pending
-                                </span>
-                                {% endif %}
-                            </div>
+                                    <!-- Experience -->
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-900">{{ ca_data.experience_formatted }}</div>
+                                    </td>
 
-                            <!-- CA Details -->
-                            <div class="space-y-3 mb-6">
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <i data-feather="map-pin" class="w-4 h-4 mr-2 text-[#ed6a3e] flex-shrink-0"></i>
-                                    <span class="truncate">{{ ca.area }}</span>
-                                </div>
+                                    <!-- Contact -->
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-900">{{ ca_data.masked_contact }}</div>
+                                        <div class="text-xs text-gray-600">{{ ca_data.masked_email }}</div>
+                                    </td>
 
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <i data-feather="phone" class="w-4 h-4 mr-2 text-[#ed6a3e] flex-shrink-0"></i>
-                                    <span>{{ ca.contact_number }}</span>
-                                </div>
+                                    <!-- Status -->
+                                    <td class="px-6 py-4">
+                                        {% set conn = connections.get(ca_data.ca.ca_id) %}
+                                        {% if conn and conn.status == 'approved' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                            <i data-feather="check-circle" class="w-3 h-3 mr-1"></i>
+                                            Connected
+                                        </span>
+                                        {% elif conn and conn.status == 'pending' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                            <i data-feather="clock" class="w-3 h-3 mr-1"></i>
+                                            Pending
+                                        </span>
+                                        {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                            <i data-feather="user-plus" class="w-3 h-3 mr-1"></i>
+                                            Available
+                                        </span>
+                                        {% endif %}
+                                    </td>
 
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <i data-feather="mail" class="w-4 h-4 mr-2 text-[#ed6a3e] flex-shrink-0"></i>
-                                    <span class="truncate">{{ ca.email }}</span>
-                                </div>
-
-                                {% if ca.experience_years %}
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <i data-feather="award" class="w-4 h-4 mr-2 text-[#ed6a3e] flex-shrink-0"></i>
-                                    <span>{{ ca.experience_years }} years experience</span>
-                                </div>
-                                {% endif %}
-
-                                {% if ca.specialization %}
-                                <div class="flex items-start text-sm text-gray-600">
-                                    <i data-feather="star" class="w-4 h-4 mr-2 text-[#ed6a3e] flex-shrink-0 mt-0.5"></i>
-                                    <span class="line-clamp-2">{{ ca.specialization }}</span>
-                                </div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Pricing Info -->
-                            {% if ca.pricing_structure %}
-                            <div class="bg-gray-50 rounded-lg p-3 mb-4">
-                                <div class="flex items-center mb-2">
-                                    <i data-feather="dollar-sign" class="w-4 h-4 mr-1 text-[#ed6a3e]"></i>
-                                    <span class="text-sm font-medium text-gray-700">Pricing</span>
-                                </div>
-                                <p class="text-xs text-gray-600 line-clamp-2">{{ ca.pricing_structure }}</p>
-                            </div>
-                            {% endif %}
-
-                            <!-- Services -->
-                            {% if ca.services_offered %}
-                            <div class="mb-4">
-                                <div class="flex items-center mb-2">
-                                    <i data-feather="briefcase" class="w-4 h-4 mr-1 text-[#ed6a3e]"></i>
-                                    <span class="text-sm font-medium text-gray-700">Services</span>
-                                </div>
-                                <div class="flex flex-wrap gap-1">
-                                    {% for service in ca.services_offered.split(',')[:3] %}
-                                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                                        {{ service.strip() }}
-                                    </span>
-                                    {% endfor %}
-                                    {% if ca.services_offered.split(',')|length > 3 %}
-                                    <span class="text-xs text-gray-500">+{{ ca.services_offered.split(',')|length - 3 }}
-                                        more</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="px-4 md:px-6 pb-4 md:pb-6">
-                            {% if connected_ca and connected_ca.ca_id == ca.ca_id %}
-                            <a href="{{ url_for('shopkeeper.connected_ca_profile', ca_id=ca.ca_id) }}"
-                                class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition duration-300 text-center block text-sm">
-                                View Connection
-                            </a>
-                            {% elif pending_requests and ca.ca_id in pending_requests %}
-                            <button
-                                class="w-full bg-gray-400 text-white font-medium py-2 px-4 rounded-lg cursor-not-allowed text-sm"
-                                disabled>
-                                Request Pending
-                            </button>
-                            {% else %}
-                            <div class="flex space-x-2">
-                                <button onclick="viewCAProfile('{{ ca.ca_id }}')"
-                                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded-lg transition duration-300 text-sm flex items-center justify-center">
-                                    <i data-feather="eye" class="w-4 h-4 mr-1"></i>
-                                    View
-                                </button>
-                                <button onclick="sendConnectionRequest('{{ ca.ca_id }}')"
-                                    class="flex-1 bg-[#ed6a3e] hover:bg-orange-700 text-white font-medium py-2 px-3 rounded-lg transition duration-300 text-sm flex items-center justify-center">
-                                    <i data-feather="user-plus" class="w-4 h-4 mr-1"></i>
-                                    Connect
-                                </button>
-                            </div>
-                            {% endif %}
-                        </div>
+                                    <!-- Actions -->
+                                    <td class="px-6 py-4">
+                                        <div class="flex space-x-2">
+                                            <button onclick="viewCAProfile('{{ ca_data.ca.ca_id }}')" 
+                                                class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-md transition duration-200">
+                                                <i data-feather="eye" class="w-3 h-3 mr-1"></i>
+                                                View
+                                            </button>
+                                            {% set conn = connections.get(ca_data.ca.ca_id) %}
+                                            {% if conn and conn.status == 'approved' %}
+                                            <a href="{{ url_for('shopkeeper.connected_ca_profile', ca_id=ca_data.ca.ca_id) }}" 
+                                                class="inline-flex items-center px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 text-xs font-medium rounded-md transition duration-200">
+                                                <i data-feather="external-link" class="w-3 h-3 mr-1"></i>
+                                                Profile
+                                            </a>
+                                            {% elif conn and conn.status == 'pending' %}
+                                            <button disabled
+                                                class="inline-flex items-center px-3 py-1.5 bg-yellow-100 text-yellow-600 text-xs font-medium rounded-md cursor-not-allowed">
+                                                <i data-feather="clock" class="w-3 h-3 mr-1"></i>
+                                                Pending
+                                            </button>
+                                            {% else %}
+                                            <button onclick="sendConnectionRequest('{{ ca_data.ca.ca_id }}')" 
+                                                class="inline-flex items-center px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium rounded-md transition duration-200">
+                                                <i data-feather="user-plus" class="w-3 h-3 mr-1"></i>
+                                                Connect
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    {% endfor %}
+
+                    <!-- Mobile Card View -->
+                    <div class="lg:hidden" id="cas-mobile">
+                        {% for ca_data in cas %}
+                        <div class="ca-card border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors duration-200" 
+                             data-firm-name="{{ ca_data.ca.firm_name|lower }}" 
+                             data-area="{{ ca_data.ca.area|lower }}"
+                             data-city="{{ ca_data.ca.city|lower if ca_data.ca.city else '' }}"
+                             data-experience="{{ ca_data.ca.experience if ca_data.ca.experience else 0 }}"
+                             data-ca-name="{{ ca_data.ca.ca_name|lower if ca_data.ca.ca_name else '' }}">
+                            
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-r from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                    {{ ca_data.ca.firm_name[0]|upper }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-sm font-semibold text-gray-900 truncate">{{ ca_data.ca.firm_name }}</h3>
+                                        {% set conn = connections.get(ca_data.ca.ca_id) %}
+                                        {% if conn and conn.status == 'approved' %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Connected
+                                        </span>
+                                        {% elif conn and conn.status == 'pending' %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            Pending
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if ca_data.ca.ca_name %}
+                                    <p class="text-xs text-gray-600 mb-1">{{ ca_data.ca.ca_name }}</p>
+                                    {% endif %}
+                                    <div class="text-xs text-gray-600 space-y-1">
+                                        <div><i data-feather="map-pin" class="w-3 h-3 inline mr-1"></i>{{ ca_data.ca.area or 'Not specified' }}</div>
+                                        <div><i data-feather="clock" class="w-3 h-3 inline mr-1"></i>{{ ca_data.experience_formatted }}</div>
+                                        <div><i data-feather="phone" class="w-3 h-3 inline mr-1"></i>{{ ca_data.masked_contact }}</div>
+                                    </div>
+                                    <div class="flex space-x-2 mt-3">
+                                        <button onclick="viewCAProfile('{{ ca_data.ca.ca_id }}')" 
+                                            class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-md transition duration-200">
+                                            <i data-feather="eye" class="w-3 h-3 mr-1"></i>
+                                            View
+                                        </button>
+                                        {% if conn and conn.status == 'approved' %}
+                                        <a href="{{ url_for('shopkeeper.connected_ca_profile', ca_id=ca_data.ca.ca_id) }}" 
+                                            class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-md transition duration-200">
+                                            Profile
+                                        </a>
+                                        {% elif conn and conn.status == 'pending' %}
+                                        <button disabled
+                                            class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-yellow-100 text-yellow-600 text-xs font-medium rounded-md cursor-not-allowed">
+                                            Pending
+                                        </button>
+                                        {% else %}
+                                        <button onclick="sendConnectionRequest('{{ ca_data.ca.ca_id }}')" 
+                                            class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium rounded-md transition duration-200">
+                                            Connect
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                     {% else %}
-                    <div class="col-span-full text-center py-12">
+                    <div class="text-center py-12">
                         <i data-feather="users" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
                         <h3 class="text-lg font-medium text-gray-900 mb-2">No CAs found</h3>
-                        <p class="text-gray-500">No Chartered Accountants are currently available in the marketplace.
-                        </p>
+                        <p class="text-gray-500">No Chartered Accountants are currently available in the marketplace.</p>
                     </div>
                     {% endif %}
                 </div>
@@ -306,25 +464,33 @@
     document.addEventListener('DOMContentLoaded', function () {
         const searchInput = document.getElementById('ca-search');
         const areaFilter = document.getElementById('area-filter');
+        const cityFilter = document.getElementById('city-filter');
+        const experienceFilter = document.getElementById('experience-filter');
         const clearFiltersBtn = document.getElementById('clear-filters');
         const showingCount = document.getElementById('showing-count');
 
         function filterCAs() {
             const searchTerm = searchInput.value.toLowerCase();
             const selectedArea = areaFilter.value.toLowerCase();
+            const selectedCity = cityFilter.value.toLowerCase();
+            const selectedExperience = experienceFilter.value;
 
+            const caRows = document.querySelectorAll('.ca-row');
             const caCards = document.querySelectorAll('.ca-card');
             let visibleCount = 0;
 
-            caCards.forEach(card => {
-                const firmName = card.dataset.firmName || '';
-                const area = card.dataset.area || '';
-                const specialization = card.dataset.specialization || '';
+            // Filter desktop table rows
+            caRows.forEach(row => {
+                const firmName = row.dataset.firmName || '';
+                const area = row.dataset.area || '';
+                const city = row.dataset.city || '';
+                const caName = row.dataset.caName || '';
+                const experience = parseInt(row.dataset.experience) || 0;
 
                 let isVisible = true;
 
                 // Search filter
-                if (searchTerm && !firmName.includes(searchTerm) && !area.includes(searchTerm) && !specialization.includes(searchTerm)) {
+                if (searchTerm && !firmName.includes(searchTerm) && !area.includes(searchTerm) && !caName.includes(searchTerm)) {
                     isVisible = false;
                 }
 
@@ -333,9 +499,69 @@
                     isVisible = false;
                 }
 
+                // City filter
+                if (selectedCity && !city.includes(selectedCity)) {
+                    isVisible = false;
+                }
+
+                // Experience filter
+                if (selectedExperience) {
+                    const [min, max] = selectedExperience.includes('+') ? 
+                        [parseInt(selectedExperience), Infinity] : 
+                        selectedExperience.split('-').map(x => parseInt(x));
+                    
+                    if (experience < min || (max !== undefined && experience > max)) {
+                        isVisible = false;
+                    }
+                }
+
+                if (isVisible) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Filter mobile cards
+            caCards.forEach(card => {
+                const firmName = card.dataset.firmName || '';
+                const area = card.dataset.area || '';
+                const city = card.dataset.city || '';
+                const caName = card.dataset.caName || '';
+                const experience = parseInt(card.dataset.experience) || 0;
+
+                let isVisible = true;
+
+                // Search filter
+                if (searchTerm && !firmName.includes(searchTerm) && !area.includes(searchTerm) && !caName.includes(searchTerm)) {
+                    isVisible = false;
+                }
+
+                // Area filter
+                if (selectedArea && !area.includes(selectedArea)) {
+                    isVisible = false;
+                }
+
+                // City filter
+                if (selectedCity && !city.includes(selectedCity)) {
+                    isVisible = false;
+                }
+
+                // Experience filter
+                if (selectedExperience) {
+                    const [min, max] = selectedExperience.includes('+') ? 
+                        [parseInt(selectedExperience), Infinity] : 
+                        selectedExperience.split('-').map(x => parseInt(x));
+                    
+                    if (experience < min || (max !== undefined && experience > max)) {
+                        isVisible = false;
+                    }
+                }
+
                 if (isVisible) {
                     card.style.display = '';
-                    visibleCount++;
+                    if (caRows.length === 0) visibleCount++; // Only count for mobile if no desktop rows
                 } else {
                     card.style.display = 'none';
                 }
@@ -347,7 +573,7 @@
         }
 
         // Attach event listeners
-        [searchInput, areaFilter].forEach(input => {
+        [searchInput, areaFilter, cityFilter, experienceFilter].forEach(input => {
             input.addEventListener('input', filterCAs);
             input.addEventListener('change', filterCAs);
         });
@@ -356,17 +582,164 @@
         clearFiltersBtn.addEventListener('click', function () {
             searchInput.value = '';
             areaFilter.value = '';
+            cityFilter.value = '';
+            experienceFilter.value = '';
             filterCAs();
         });
-
-        // Modal event listeners
-        document.getElementById('close-profile-modal').addEventListener('click', closeProfileModal);
     });
 
+    // CA Details Modal Functions
     function viewCAProfile(caId) {
-        // Implementation for viewing CA profile
-        console.log('View CA profile:', caId);
-        // You can implement AJAX call to fetch and display CA profile details
+        // For now, show a simple implementation
+        // In a production environment, you would fetch this data via AJAX
+        showCADetailsModal(caId);
+    }
+
+    function showCADetailsModal(caId) {
+        const modal = document.getElementById('ca-details-modal');
+        const content = document.getElementById('ca-details-content');
+        
+        // Create CA data lookup object from template
+        const caDataMap = {
+            {% for ca_data in cas %}
+            "{{ ca_data.ca.ca_id }}": {
+                firmName: "{{ ca_data.ca.firm_name }}",
+                caName: "{{ ca_data.ca.ca_name or '' }}",
+                area: "{{ ca_data.ca.area or 'Not specified' }}",
+                city: "{{ ca_data.ca.city or '' }}",
+                maskedContact: "{{ ca_data.masked_contact }}",
+                maskedEmail: "{{ ca_data.masked_email }}",
+                experienceFormatted: "{{ ca_data.experience_formatted }}",
+                gstNumber: "{{ ca_data.ca.gst_number or '' }}",
+                domainExpertise: {{ ca_data.domain_expertise|tojson if ca_data.domain_expertise else '[]' }},
+                industriesServed: {{ ca_data.industries_served|tojson if ca_data.industries_served else '[]' }},
+                isConnected: {{ 'true' if connections.get(ca_data.ca.ca_id) and connections.get(ca_data.ca.ca_id).status == 'approved' else 'false' }},
+                isPending: {{ 'true' if connections.get(ca_data.ca.ca_id) and connections.get(ca_data.ca.ca_id).status == 'pending' else 'false' }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        };
+
+        const caData = caDataMap[caId];
+        if (!caData) {
+            showError('CA details not found.');
+            return;
+        }
+
+        content.innerHTML = `
+            <div class="space-y-6">
+                <!-- CA Header -->
+                <div class="flex items-center space-x-4 pb-6 border-b border-gray-200">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-r from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        ${caData.firmName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">${caData.firmName}</h3>
+                        ${caData.caName ? `<p class="text-gray-600">${caData.caName}</p>` : ''}
+                    </div>
+                </div>
+
+                <!-- Professional Details Table -->
+                <div class="overflow-hidden bg-gray-50 rounded-lg">
+                    <table class="w-full text-sm">
+                        <tbody class="divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-100 transition-colors">
+                                <td class="px-4 py-3 font-medium text-gray-700 bg-gray-100 w-1/3">
+                                    <i data-feather="map-pin" class="w-4 h-4 inline mr-2 text-orange-500"></i>
+                                    Location
+                                </td>
+                                <td class="px-4 py-3 text-gray-600">
+                                    ${caData.area}${caData.city && caData.city !== caData.area ? ', ' + caData.city : ''}
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-100 transition-colors">
+                                <td class="px-4 py-3 font-medium text-gray-700 bg-gray-100">
+                                    <i data-feather="phone" class="w-4 h-4 inline mr-2 text-orange-500"></i>
+                                    Contact
+                                </td>
+                                <td class="px-4 py-3 text-gray-600">${caData.maskedContact}</td>
+                            </tr>
+                            <tr class="hover:bg-gray-100 transition-colors">
+                                <td class="px-4 py-3 font-medium text-gray-700 bg-gray-100">
+                                    <i data-feather="mail" class="w-4 h-4 inline mr-2 text-orange-500"></i>
+                                    Email
+                                </td>
+                                <td class="px-4 py-3 text-gray-600">${caData.maskedEmail}</td>
+                            </tr>
+                            <tr class="hover:bg-gray-100 transition-colors">
+                                <td class="px-4 py-3 font-medium text-gray-700 bg-gray-100">
+                                    <i data-feather="briefcase" class="w-4 h-4 inline mr-2 text-orange-500"></i>
+                                    Domain Expertise
+                                </td>
+                                <td class="px-4 py-3 text-gray-600">
+                                    ${caData.domainExpertise && caData.domainExpertise.length > 0 ? 
+                                        '<div class="flex flex-wrap gap-2">' + 
+                                        caData.domainExpertise.map(exp => 
+                                            `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${exp}</span>`
+                                        ).join('') + '</div>' : 
+                                        '<span class="text-gray-400 italic">Not specified</span>'
+                                    }
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-100 transition-colors">
+                                <td class="px-4 py-3 font-medium text-gray-700 bg-gray-100">
+                                    <i data-feather="clock" class="w-4 h-4 inline mr-2 text-orange-500"></i>
+                                    Experience
+                                </td>
+                                <td class="px-4 py-3 text-gray-600">${caData.experienceFormatted}</td>
+                            </tr>
+                            <tr class="hover:bg-gray-100 transition-colors">
+                                <td class="px-4 py-3 font-medium text-gray-700 bg-gray-100">
+                                    <i data-feather="layers" class="w-4 h-4 inline mr-2 text-orange-500"></i>
+                                    Industries Served
+                                </td>
+                                <td class="px-4 py-3 text-gray-600">
+                                    ${caData.industriesServed && caData.industriesServed.length > 0 ? 
+                                        '<div class="flex flex-wrap gap-2">' + 
+                                        caData.industriesServed.map(industry => 
+                                            `<span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">${industry}</span>`
+                                        ).join('') + '</div>' : 
+                                        '<span class="text-gray-400 italic">Not specified</span>'
+                                    }
+                                </td>
+                            </tr>
+                            ${caData.gstNumber ? `
+                            <tr class="hover:bg-gray-100 transition-colors">
+                                <td class="px-4 py-3 font-medium text-gray-700 bg-gray-100">
+                                    <i data-feather="hash" class="w-4 h-4 inline mr-2 text-orange-500"></i>
+                                    GST Number
+                                </td>
+                                <td class="px-4 py-3 text-gray-600">${caData.gstNumber}</td>
+                            </tr>` : ''}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-4 pt-4 border-t border-gray-200">
+                    ${!caData.isConnected && !caData.isPending ? `
+                    <button onclick="closeCADetailsModal(); sendConnectionRequest('${caId}')" 
+                        class="flex-1 flex items-center justify-center px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition duration-300 font-medium shadow-md">
+                        <i data-feather="user-plus" class="w-4 h-4 mr-2"></i>
+                        Send Connection Request
+                    </button>` : ''}
+                    <button onclick="closeCADetailsModal()" 
+                        class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition duration-300 font-medium">
+                        Close
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Re-render feather icons in modal
+        setTimeout(() => feather.replace(), 100);
+        
+        // Show modal
+        modal.classList.remove('hidden');
+    }
+
+    function closeCADetailsModal() {
+        const modal = document.getElementById('ca-details-modal');
+        modal.classList.add('hidden');
     }
 
     let currentCAId = null;
@@ -479,9 +852,24 @@
     // Handle ESC key to close popup and go back
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
+            // Close CA details modal if open
+            const caDetailsModal = document.getElementById('ca-details-modal');
+            if (caDetailsModal && !caDetailsModal.classList.contains('hidden')) {
+                closeCADetailsModal();
+                return;
+            }
+
+            // Close connection request modal if open
+            const connectionModal = document.getElementById('connection-request-modal');
+            if (connectionModal && !connectionModal.classList.contains('hidden')) {
+                closeConnectionModal();
+                return;
+            }
+
+            // Close main popup if present
             const backButton = document.querySelector('.fixed.inset-0 button');
             if (backButton) {
-                window.location.href = '{{ url_for('shopkeeper.dashboard') }}';
+                window.location.href = "{{ url_for('shopkeeper.dashboard') }}";
             }
         }
     });
@@ -491,6 +879,27 @@
         feather.replace();
     });
 </script>
+
+<!-- CA Details View Modal -->
+<div id="ca-details-modal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-white">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                <i data-feather="eye" class="w-6 h-6 mr-2 text-orange-500"></i>
+                CA Profile Details
+            </h3>
+            <button onclick="closeCADetailsModal()" class="text-gray-400 hover:text-gray-600 transition duration-200">
+                <i data-feather="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="p-6" id="ca-details-content">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
 
 <!-- Connection Request Confirmation Modal -->
 <!-- Connection Request Modal -->
