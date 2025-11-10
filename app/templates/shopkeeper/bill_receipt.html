@@ -122,8 +122,8 @@
                         <i data-feather="save" class="w-5 h-5"></i> 
                         Print / Save PDF
                     </button>
-                    <!-- Remark button for CA users -->
-                    {% if current_user.role == 'CA' %}
+                    <!-- Remark button for both CA and Shopkeeper users -->
+                    {% if current_user.role in ['CA', 'shopkeeper'] %}
                     <button onclick="openRemarkModal({{ bill.bill_id }}, '{{ bill.bill_number }}', '{{ bill.total_amount }}', '{{ bill.bill_date.strftime('%Y-%m-%d') if bill.bill_date }}')" 
                             class="bg-orange-100 hover:bg-orange-200 text-orange-600 px-4 py-2 rounded font-bold flex items-center gap-2">
                         <i data-feather="message-circle" class="w-5 h-5"></i>
@@ -486,8 +486,8 @@
         });
     </script>
 
-    <!-- Remark Modal for CA users -->
-    {% if current_user.role == 'CA' %}
+    <!-- Remark Modal for both CA and Shopkeeper users -->
+    {% if current_user.role in ['CA', 'shopkeeper'] %}
     <div id="remark-modal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
             <div class="flex justify-between items-center mb-4">
@@ -528,7 +528,10 @@
     </div>
 
     <script>
-        // Remark modal functionality for CA users
+        // Set receiver ID based on user role
+        window.REMARK_RECEIVER_ID = {% if current_user.role == 'CA' %}{{ bill.shopkeeper.user_id }}{% else %}null{% endif %};
+        
+        // Remark modal functionality for both CA and Shopkeeper users
         let currentBillData = null;
 
         function openRemarkModal(billId, billNumber, totalAmount, billDate) {
@@ -580,7 +583,7 @@
             }
 
             try {
-                const shopkeeperId = {{ bill.shopkeeper.user_id }};
+                const receiverId = window.REMARK_RECEIVER_ID;
                 
                 const response = await fetch('/api/messages/send', {
                     method: 'POST',
@@ -588,7 +591,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        receiver_id: shopkeeperId,
+                        receiver_id: receiverId,
                         message: message,
                         message_type: 'remark',
                         bill_id: currentBillData.id

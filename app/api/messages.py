@@ -28,14 +28,35 @@ def register_routes(bp):
             message_type = data.get('message_type', 'chat')
             bill_id = data.get('bill_id')
             
-            if not receiver_id or not message_text:
-                return jsonify({'error': 'receiver_id and message are required'}), 400
+            if not message_text:
+                return jsonify({'error': 'Message is required'}), 400
             
             if len(message_text) > 2000:
                 return jsonify({'error': 'Message too long (max 2000 characters)'}), 400
             
             if message_type not in ['chat', 'remark']:
                 return jsonify({'error': 'Invalid message_type. Must be chat or remark'}), 400
+            
+            # Handle shopkeeper case where receiver_id is null
+            if not receiver_id:
+                if current_user.role == 'shopkeeper':
+                    # Find connected CA for this shopkeeper
+                    shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+                    if not shopkeeper:
+                        return jsonify({'error': 'Shopkeeper profile not found'}), 404
+                    
+                    # Get connected CA
+                    connection = CAConnection.query.filter_by(
+                        shopkeeper_id=shopkeeper.shopkeeper_id,
+                        status='approved'
+                    ).first()
+                    
+                    if not connection:
+                        return jsonify({'error': 'No connected CA found. Please connect with a CA first.'}), 403
+                    
+                    receiver_id = connection.ca.user_id
+                else:
+                    return jsonify({'error': 'receiver_id is required for this user type'}), 400
             
             # Verify receiver exists
             receiver = User.query.filter_by(user_id=receiver_id).first()
@@ -49,6 +70,12 @@ def register_routes(bp):
             # If bill_id provided, verify it exists and user has access
             if bill_id:
                 bill = Bill.query.get(bill_id)
+                if not bill:
+                    return jsonify({'error': 'Bill not found'}), 404
+                
+                # Check if current user can access this bill
+                if not _can_access_bill(current_user.user_id, bill):
+                    return jsonify({'error': 'Access denied to this bill'}), 403
                 if not bill:
                     return jsonify({'error': 'Bill not found'}), 404
                 

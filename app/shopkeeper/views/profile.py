@@ -2,7 +2,7 @@
 Profile and document management routes for shopkeeper.
 Extracted from original routes.py - maintaining all original logic.
 """
-from flask import render_template, request, flash, redirect, url_for, current_app, g
+from flask import render_template, request, flash, redirect, url_for, current_app, g, jsonify
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os
@@ -54,7 +54,7 @@ def register_routes(bp):
     def profile():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         shop_name = shopkeeper.shop_name
-        return render_template('shopkeeper/profile.html', 
+        return render_template('shopkeeper/new_profile.html', 
                              shopkeeper=shopkeeper,
                              shop_name=shop_name,
                              preview_next_invoice_number=preview_next_invoice_number)
@@ -66,18 +66,98 @@ def register_routes(bp):
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         shop_name = shopkeeper.shop_name
         if request.method == 'POST':
+            # Personal Information
+            shopkeeper.owner_name = request.form.get('owner_name')
+            shopkeeper.pan_number = request.form.get('pan_number')
+            shopkeeper.owner_address = request.form.get('owner_address')
+            
+            # Business Information
             shopkeeper.shop_name = request.form.get('shop_name')
-            shopkeeper.domain = request.form.get('domain')
-            shopkeeper.address = request.form.get('address')
+            shopkeeper.business_type = request.form.get('business_type')
+            shopkeeper.established_year = request.form.get('established_year')
+            if shopkeeper.established_year:
+                try:
+                    shopkeeper.established_year = int(shopkeeper.established_year)
+                except ValueError:
+                    shopkeeper.established_year = None
             shopkeeper.gst_number = request.form.get('gst_number')
             shopkeeper.contact_number = request.form.get('contact_number')
+            shopkeeper.business_address = request.form.get('business_address')
+            
+            # Location Information
             shopkeeper.city = request.form.get('city')
             shopkeeper.state = request.form.get('state')
             shopkeeper.pincode = request.form.get('pincode')
+            
+            # Banking Information
             shopkeeper.bank_name = request.form.get('bank_name')
             shopkeeper.account_number = request.form.get('account_number')
             shopkeeper.ifsc_code = request.form.get('ifsc_code')
+            shopkeeper.upi_id = request.form.get('upi_id')
+            
+            # Bill Template Settings
             shopkeeper.template_choice = request.form.get('template_choice')
+            
+            # Backward compatibility - update legacy fields
+            if shopkeeper.business_type and not shopkeeper.domain:
+                shopkeeper.domain = shopkeeper.business_type
+            if shopkeeper.business_address and not shopkeeper.address:
+                shopkeeper.address = shopkeeper.business_address
+            
+            # Handle document uploads
+            document_types = [
+                ('gst_doc', 'gst_doc_path'),
+                ('pan_doc', 'pan_doc_path'),
+                ('address_proof', 'address_proof_path'),
+                ('aadhaar_dl', 'aadhaar_dl_path'),
+                ('selfie', 'selfie_path'),
+                ('gumasta', 'gumasta_path'),
+                ('udyam', 'udyam_path'),
+                ('bank_statement', 'bank_statement_path'),
+                ('logo', 'logo_path')
+            ]
+            
+            for form_field, db_field in document_types:
+                file = request.files.get(form_field)
+                if file and file.filename:
+                    # Validate file
+                    allowed_exts = {'pdf', 'jpg', 'jpeg', 'png'}
+                    if form_field in ['selfie', 'logo']:
+                        if form_field == 'logo':
+                            allowed_exts.add('svg')
+                        elif form_field == 'selfie':
+                            allowed_exts = {'jpg', 'jpeg', 'png'}
+                    
+                    max_size = 2 * 1024 * 1024  # 2MB
+                    
+                    # Get file extension
+                    if '.' not in file.filename:
+                        flash(f'Invalid file type for {form_field.replace("_", " ").title()}. File extension required.', 'danger')
+                        continue
+                        
+                    ext = file.filename.rsplit('.', 1)[-1].lower()
+                    if ext not in allowed_exts:
+                        flash(f'Invalid file type for {form_field.replace("_", " ").title()}. Allowed: {", ".join(allowed_exts).upper()}', 'danger')
+                        continue
+                    
+                    # Check file size
+                    file.seek(0, 2)
+                    size = file.tell()
+                    file.seek(0)
+                    if size > max_size:
+                        flash(f'File too large for {form_field.replace("_", " ").title()}. Maximum 2MB allowed.', 'danger')
+                        continue
+                    
+                    # Save file
+                    filename = f"shopkeeper_{shopkeeper.shopkeeper_id}_{form_field}.{ext}"
+                    save_path = os.path.join('app', 'static', 'shop_upload', filename)
+                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                    file.save(save_path)
+                    
+                    # Update database
+                    rel_path = f"shop_upload/{filename}"
+                    setattr(shopkeeper, db_field, rel_path)
+                    flash(f'{form_field.replace("_", " ").title()} uploaded successfully.', 'success')
             
             # Handle invoice numbering settings
             invoice_prefix = request.form.get('invoice_prefix', '').strip()
@@ -99,9 +179,10 @@ def register_routes(bp):
                     flash('Invalid starting number provided.', 'error')
             
             db.session.commit()
+            update_shopkeeper_verification(shopkeeper)
             flash('Profile updated successfully.', 'success')
             return redirect(url_for('shopkeeper.profile'))
-        return render_template('shopkeeper/profile_edit.html', 
+        return render_template('shopkeeper/new_edit_profile.html', 
                              shop_name=shop_name,
                              shopkeeper=shopkeeper,
                              preview_next_invoice_number=preview_next_invoice_number)
@@ -171,34 +252,61 @@ def register_routes(bp):
     @login_required
     @shopkeeper_required
     def delete_document(doc_type):
-        shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-        if doc_type == 'gst' and shopkeeper.gst_doc_path:
-            shopkeeper.gst_doc_path = None
-        elif doc_type == 'pan' and shopkeeper.pan_doc_path:
-            shopkeeper.pan_doc_path = None
-        elif doc_type == 'address_proof' and shopkeeper.address_proof_path:
-            shopkeeper.address_proof_path = None
-        elif doc_type == 'logo' and shopkeeper.logo_path:
-            shopkeeper.logo_path = None
-        elif doc_type == 'aadhaar_dl' and shopkeeper.aadhaar_dl_path:
-            shopkeeper.aadhaar_dl_path = None
-        elif doc_type == 'selfie' and shopkeeper.selfie_path:
-            shopkeeper.selfie_path = None
-        elif doc_type == 'gumasta' and shopkeeper.gumasta_path:
-            shopkeeper.gumasta_path = None
-        elif doc_type == 'udyam' and shopkeeper.udyam_path:
-            shopkeeper.udyam_path = None
-        elif doc_type == 'bank_statement' and shopkeeper.bank_statement_path:
-            shopkeeper.bank_statement_path = None
-        db.session.commit()
-        update_shopkeeper_verification(shopkeeper)
-        flash(f'{doc_type.replace("_", " ").title()} deleted successfully.', 'success')
-        return redirect(url_for('shopkeeper.profile'))
+        try:
+            shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+            deleted = False
+            
+            if doc_type == 'gst' and shopkeeper.gst_doc_path:
+                shopkeeper.gst_doc_path = None
+                deleted = True
+            elif doc_type == 'pan' and shopkeeper.pan_doc_path:
+                shopkeeper.pan_doc_path = None
+                deleted = True
+            elif doc_type == 'address_proof' and shopkeeper.address_proof_path:
+                shopkeeper.address_proof_path = None
+                deleted = True
+            elif doc_type == 'logo' and shopkeeper.logo_path:
+                shopkeeper.logo_path = None
+                deleted = True
+            elif doc_type == 'aadhaar_dl' and shopkeeper.aadhaar_dl_path:
+                shopkeeper.aadhaar_dl_path = None
+                deleted = True
+            elif doc_type == 'selfie' and shopkeeper.selfie_path:
+                shopkeeper.selfie_path = None
+                deleted = True
+            elif doc_type == 'gumasta' and shopkeeper.gumasta_path:
+                shopkeeper.gumasta_path = None
+                deleted = True
+            elif doc_type == 'udyam' and shopkeeper.udyam_path:
+                shopkeeper.udyam_path = None
+                deleted = True
+            elif doc_type == 'bank_statement' and shopkeeper.bank_statement_path:
+                shopkeeper.bank_statement_path = None
+                deleted = True
+            
+            if deleted:
+                db.session.commit()
+                update_shopkeeper_verification(shopkeeper)
+                return jsonify({
+                    'success': True, 
+                    'message': f'{doc_type.replace("_", " ").title()} deleted successfully.'
+                })
+            else:
+                return jsonify({
+                    'success': False, 
+                    'message': f'No {doc_type.replace("_", " ")} document found to delete.'
+                })
+                
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({
+                'success': False, 
+                'message': f'Error deleting document: {str(e)}'
+            })
 
     def get_shopkeeper_pending_requests():
         if hasattr(g, 'shopkeeper_pending_requests'):
             return g.shopkeeper_pending_requests
-        from flask_login import current_user
         if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated and getattr(current_user, 'role', None) == 'shopkeeper':
             shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
             if shopkeeper:

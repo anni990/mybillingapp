@@ -20,6 +20,7 @@ def register_routes(bp):
             return redirect(url_for('auth.login'))
         
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        shop_name = shopkeeper.shop_name
         if not shopkeeper:
             flash('Error: Shopkeeper profile not found.', 'danger')
             return redirect(url_for('auth.login'))
@@ -37,6 +38,7 @@ def register_routes(bp):
         return render_template('shopkeeper/messages.html', 
                              shopkeeper=shopkeeper,
                              connected_ca=connected_ca,
+                             shop_name=shop_name,
                              current_user=current_user)
     
     @bp.route('/bills/<int:bill_id>/remark', methods=['POST'])

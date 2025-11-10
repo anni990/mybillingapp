@@ -117,3 +117,67 @@
 -- ALTER TABLE customers 
 -- ADD COLUMN gstin VARCHAR(15) NULL 
 -- COMMENT 'Customer GST Identification Number (15 characters max)';
+
+
+-- Add new columns to chartered_accountants table
+ALTER TABLE chartered_accountants 
+ADD ca_name VARCHAR(100) NULL COMMENT 'CA personal name',
+ADD ca_email_id VARCHAR(100) NULL COMMENT 'CA professional email address',
+ADD domain_expertise TEXT NULL COMMENT 'JSON array of expertise areas',
+ADD experience INT NULL COMMENT 'Years of experience',
+ADD industries_served TEXT NULL COMMENT 'JSON array of industries served',
+ADD about_me TEXT NULL COMMENT 'Professional summary';
+
+-- Update existing records with default values if needed
+-- Note: These fields are optional and can remain NULL for existing records
+
+-- Optional: Add indexes for better performance
+CREATE INDEX idx_ca_experience ON chartered_accountants(experience);
+CREATE INDEX idx_ca_email ON chartered_accountants(ca_email_id);
+
+-- Verify the changes
+DESCRIBE chartered_accountants;
+
+-- Show sample data structure
+SELECT 
+    ca_id,
+    firm_name,
+    ca_name,
+    ca_email_id,
+    experience,
+    domain_expertise,
+    industries_served,
+    about_me
+FROM chartered_accountants 
+LIMIT 5;
+
+
+-- Add new fields to shopkeepers table
+ALTER TABLE shopkeepers 
+ADD COLUMN owner_name VARCHAR(100) AFTER user_id,
+ADD COLUMN business_type VARCHAR(50) AFTER owner_name,
+ADD COLUMN owner_address VARCHAR(255) AFTER business_type,
+ADD COLUMN business_address VARCHAR(255) AFTER owner_address,
+ADD COLUMN established_year INT AFTER business_address,
+ADD COLUMN pan_number VARCHAR(20) AFTER established_year;
+
+-- Add UPI ID field to shopkeepers table (if not already exists)
+ALTER TABLE shopkeepers 
+ADD COLUMN upi_id VARCHAR(100) AFTER ifsc_code;
+
+-- Update existing data to maintain backward compatibility
+-- Copy domain to business_type for existing records
+UPDATE shopkeepers 
+SET business_type = domain 
+WHERE business_type IS NULL AND domain IS NOT NULL;
+
+-- Copy address to business_address for existing records
+UPDATE shopkeepers 
+SET business_address = address 
+WHERE business_address IS NULL AND address IS NOT NULL;
+
+-- Optional: Add indexes for better performance
+CREATE INDEX idx_shopkeeper_owner_name ON shopkeepers(owner_name);
+CREATE INDEX idx_shopkeeper_business_type ON shopkeepers(business_type);
+CREATE INDEX idx_shopkeeper_city_state ON shopkeepers(city, state);
+CREATE INDEX idx_shopkeeper_established_year ON shopkeepers(established_year);

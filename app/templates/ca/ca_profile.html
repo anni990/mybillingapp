@@ -127,15 +127,42 @@
       </div>
       
       <div class="flex flex-wrap justify-center md:justify-start gap-3 mb-6">
-        <span class="bg-green-200 text-green-600 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium border border-white/30 hover:bg-white/30 transition-colors duration-200">
-          Chartered Accountant
-        </span>
-        <span class="bg-purple-200 text-purple-600 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium border border-white/30 hover:bg-white/30 transition-colors duration-200">
-          Tax Consultant
-        </span>
-        <span class="bg-indigo-200 text-indigo-600 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium border border-white/30 hover:bg-white/30 transition-colors duration-200">
-          GST Expert
-        </span>
+        {% if ca.domain_expertise %}
+          {% set expertise_list = ca.domain_expertise|from_json %}
+          {% set colors = [
+            {'bg': 'bg-green-200', 'text': 'text-green-600'},
+            {'bg': 'bg-purple-200', 'text': 'text-purple-600'},
+            {'bg': 'bg-indigo-200', 'text': 'text-indigo-600'}
+          ] %}
+          {% for expertise in expertise_list[:3] %}
+            <span class="{{ colors[loop.index0]['bg'] }} {{ colors[loop.index0]['text'] }} backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium border border-white/30 hover:bg-white/30 transition-colors duration-200">
+              {% if expertise == 'taxation' %}Taxation
+              {% elif expertise == 'audit' %}Audit & Assurance
+              {% elif expertise == 'financial_planning' %}Financial Planning
+              {% elif expertise == 'corporate_law' %}Corporate Law
+              {% elif expertise == 'gst' %}GST Compliance
+              {% elif expertise == 'income_tax' %}Income Tax
+              {% elif expertise == 'company_formation' %}Company Formation
+              {% elif expertise == 'accounting' %}Accounting Services
+              {% elif expertise == 'compliance' %}Regulatory Compliance
+              {% elif expertise == 'investment_advisory' %}Investment Advisory
+              {% elif expertise == 'mergers_acquisitions' %}Mergers & Acquisitions
+              {% elif expertise == 'forensic_accounting' %}Forensic Accounting
+              {% else %}{{ expertise|title }}
+              {% endif %}
+            </span>
+          {% endfor %}
+        {% else %}
+          <span class="bg-green-200 text-green-600 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium border border-white/30 hover:bg-white/30 transition-colors duration-200">
+            Chartered Accountant
+          </span>
+          <span class="bg-purple-200 text-purple-600 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium border border-white/30 hover:bg-white/30 transition-colors duration-200">
+            Tax Consultant
+          </span>
+          <span class="bg-indigo-200 text-indigo-600 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium border border-white/30 hover:bg-white/30 transition-colors duration-200">
+            GST Expert
+          </span>
+        {% endif %}
       </div>
 
       {% if ca.about_me %}
@@ -169,6 +196,137 @@
 {% endif %}
 
 {% if not edit_mode %}
+<!-- Professional Profile Section - Profile View -->
+<div class="bg-white rounded-2xl p-8 shadow-xl border border-blue-100 fade-in-up mb-8">
+  <div class="flex items-center mb-6">
+    <div class="p-3 bg-blue-200 rounded-xl shadow-lg">
+      <i data-feather="user" class="w-6 h-6 text-blue-700"></i>
+    </div>
+    <h2 class="text-2xl font-bold text-gray-800 ml-4">Professional Profile</h2>
+  </div>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- CA Personal Info -->
+    <div class="space-y-4">
+      <div class="info-card p-4 bg-blue-50 rounded-xl border-l-4 border-blue-600">
+        <div class="flex items-center">
+          <i data-feather="user" class="w-5 h-5 text-blue-600 mr-3"></i>
+          <div>
+            <p class="text-sm text-gray-700">CA Name</p>
+            <p class="font-semibold text-blue-800">{{ ca.ca_name or 'Not provided' }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="info-card p-4 bg-blue-50 rounded-xl border-l-4 border-blue-600">
+        <div class="flex items-center">
+          <i data-feather="mail" class="w-5 h-5 text-blue-600 mr-3"></i>
+          <div>
+            <p class="text-sm text-gray-700">Professional Email</p>
+            <p class="font-semibold text-blue-800">{{ ca.ca_email_id or 'Not provided' }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="info-card p-4 bg-blue-50 rounded-xl border-l-4 border-blue-600">
+        <div class="flex items-center">
+          <i data-feather="clock" class="w-5 h-5 text-blue-600 mr-3"></i>
+          <div>
+            <p class="text-sm text-gray-700">Experience</p>
+            <p class="font-semibold text-blue-800">
+              {% if ca.experience %}
+                {% if ca.experience == 1 %}1-2 years
+                {% elif ca.experience == 3 %}3-5 years
+                {% elif ca.experience == 6 %}6-10 years
+                {% elif ca.experience == 11 %}11-15 years
+                {% elif ca.experience == 16 %}16-20 years
+                {% elif ca.experience == 21 %}20+ years
+                {% else %}{{ ca.experience }} years
+                {% endif %}
+              {% else %}Not specified{% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Domain Expertise & Industries -->
+    <div class="space-y-4">
+      <div class="info-card p-4 bg-blue-50 rounded-xl border-l-4 border-blue-600">
+        <div class="flex items-start">
+          <i data-feather="briefcase" class="w-5 h-5 text-blue-600 mr-3 mt-1"></i>
+          <div class="flex-1">
+            <p class="text-sm text-gray-700 mb-2">Domain Expertise</p>
+            {% if ca.domain_expertise %}
+              {% set expertise_list = ca.domain_expertise|from_json %}
+              <div class="flex flex-wrap gap-2">
+                {% for expertise in expertise_list %}
+                  <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                    {% if expertise == 'taxation' %}Taxation
+                    {% elif expertise == 'audit' %}Audit & Assurance
+                    {% elif expertise == 'financial_planning' %}Financial Planning
+                    {% elif expertise == 'corporate_law' %}Corporate Law
+                    {% elif expertise == 'gst' %}GST Compliance
+                    {% elif expertise == 'income_tax' %}Income Tax
+                    {% elif expertise == 'company_formation' %}Company Formation
+                    {% elif expertise == 'accounting' %}Accounting Services
+                    {% elif expertise == 'compliance' %}Regulatory Compliance
+                    {% elif expertise == 'investment_advisory' %}Investment Advisory
+                    {% elif expertise == 'mergers_acquisitions' %}Mergers & Acquisitions
+                    {% elif expertise == 'forensic_accounting' %}Forensic Accounting
+                    {% else %}{{ expertise|title }}
+                    {% endif %}
+                  </span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="font-semibold text-blue-800">Not specified</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      
+      <div class="info-card p-4 bg-blue-50 rounded-xl border-l-4 border-blue-600">
+        <div class="flex items-start">
+          <i data-feather="layers" class="w-5 h-5 text-blue-600 mr-3 mt-1"></i>
+          <div class="flex-1">
+            <p class="text-sm text-gray-700 mb-2">Industries Served</p>
+            {% if ca.industries_served %}
+              {% set industries_list = ca.industries_served|from_json %}
+              <div class="flex flex-wrap gap-2">
+                {% for industry in industries_list %}
+                  <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-medium">
+                    {% if industry == 'retail' %}Retail & E-commerce
+                    {% elif industry == 'manufacturing' %}Manufacturing
+                    {% elif industry == 'healthcare' %}Healthcare
+                    {% elif industry == 'real_estate' %}Real Estate
+                    {% elif industry == 'hospitality' %}Hospitality
+                    {% elif industry == 'education' %}Education
+                    {% elif industry == 'technology' %}Technology
+                    {% elif industry == 'agriculture' %}Agriculture
+                    {% elif industry == 'automotive' %}Automotive
+                    {% elif industry == 'textiles' %}Textiles
+                    {% elif industry == 'pharmaceuticals' %}Pharmaceuticals
+                    {% elif industry == 'food_beverage' %}Food & Beverage
+                    {% elif industry == 'construction' %}Construction
+                    {% elif industry == 'logistics' %}Logistics & Transportation
+                    {% elif industry == 'financial_services' %}Financial Services
+                    {% elif industry == 'startups' %}Startups & SMEs
+                    {% else %}{{ industry|title }}
+                    {% endif %}
+                  </span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="font-semibold text-blue-800">Not specified</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Contact Information Grid - Profile View -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
   <!-- Contact Details -->
@@ -250,15 +408,7 @@
         </div>
       </div>
 
-      <div class="info-card p-4 bg-purple-50 rounded-xl border-l-4 border-purple-600">
-        <div class="flex items-center">
-          <i data-feather="file-text" class="w-5 h-5 text-purple-600 mr-3"></i>
-          <div>
-            <p class="text-sm text-gray-700">GSTIN</p>
-            <p class="font-semibold text-purple-800">{{ ca.gstin or 'Not provided' }}</p>
-          </div>
-        </div>
-      </div>
+      
 
       <div class="info-card p-4 bg-purple-50 rounded-xl border-l-4 border-purple-600">
         <div class="flex items-center">
@@ -566,6 +716,90 @@
       </div>
     </div>
 
+    <!-- Professional Profile Section -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 border border-blue-200">
+      <div class="flex items-center mb-6">
+        <div class="p-2 bg-blue-100 rounded-lg shadow-lg">
+          <i data-feather="award" class="w-5 h-5 text-blue-600"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-800 ml-3">Professional Profile</h3>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- CA Name -->
+        <div class="space-y-2">
+          {{ form.ca_name.label(class_="flex items-center text-gray-700 font-medium text-sm") }}
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i data-feather="user" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            {{ form.ca_name(class_="w-full pl-10 pr-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-blue-50 hover:bg-white", placeholder="Enter your full name") }}
+          </div>
+          {% for error in form.ca_name.errors %}<p class="text-red-500 text-xs flex items-center"><i data-feather="alert-circle" class="w-3 h-3 mr-1"></i>{{ error }}</p>{% endfor %}
+        </div>
+
+        <!-- Professional Email -->
+        <div class="space-y-2">
+          {{ form.ca_email_id.label(class_="flex items-center text-gray-700 font-medium text-sm") }}
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i data-feather="mail" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            {{ form.ca_email_id(class_="w-full pl-10 pr-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-blue-50 hover:bg-white", placeholder="your.email@example.com") }}
+          </div>
+          {% for error in form.ca_email_id.errors %}<p class="text-red-500 text-xs flex items-center"><i data-feather="alert-circle" class="w-3 h-3 mr-1"></i>{{ error }}</p>{% endfor %}
+        </div>
+
+        <!-- Experience -->
+        <div class="space-y-2">
+          {{ form.experience.label(class_="flex items-center text-gray-700 font-medium text-sm") }}
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i data-feather="clock" class="w-4 h-4 text-blue-400"></i>
+            </div>
+            {{ form.experience(class_="w-full pl-10 pr-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-blue-50 hover:bg-white") }}
+          </div>
+          {% for error in form.experience.errors %}<p class="text-red-500 text-xs flex items-center"><i data-feather="alert-circle" class="w-3 h-3 mr-1"></i>{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+      
+      <!-- Domain Expertise - Full Width -->
+      <div class="space-y-2 mt-6">
+        {{ form.domain_expertise.label(class_="flex items-center text-gray-700 font-medium text-sm") }}
+        <div class="relative">
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-4 border border-blue-300 rounded-lg bg-blue-50 hover:bg-white transition duration-200">
+            {% for value, label in form.domain_expertise.choices %}
+              <label class="flex items-center space-x-2 cursor-pointer hover:bg-blue-100 p-2 rounded-lg transition duration-200">
+                <input type="checkbox" name="domain_expertise" value="{{ value }}" 
+                       {% if form.domain_expertise.data and value in form.domain_expertise.data %}checked{% endif %}
+                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                <span class="text-sm text-gray-700">{{ label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% for error in form.domain_expertise.errors %}<p class="text-red-500 text-xs flex items-center"><i data-feather="alert-circle" class="w-3 h-3 mr-1"></i>{{ error }}</p>{% endfor %}
+      </div>
+      
+      <!-- Industries Served - Full Width -->
+      <div class="space-y-2 mt-6">
+        {{ form.industries_served.label(class_="flex items-center text-gray-700 font-medium text-sm") }}
+        <div class="relative">
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-4 border border-blue-300 rounded-lg bg-blue-50 hover:bg-white transition duration-200">
+            {% for value, label in form.industries_served.choices %}
+              <label class="flex items-center space-x-2 cursor-pointer hover:bg-blue-100 p-2 rounded-lg transition duration-200">
+                <input type="checkbox" name="industries_served" value="{{ value }}" 
+                       {% if form.industries_served.data and value in form.industries_served.data %}checked{% endif %}
+                       class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                <span class="text-sm text-gray-700">{{ label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% for error in form.industries_served.errors %}<p class="text-red-500 text-xs flex items-center"><i data-feather="alert-circle" class="w-3 h-3 mr-1"></i>{{ error }}</p>{% endfor %}
+      </div>
+    </div>
+
     <!-- Location Information Section -->
     <div class="bg-white rounded-2xl shadow-lg p-8 border border-cyan-200">
       <div class="flex items-center mb-6">
@@ -647,7 +881,7 @@
         <h3 class="text-xl font-semibold text-gray-800 ml-3">Professional Information</h3>
       </div>
       
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- GST Number -->
         <div class="space-y-2">
           {{ form.gst_number.label(class_="flex items-center text-gray-700 font-medium text-sm") }}
@@ -673,16 +907,7 @@
         </div>
 
         <!-- GSTIN -->
-        <div class="space-y-2">
-          {{ form.gstin.label(class_="flex items-center text-gray-700 font-medium text-sm") }}
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i data-feather="shield" class="w-4 h-4 text-orange-400"></i>
-            </div>
-            {{ form.gstin(class_="w-full pl-10 pr-4 py-3 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-200 bg-orange-50 hover:bg-white", placeholder="Enter GSTIN") }}
-          </div>
-          {% for error in form.gstin.errors %}<p class="text-red-500 text-xs flex items-center"><i data-feather="alert-circle" class="w-3 h-3 mr-1"></i>{{ error }}</p>{% endfor %}
-        </div>
+        
       </div>
     </div>
     <!-- Profile Images Section -->
