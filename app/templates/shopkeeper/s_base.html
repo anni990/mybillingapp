@@ -205,12 +205,28 @@
         }
 
         /* Create Bill Dropdown Styles */
+        .create-bill-dropdown-content {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        
         .create-bill-dropdown-content.open {
             max-height: 200px;
             opacity: 1;
             margin-top: 0.25rem;
         }
 
+        .max-h-200 {
+            max-height: 200px;
+        }
+
+        .create-bill-arrow {
+            transition: transform 0.3s ease-in-out;
+        }
+        
         .create-bill-arrow.rotated {
             transform: rotate(180deg);
         }
@@ -224,12 +240,24 @@
         }
 
         /* Purchase Bills Dropdown Styles */
+        .purchase-bills-dropdown-content {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        
         .purchase-bills-dropdown-content.open {
             max-height: 200px;
             opacity: 1;
             margin-top: 0.25rem;
         }
 
+        .purchase-bills-arrow {
+            transition: transform 0.3s ease-in-out;
+        }
+        
         .purchase-bills-arrow.rotated {
             transform: rotate(180deg);
         }
@@ -243,12 +271,24 @@
         }
 
         /* Messages Dropdown Styles */
+        .messages-dropdown-content {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        
         .messages-dropdown-content.open {
             max-height: 200px;
             opacity: 1;
             margin-top: 0.25rem;
         }
 
+        .messages-arrow {
+            transition: transform 0.3s ease-in-out;
+        }
+        
         .messages-arrow.rotated {
             transform: rotate(180deg);
         }
@@ -259,6 +299,55 @@
 
         .sidebar-collapsed .messages-arrow {
             display: none;
+        }
+
+        /* Tools Dropdown Styles */
+        .tools-dropdown-content {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        
+        .tools-dropdown-content.open {
+            max-height: 200px;
+            opacity: 1;
+            margin-top: 0.25rem;
+        }
+
+        .tools-arrow {
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .tools-arrow.rotated {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-collapsed .tools-dropdown-content {
+            display: none;
+        }
+
+        .sidebar-collapsed .tools-arrow {
+            display: none;
+        }
+
+        /* Prevent initial flicker by hiding elements until JS loads */
+        .sidebar-loading {
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        
+        .sidebar-loaded {
+            opacity: 1;
+        }
+        
+        .dropdown-loading {
+            visibility: hidden;
+        }
+        
+        .dropdown-loaded {
+            visibility: visible;
         }
 
         /* Additional mobile-first utilities */
@@ -277,6 +366,71 @@
         }
     </style>
     <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        // Early state loading to prevent flicker
+        document.addEventListener('DOMContentLoaded', function() {
+            // Apply saved sidebar state immediately
+            const savedSidebarState = localStorage.getItem('sidebarCollapsed');
+            const isCollapsed = savedSidebarState === 'true';
+            const mainContent = document.getElementById('main-content');
+            const sidebar = document.getElementById('sidebar');
+            const fixedToggleBtn = document.getElementById('fixed-toggle-btn');
+            
+            if (window.innerWidth > 768 && isCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                mainContent.classList.add('sidebar-collapsed-content');
+                mainContent.style.marginLeft = '4rem';
+                if (fixedToggleBtn) fixedToggleBtn.classList.add('show');
+            }
+            
+            // Remove loading state
+            mainContent.classList.remove('sidebar-loading');
+            mainContent.classList.add('sidebar-loaded');
+            
+            // Apply dropdown states immediately
+            applyDropdownStatesEarly();
+        });
+        
+        function applyDropdownStatesEarly() {
+            const dropdowns = [
+                { type: 'create-bill', defaultOpen: true },
+                { type: 'purchase-bills', defaultOpen: true },
+                { type: 'messages', defaultOpen: true },
+                { type: 'tools', defaultOpen: true }
+            ];
+            
+            dropdowns.forEach(dropdown => {
+                const savedState = localStorage.getItem(`${dropdown.type.replace('-', '')}DropdownOpen`);
+                const isOpen = savedState !== null ? savedState === 'true' : dropdown.defaultOpen;
+                
+                const dropdownContent = document.querySelector(`.${dropdown.type}-dropdown-content`);
+                const arrow = document.querySelector(`.${dropdown.type}-arrow`);
+                
+                if (dropdownContent && arrow) {
+                    // Remove loading classes
+                    dropdownContent.classList.remove('dropdown-loading');
+                    dropdownContent.classList.add('dropdown-loaded');
+                    arrow.classList.remove('dropdown-loading');
+                    arrow.classList.add('dropdown-loaded');
+                    
+                    if (isOpen) {
+                        // Open state: show content, up arrow, no rotation
+                        dropdownContent.classList.add('open');
+                        arrow.classList.remove('rotated');
+                        arrow.setAttribute('data-feather', 'chevron-up');
+                    } else {
+                        // Closed state: hide content, up arrow rotated 180° = down arrow
+                        dropdownContent.classList.remove('open');
+                        arrow.classList.add('rotated');
+                        arrow.setAttribute('data-feather', 'chevron-up'); // Rotated 180° = down
+                    }
+                }
+            });
+            
+            // Initialize feather icons
+            feather.replace();
+        }
+    </script>
 </head>
 
 <body class="no-scroll-x">
@@ -292,7 +446,7 @@
         <div id="sidebar-overlay" class="fixed inset-0 z-30 sidebar-overlay hidden md:hidden"></div>
 
         <!-- Main Content Area -->
-        <div id="main-content" class="main-content flex-1 ml-64 min-h-screen flex flex-col">
+        <div id="main-content" class="main-content flex-1 ml-64 min-h-screen flex flex-col sidebar-loading">
             <!-- Top Header -->
             <header class="flex items-center justify-between bg-white shadow-md h-16 px-4 lg:px-8 sticky top-0 z-10">
                 
@@ -503,11 +657,11 @@
                                     <i data-feather="file-plus" class="w-5 h-5 flex-shrink-0"></i>
                                     <span class="sidebar-text ml-3 whitespace-nowrap">Create Bill</span>
                                 </div>
-                                <i data-feather="chevron-down" class="w-6 h-6 transition-transform duration-300 sidebar-text create-bill-arrow"></i>
+                                <i data-feather="chevron-up" class="w-6 h-6 transition-transform duration-300 sidebar-text create-bill-arrow dropdown-loading"></i>
                             </button>
                             
                             <!-- Dropdown Content -->
-                            <div class="create-bill-dropdown-content ml-8 mt-1 space-y-1 overflow-hidden transition-all duration-300 max-h-0 opacity-0">
+                            <div class="create-bill-dropdown-content ml-8 mt-1 space-y-1 dropdown-loading">
                                 <a href="{{ url_for('shopkeeper.create_bill') }}?customer_type=existing"
                                    class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mr-2">
                                     <i data-feather="users" class="w-4 h-4 flex-shrink-0"></i>
@@ -537,11 +691,11 @@
                                     <i data-feather="shopping-cart" class="w-5 h-5 flex-shrink-0"></i>
                                     <span class="sidebar-text ml-3 whitespace-nowrap">Purchase Bills</span>
                                 </div>
-                                <!-- <i data-feather="chevron-down" class="w-6 h-6 transition-transform duration-300 sidebar-text purchase-bills-arrow rotated"></i> -->
+                                <i data-feather="chevron-up" class="w-6 h-6 transition-transform duration-300 sidebar-text purchase-bills-arrow dropdown-loading"></i>
                             </button>
                             
-                            <!-- Dropdown Content - Initially Open -->
-                            <div class="purchase-bills-dropdown-content ml-8 mt-1 space-y-1 overflow-hidden transition-all duration-300 max-h-200 opacity-100 open">
+                            <!-- Dropdown Content -->
+                            <div class="purchase-bills-dropdown-content ml-8 mt-1 space-y-1 dropdown-loading">
                                 <a href="{{ url_for('shopkeeper.purchase_bills') }}"
                                    class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mr-2">
                                     <i data-feather="list" class="w-4 h-4 flex-shrink-0"></i>
@@ -594,17 +748,17 @@
                                 </div>
                                 <div class="flex items-center">
                                     <span id="msg-unread-badge" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 hidden mr-2">0</span>
-                                    <i data-feather="chevron-down" class="messages-arrow w-6 h-6 flex-shrink-0 transition-transform duration-300 sidebar-text"></i>
+                                    <i data-feather="chevron-up" class="messages-arrow w-6 h-6 flex-shrink-0 transition-transform duration-300 sidebar-text dropdown-loading"></i>
                                 </div>
                             </button>
-                            <div class="messages-dropdown-content ml-8 mt-1 space-y-1 overflow-hidden transition-all duration-300 max-h-0 opacity-0">
+                            <div class="messages-dropdown-content ml-8 mt-1 space-y-1 dropdown-loading">
                                 <a href="{{ url_for('shopkeeper.messages') }}?tab=chat" 
-                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/20 group">
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mr-2">
                                     <i data-feather="message-circle" class="w-4 h-4 flex-shrink-0"></i>
                                     <span class="ml-2 whitespace-nowrap">Chats</span>
                                 </a>
                                 <a href="{{ url_for('shopkeeper.messages') }}?tab=remarks" 
-                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/20 group">
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mr-2 mb-2">
                                     <i data-feather="edit-3" class="w-4 h-4 flex-shrink-0"></i>
                                     <span class="ml-2 whitespace-nowrap">Remarks</span>
                                 </a>
@@ -617,6 +771,38 @@
                             <i data-feather="briefcase" class="w-5 h-5 flex-shrink-0"></i>
                             <span class="sidebar-text ml-3 whitespace-nowrap">CA Marketplace</span>
                         </a>
+                    </li>
+                    <li>
+                        <!-- Tools Dropdown -->
+                        <div class="tools-dropdown hover:bg-white/10 rounded-xl">
+                            <button class="flex items-center justify-between w-full px-3 py-3 transition duration-300 group text-left"
+                                    onclick="toggleToolsDropdown(event)">
+                                <div class="flex items-center">
+                                    <i data-feather="settings" class="w-5 h-5 flex-shrink-0"></i>
+                                    <span class="sidebar-text ml-3 whitespace-nowrap">Tools</span>
+                                </div>
+                                <i data-feather="chevron-up" class="w-6 h-6 transition-transform duration-300 sidebar-text tools-arrow dropdown-loading"></i>
+                            </button>
+                            
+                            <!-- Dropdown Content -->
+                            <div class="tools-dropdown-content ml-8 mt-1 space-y-1 dropdown-loading">
+                                <a href="{{ url_for('shopkeeper.profile_edit') }}"
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mr-2">
+                                    <i data-feather="edit-3" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">Profile Edit</span>
+                                </a>
+                                <a href="{{ url_for('shopkeeper.profile') }}?modal=template"
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mr-2">
+                                    <i data-feather="layout" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">Configure Template</span>
+                                </a>
+                                <a href="{{ url_for('shopkeeper.profile') }}?modal=invoice"
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mb-2 mr-2">
+                                    <i data-feather="hash" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">Configure Invoice</span>
+                                </a>
+                            </div>
+                        </div>
                     </li>
                 </ul>
                 
@@ -695,28 +881,26 @@
 
         // Initialize proper sizing on page load
         function initializeSidebar() {
+            // States are already applied by early script, just update variables
+            const savedSidebarState = localStorage.getItem('sidebarCollapsed');
+            if (savedSidebarState !== null) {
+                isCollapsed = savedSidebarState === 'true';
+            }
+            
+            // Ensure proper responsive behavior
             if (window.innerWidth <= 768) {
-                // Mobile mode - ensure proper styling
                 mainContent.style.marginLeft = '';
                 mainContent.classList.remove('sidebar-collapsed-content');
-                fixedToggleBtn.classList.remove('show');
-            } else {
-                // Desktop mode - apply default state
-                if (isCollapsed) {
-                    sidebar.classList.add('sidebar-collapsed');
-                    mainContent.classList.add('sidebar-collapsed-content');
-                    mainContent.style.marginLeft = '4rem';
-                    fixedToggleBtn.classList.add('show');
-                } else {
-                    mainContent.style.marginLeft = '';
-                    fixedToggleBtn.classList.remove('show');
-                }
+                if (fixedToggleBtn) fixedToggleBtn.classList.remove('show');
             }
         }
 
         // Function to toggle sidebar
         function toggleSidebar() {
             isCollapsed = !isCollapsed;
+            
+            // Save sidebar state to localStorage
+            localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
             
             if (isCollapsed) {
                 sidebar.classList.add('sidebar-collapsed');
@@ -921,6 +1105,28 @@
             notifDropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
         }
 
+        // Set dropdown state helper function
+        function setDropdownState(type, isOpen) {
+            const dropdownContent = document.querySelector(`.${type}-dropdown-content`);
+            const arrow = document.querySelector(`.${type}-arrow`);
+            
+            if (dropdownContent && arrow) {
+                if (isOpen) {
+                    // Open state: show content, up arrow, no rotation
+                    dropdownContent.classList.add('open');
+                    dropdownContent.classList.remove('max-h-0', 'opacity-0');
+                    arrow.classList.remove('rotated');
+                    arrow.setAttribute('data-feather', 'chevron-up'); // Up arrow when open
+                } else {
+                    // Closed state: hide content, down arrow, with rotation
+                    dropdownContent.classList.remove('open');
+                    dropdownContent.classList.add('max-h-0', 'opacity-0');
+                    arrow.classList.add('rotated');
+                    arrow.setAttribute('data-feather', 'chevron-up'); // Up arrow rotated 180° = down arrow
+                }
+            }
+        }
+
         // Create Bill Dropdown functionality
         function toggleCreateBillDropdown(event) {
             event.preventDefault();
@@ -930,8 +1136,15 @@
             const arrow = document.querySelector('.create-bill-arrow');
             
             if (dropdownContent && arrow) {
-                dropdownContent.classList.toggle('open');
-                arrow.classList.toggle('rotated');
+                const isOpen = dropdownContent.classList.contains('open');
+                const newState = !isOpen;
+                
+                // Save state to localStorage
+                localStorage.setItem('createbillDropdownOpen', newState.toString());
+                
+                // Update UI
+                setDropdownState('create-bill', newState);
+                feather.replace();
             }
         }
 
@@ -944,8 +1157,15 @@
             const arrow = document.querySelector('.purchase-bills-arrow');
             
             if (dropdownContent && arrow) {
-                dropdownContent.classList.toggle('open');
-                arrow.classList.toggle('rotated');
+                const isOpen = dropdownContent.classList.contains('open');
+                const newState = !isOpen;
+                
+                // Save state to localStorage
+                localStorage.setItem('purchasebillsDropdownOpen', newState.toString());
+                
+                // Update UI
+                setDropdownState('purchase-bills', newState);
+                feather.replace();
             }
         }
 
@@ -958,80 +1178,55 @@
             const arrow = document.querySelector('.messages-arrow');
             
             if (dropdownContent && arrow) {
-                dropdownContent.classList.toggle('open');
-                arrow.classList.toggle('rotated');
+                const isOpen = dropdownContent.classList.contains('open');
+                const newState = !isOpen;
+                
+                // Save state to localStorage
+                localStorage.setItem('messagesDropdownOpen', newState.toString());
+                
+                // Update UI
+                setDropdownState('messages', newState);
+                feather.replace();
             }
         }
 
-        // Close dropdown when clicking outside
+        // Tools Dropdown functionality
+        function toggleToolsDropdown(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const dropdownContent = document.querySelector('.tools-dropdown-content');
+            const arrow = document.querySelector('.tools-arrow');
+            
+            if (dropdownContent && arrow) {
+                const isOpen = dropdownContent.classList.contains('open');
+                const newState = !isOpen;
+                
+                // Save state to localStorage
+                localStorage.setItem('toolsDropdownOpen', newState.toString());
+                
+                // Update UI
+                setDropdownState('tools', newState);
+                feather.replace();
+            }
+        }
+
+        // Close dropdown when clicking outside - but maintain initial open state
         document.addEventListener('click', function(event) {
-            const createBillDropdown = document.querySelector('.create-bill-dropdown');
-            const purchaseBillsDropdown = document.querySelector('.purchase-bills-dropdown');
-            const messagesDropdown = document.querySelector('.messages-dropdown');
-            
-            // Handle Create Bill dropdown
-            if (createBillDropdown && !createBillDropdown.contains(event.target)) {
-                const dropdownContent = document.querySelector('.create-bill-dropdown-content');
-                const arrow = document.querySelector('.create-bill-arrow');
-                
-                if (dropdownContent && arrow) {
-                    dropdownContent.classList.remove('open');
-                    arrow.classList.remove('rotated');
-                }
-            }
-            
-            // Handle Purchase Bills dropdown
-            if (purchaseBillsDropdown && !purchaseBillsDropdown.contains(event.target)) {
-                const dropdownContent = document.querySelector('.purchase-bills-dropdown-content');
-                const arrow = document.querySelector('.purchase-bills-arrow');
-                
-                if (dropdownContent && arrow) {
-                    dropdownContent.classList.remove('open');
-                    arrow.classList.remove('rotated');
-                }
-            }
-            
-            // Handle Messages dropdown
-            if (messagesDropdown && !messagesDropdown.contains(event.target)) {
-                const dropdownContent = document.querySelector('.messages-dropdown-content');
-                const arrow = document.querySelector('.messages-arrow');
-                
-                if (dropdownContent && arrow) {
-                    dropdownContent.classList.remove('open');
-                    arrow.classList.remove('rotated');
-                }
-            }
+            // We don't auto-close dropdowns on outside clicks since they should remain open by default
+            // Users can manually toggle them if needed
         });
 
-        // Handle sidebar collapse - close dropdown when sidebar is collapsed
+        // Handle sidebar collapse - hide dropdown content when sidebar is collapsed
         function handleSidebarCollapseDropdown() {
             if (isCollapsed) {
-                // Close Create Bill dropdown
-                const createBillDropdownContent = document.querySelector('.create-bill-dropdown-content');
-                const createBillArrow = document.querySelector('.create-bill-arrow');
-                
-                if (createBillDropdownContent && createBillArrow) {
-                    createBillDropdownContent.classList.remove('open');
-                    createBillArrow.classList.remove('rotated');
-                }
-
-                // Close Purchase Bills dropdown
-                const purchaseBillsDropdownContent = document.querySelector('.purchase-bills-dropdown-content');
-                const purchaseBillsArrow = document.querySelector('.purchase-bills-arrow');
-                
-                if (purchaseBillsDropdownContent && purchaseBillsArrow) {
-                    purchaseBillsDropdownContent.classList.remove('open');
-                    purchaseBillsArrow.classList.remove('rotated');
-                }
-
-                // Close Messages dropdown
-                const messagesDropdownContent = document.querySelector('.messages-dropdown-content');
-                const messagesArrow = document.querySelector('.messages-arrow');
-                
-                if (messagesDropdownContent && messagesArrow) {
-                    messagesDropdownContent.classList.remove('open');
-                    messagesArrow.classList.remove('rotated');
-                }
+                // Dropdowns are hidden via CSS when sidebar is collapsed
+                // No need to manually close them as they maintain their state
+            } else {
+                // When sidebar expands, ensure feather icons are properly rendered
+                setTimeout(() => {
+                    feather.replace();
+                }, 100);
             }
         }
     </script>

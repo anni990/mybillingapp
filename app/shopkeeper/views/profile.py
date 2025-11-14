@@ -66,122 +66,146 @@ def register_routes(bp):
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         shop_name = shopkeeper.shop_name
         if request.method == 'POST':
-            # Personal Information
-            shopkeeper.owner_name = request.form.get('owner_name')
-            shopkeeper.pan_number = request.form.get('pan_number')
-            shopkeeper.owner_address = request.form.get('owner_address')
-            
-            # Business Information
-            shopkeeper.shop_name = request.form.get('shop_name')
-            shopkeeper.business_type = request.form.get('business_type')
-            shopkeeper.established_year = request.form.get('established_year')
-            if shopkeeper.established_year:
-                try:
-                    shopkeeper.established_year = int(shopkeeper.established_year)
-                except ValueError:
-                    shopkeeper.established_year = None
-            shopkeeper.gst_number = request.form.get('gst_number')
-            shopkeeper.contact_number = request.form.get('contact_number')
-            shopkeeper.business_address = request.form.get('business_address')
-            
-            # Location Information
-            shopkeeper.city = request.form.get('city')
-            shopkeeper.state = request.form.get('state')
-            shopkeeper.pincode = request.form.get('pincode')
-            
-            # Banking Information
-            shopkeeper.bank_name = request.form.get('bank_name')
-            shopkeeper.account_number = request.form.get('account_number')
-            shopkeeper.ifsc_code = request.form.get('ifsc_code')
-            shopkeeper.upi_id = request.form.get('upi_id')
-            
-            # Bill Template Settings
-            shopkeeper.template_choice = request.form.get('template_choice')
-            
-            # Backward compatibility - update legacy fields
-            if shopkeeper.business_type and not shopkeeper.domain:
-                shopkeeper.domain = shopkeeper.business_type
-            if shopkeeper.business_address and not shopkeeper.address:
-                shopkeeper.address = shopkeeper.business_address
-            
-            # Handle document uploads
-            document_types = [
-                ('gst_doc', 'gst_doc_path'),
-                ('pan_doc', 'pan_doc_path'),
-                ('address_proof', 'address_proof_path'),
-                ('aadhaar_dl', 'aadhaar_dl_path'),
-                ('selfie', 'selfie_path'),
-                ('gumasta', 'gumasta_path'),
-                ('udyam', 'udyam_path'),
-                ('bank_statement', 'bank_statement_path'),
-                ('logo', 'logo_path')
-            ]
-            
-            for form_field, db_field in document_types:
-                file = request.files.get(form_field)
-                if file and file.filename:
-                    # Validate file
-                    allowed_exts = {'pdf', 'jpg', 'jpeg', 'png'}
-                    if form_field in ['selfie', 'logo']:
-                        if form_field == 'logo':
-                            allowed_exts.add('svg')
-                        elif form_field == 'selfie':
-                            allowed_exts = {'jpg', 'jpeg', 'png'}
-                    
-                    max_size = 2 * 1024 * 1024  # 2MB
-                    
-                    # Get file extension
-                    if '.' not in file.filename:
-                        flash(f'Invalid file type for {form_field.replace("_", " ").title()}. File extension required.', 'danger')
-                        continue
+            try:
+                # Helper function to handle empty strings
+                def safe_get_form_value(field_name, convert_to=None):
+                    value = request.form.get(field_name, '').strip()
+                    if not value:
+                        return None
+                    if convert_to == int:
+                        try:
+                            return int(value)
+                        except (ValueError, TypeError):
+                            return None
+                    return value
+                
+                # Personal Information
+                shopkeeper.owner_name = safe_get_form_value('owner_name')
+                shopkeeper.pan_number = safe_get_form_value('pan_number')
+                shopkeeper.owner_address = safe_get_form_value('owner_address')
+                
+                # Business Information
+                shopkeeper.shop_name = safe_get_form_value('shop_name') or shopkeeper.shop_name  # Keep existing if empty
+                shopkeeper.business_type = safe_get_form_value('business_type')
+                shopkeeper.established_year = safe_get_form_value('established_year', convert_to=int)
+                shopkeeper.gst_number = safe_get_form_value('gst_number')
+                shopkeeper.contact_number = safe_get_form_value('contact_number')
+                shopkeeper.business_address = safe_get_form_value('business_address')
+                
+                # Location Information
+                shopkeeper.city = safe_get_form_value('city')
+                shopkeeper.state = safe_get_form_value('state')
+                shopkeeper.pincode = safe_get_form_value('pincode')
+                
+                # Banking Information
+                shopkeeper.bank_name = safe_get_form_value('bank_name')
+                shopkeeper.account_number = safe_get_form_value('account_number')
+                shopkeeper.ifsc_code = safe_get_form_value('ifsc_code')
+                shopkeeper.upi_id = safe_get_form_value('upi_id')
+                
+                # Bill Template Settings
+                template_choice = safe_get_form_value('template_choice')
+                if template_choice:
+                    shopkeeper.template_choice = template_choice
+                
+                # Backward compatibility - update legacy fields
+                if shopkeeper.business_type and not shopkeeper.domain:
+                    shopkeeper.domain = shopkeeper.business_type
+                if shopkeeper.business_address and not shopkeeper.address:
+                    shopkeeper.address = shopkeeper.business_address
+                
+                # Handle document uploads
+                document_types = [
+                    ('gst_doc', 'gst_doc_path'),
+                    ('pan_doc', 'pan_doc_path'),
+                    ('address_proof', 'address_proof_path'),
+                    ('aadhaar_dl', 'aadhaar_dl_path'),
+                    ('selfie', 'selfie_path'),
+                    ('gumasta', 'gumasta_path'),
+                    ('udyam', 'udyam_path'),
+                    ('bank_statement', 'bank_statement_path'),
+                    ('logo', 'logo_path')
+                ]
+                
+                for form_field, db_field in document_types:
+                    file = request.files.get(form_field)
+                    if file and file.filename:
+                        # Validate file
+                        allowed_exts = {'pdf', 'jpg', 'jpeg', 'png'}
+                        if form_field in ['selfie', 'logo']:
+                            if form_field == 'logo':
+                                allowed_exts.add('svg')
+                            elif form_field == 'selfie':
+                                allowed_exts = {'jpg', 'jpeg', 'png'}
                         
-                    ext = file.filename.rsplit('.', 1)[-1].lower()
-                    if ext not in allowed_exts:
-                        flash(f'Invalid file type for {form_field.replace("_", " ").title()}. Allowed: {", ".join(allowed_exts).upper()}', 'danger')
-                        continue
-                    
-                    # Check file size
-                    file.seek(0, 2)
-                    size = file.tell()
-                    file.seek(0)
-                    if size > max_size:
-                        flash(f'File too large for {form_field.replace("_", " ").title()}. Maximum 2MB allowed.', 'danger')
-                        continue
-                    
-                    # Save file
-                    filename = f"shopkeeper_{shopkeeper.shopkeeper_id}_{form_field}.{ext}"
-                    save_path = os.path.join('app', 'static', 'shop_upload', filename)
-                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-                    file.save(save_path)
-                    
-                    # Update database
-                    rel_path = f"shop_upload/{filename}"
-                    setattr(shopkeeper, db_field, rel_path)
-                    flash(f'{form_field.replace("_", " ").title()} uploaded successfully.', 'success')
+                        max_size = 2 * 1024 * 1024  # 2MB
+                        
+                        # Get file extension
+                        if '.' not in file.filename:
+                            flash(f'Invalid file type for {form_field.replace("_", " ").title()}. File extension required.', 'warning')
+                            continue
+                            
+                        ext = file.filename.rsplit('.', 1)[-1].lower()
+                        if ext not in allowed_exts:
+                            flash(f'Invalid file type for {form_field.replace("_", " ").title()}. Allowed: {", ".join(allowed_exts).upper()}', 'warning')
+                            continue
+                        
+                        # Check file size
+                        file.seek(0, 2)
+                        size = file.tell()
+                        file.seek(0)
+                        if size > max_size:
+                            flash(f'File too large for {form_field.replace("_", " ").title()}. Maximum 2MB allowed.', 'warning')
+                            continue
+                        
+                        # Save file
+                        filename = f"shopkeeper_{shopkeeper.shopkeeper_id}_{form_field}.{ext}"
+                        save_path = os.path.join('app', 'static', 'shop_upload', filename)
+                        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                        file.save(save_path)
+                        
+                        # Update database
+                        rel_path = f"shop_upload/{filename}"
+                        setattr(shopkeeper, db_field, rel_path)
+                        flash(f'{form_field.replace("_", " ").title()} uploaded successfully.', 'success')
             
-            # Handle invoice numbering settings
-            invoice_prefix = request.form.get('invoice_prefix', '').strip()
-            invoice_starting_number = request.form.get('invoice_starting_number')
-            
-            # Update prefix (can be empty for timestamp-based numbering)
-            shopkeeper.invoice_prefix = invoice_prefix
-            
-            if invoice_starting_number:
-                try:
-                    starting_num = int(invoice_starting_number)
-                    if starting_num != shopkeeper.invoice_starting_number:
-                        reset_invoice_numbering(shopkeeper, starting_number=starting_num)
-                        if invoice_prefix:  # Only show preview if custom numbering is enabled
-                            flash(f'Invoice numbering reset. Next invoice will be: {preview_next_invoice_number(shopkeeper)}', 'info')
+                # Handle invoice numbering settings
+                invoice_prefix = safe_get_form_value('invoice_prefix')
+                invoice_starting_number_str = safe_get_form_value('invoice_starting_number')
+                
+                # Update prefix (can be empty for timestamp-based numbering)
+                if invoice_prefix is not None:
+                    shopkeeper.invoice_prefix = invoice_prefix
+                
+                # Handle invoice starting number with proper validation
+                if invoice_starting_number_str:
+                    try:
+                        starting_num = int(invoice_starting_number_str)
+                        if starting_num > 0:  # Ensure positive number
+                            # Only update if it's different from current
+                            if starting_num != shopkeeper.invoice_starting_number:
+                                shopkeeper.invoice_starting_number = starting_num
+                                shopkeeper.current_invoice_number = starting_num
+                                if invoice_prefix:  # Only show preview if custom numbering is enabled
+                                    flash(f'Invoice numbering reset. Next invoice will be: {preview_next_invoice_number(shopkeeper)}', 'info')
+                                else:
+                                    flash('Invoice numbering reset to timestamp-based method.', 'info')
                         else:
-                            flash('Invoice numbering reset to timestamp-based method.', 'info')
-                except ValueError:
-                    flash('Invalid starting number provided.', 'error')
-            
-            db.session.commit()
-            update_shopkeeper_verification(shopkeeper)
-            flash('Profile updated successfully.', 'success')
-            return redirect(url_for('shopkeeper.profile'))
+                            flash('Invoice starting number must be greater than 0.', 'warning')
+                    except (ValueError, TypeError):
+                        flash('Invalid starting number provided. Please enter a valid number.', 'warning')
+                
+                # Commit all changes
+                db.session.commit()
+                update_shopkeeper_verification(shopkeeper)
+                flash('Profile updated successfully.', 'success')
+                return redirect(url_for('shopkeeper.profile'))
+                
+            except Exception as e:
+                # Rollback on any error
+                db.session.rollback()
+                flash(f'An error occurred while updating your profile: {str(e)}', 'danger')
+                return redirect(url_for('shopkeeper.profile_edit'))
         return render_template('shopkeeper/new_edit_profile.html', 
                              shop_name=shop_name,
                              shopkeeper=shopkeeper,
@@ -355,3 +379,102 @@ def register_routes(bp):
                 db.session.commit()
                 flash('Connection rejected.', 'info')
         return redirect(request.referrer or url_for('shopkeeper.dashboard'))
+
+
+    @bp.route('/update-invoice-config', methods=['POST'])
+    @login_required
+    @shopkeeper_required
+    def update_invoice_config():
+        """API endpoint to update invoice configuration."""
+        try:
+            shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+            if not shopkeeper:
+                return jsonify({'success': False, 'message': 'Shopkeeper not found'}), 404
+
+            # Get form data with safe handling
+            invoice_prefix = request.form.get('invoice_prefix', '').strip()
+            invoice_starting_number = request.form.get('invoice_starting_number', '').strip()
+
+            # Validate starting number
+            if invoice_starting_number:
+                try:
+                    starting_number = int(invoice_starting_number)
+                    if starting_number < 1 or starting_number > 999999:
+                        return jsonify({'success': False, 'message': 'Starting number must be between 1 and 999999'}), 400
+                except ValueError:
+                    return jsonify({'success': False, 'message': 'Invalid starting number'}), 400
+            else:
+                starting_number = 1
+
+            # Validate prefix
+            if invoice_prefix and len(invoice_prefix) > 10:
+                return jsonify({'success': False, 'message': 'Invoice prefix must be 10 characters or less'}), 400
+
+            # Update shopkeeper fields
+            shopkeeper.invoice_prefix = invoice_prefix if invoice_prefix else None
+            shopkeeper.invoice_starting_number = starting_number
+            
+            # Reset current counter only if starting number changed
+            if shopkeeper.current_invoice_number != starting_number:
+                shopkeeper.current_invoice_number = starting_number
+
+            # Save to database
+            db.session.commit()
+
+            # Return success with preview
+            preview = preview_next_invoice_number(shopkeeper) if invoice_prefix else f'BILL{str(starting_number).zfill(9)}'
+            
+            return jsonify({
+                'success': True,
+                'message': 'Invoice configuration updated successfully',
+                'preview': preview
+            })
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating invoice config: {e}")
+            return jsonify({'success': False, 'message': 'An error occurred while updating configuration'}), 500
+
+
+    @bp.route('/update-template-config', methods=['POST'])
+    @login_required
+    @shopkeeper_required
+    def update_template_config():
+        """API endpoint to update template configuration."""
+        try:
+            shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+            if not shopkeeper:
+                return jsonify({'success': False, 'message': 'Shopkeeper not found'}), 404
+
+            # Get form data
+            template_choice = request.form.get('template_choice', '').strip()
+
+            # Validate template choice
+            valid_templates = ['template1', 'template2', 'template3']
+            if not template_choice or template_choice not in valid_templates:
+                return jsonify({'success': False, 'message': 'Invalid template selection'}), 400
+
+            # Update shopkeeper template choice
+            shopkeeper.template_choice = template_choice
+
+            # Save to database
+            db.session.commit()
+
+            # Get template name for response
+            template_names = {
+                'template1': 'Basic Template',
+                'template2': 'Professional Template',
+                'template3': 'Modern Template'
+            }
+
+            return jsonify({
+                'success': True,
+                'message': f'Template updated to {template_names.get(template_choice, "Unknown")} successfully',
+                'template': template_choice,
+                'template_name': template_names.get(template_choice, "Unknown")
+            })
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating template config: {e}")
+            return jsonify({'success': False, 'message': 'An error occurred while updating template configuration'}), 500
