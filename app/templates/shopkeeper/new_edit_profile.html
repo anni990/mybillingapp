@@ -135,7 +135,8 @@
                             PAN Number
                         </label>
                         <input type="text" id="pan_number" name="pan_number" value="{{ shopkeeper.pan_number or '' }}"
-                            placeholder="e.g., ABCDE1234F" maxlength="10"
+                            placeholder="Enter PAN (e.g., ABCDE1234F)" maxlength="10" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                            title="Enter 10-character PAN: 5 letters + 4 digits + 1 letter"
                             class="form-input w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent transition duration-200 text-gray-700">
                     </div>
 
@@ -188,8 +189,8 @@
                             Established Year
                         </label>
                         <input type="number" id="established_year" name="established_year"
-                            value="{{ shopkeeper.established_year or '' }}" placeholder="e.g., 2020" min="1900"
-                            max="2024"
+                            value="{{ shopkeeper.established_year or '' }}" placeholder="Enter year (e.g., 2020)" min="1800"
+                            max="2025" title="Enter establishment year between 1800 and 2025"
                             class="form-input w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition duration-200 text-gray-700">
                     </div>
 
@@ -199,7 +200,9 @@
                             GST Number
                         </label>
                         <input type="text" id="gst_number" name="gst_number" value="{{ shopkeeper.gst_number or '' }}"
-                            placeholder="e.g., 22AAAAA0000A1Z5" maxlength="15"
+                            placeholder="Enter GST Number (e.g., 22AAAAA0000A1Z5)" maxlength="15"
+                            pattern="[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}"
+                            title="Enter 15-character GST number"
                             class="form-input w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition duration-200 text-gray-700">
                     </div>
 
@@ -209,7 +212,8 @@
                             Contact Number
                         </label>
                         <input type="tel" id="contact_number" name="contact_number"
-                            value="{{ shopkeeper.contact_number or '' }}" placeholder="e.g., +91 98765 43210"
+                            value="{{ shopkeeper.contact_number or '' }}" placeholder="Enter 10-digit mobile number"
+                            maxlength="10" pattern="[6-9][0-9]{9}" title="Enter 10-digit mobile number starting with 6, 7, 8, or 9"
                             class="form-input w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition duration-200 text-gray-700">
                     </div>
 
@@ -261,7 +265,8 @@
                             Pincode
                         </label>
                         <input type="text" id="pincode" name="pincode" value="{{ shopkeeper.pincode or '' }}"
-                            placeholder="e.g., 400001" maxlength="6"
+                            placeholder="Enter 6-digit pincode" maxlength="6" pattern="[1-9][0-9]{5}"
+                            title="Enter valid 6-digit pincode"
                             class="form-input w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200 text-gray-700">
                     </div>
                 </div>
@@ -293,7 +298,8 @@
                             Account Number
                         </label>
                         <input type="text" id="account_number" name="account_number"
-                            value="{{ shopkeeper.account_number or '' }}" placeholder="Enter your account number"
+                            value="{{ shopkeeper.account_number or '' }}" placeholder="Enter bank account number (9-18 digits)"
+                            maxlength="18" pattern="[0-9]{9,18}" title="Enter bank account number (9-18 digits)"
                             class="form-input w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200 text-gray-700">
                     </div>
 
@@ -303,7 +309,8 @@
                             IFSC Code
                         </label>
                         <input type="text" id="ifsc_code" name="ifsc_code" value="{{ shopkeeper.ifsc_code or '' }}"
-                            placeholder="e.g., SBIN0000123" maxlength="11"
+                            placeholder="Enter IFSC code (e.g., SBIN0000123)" maxlength="11" pattern="[A-Z]{4}0[A-Z0-9]{6}"
+                            title="Enter 11-character IFSC code"
                             class="form-input w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200 text-gray-700">
                     </div>
 
@@ -313,7 +320,8 @@
                             UPI ID
                         </label>
                         <input type="text" id="upi_id" name="upi_id" value="{{ shopkeeper.upi_id or '' }}"
-                            placeholder="e.g., yourname@paytm"
+                            placeholder="Enter UPI ID (e.g., yourname@paytm)" pattern="[\w.-]+@[\w.-]+"
+                            title="Enter valid UPI ID (username@provider)"
                             class="form-input w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200 text-gray-700">
                     </div>
                 </div>
@@ -656,30 +664,137 @@
                     <h2 class="text-2xl font-bold text-gray-800 ml-4">Bill Template Settings</h2>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Template Selection -->
                     <div>
-                        <label for="template_choice" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i data-feather="layout" class="w-4 h-4 inline mr-2 text-indigo-500"></i>
-                            Bill Template
-                        </label>
-                        <select id="template_choice" name="template_choice"
-                            class="form-input w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 text-gray-700">
-                            <option value="template1" {{ 'selected' if shopkeeper.template_choice=='template1' else ''
-                                }}>Template 1 - Basic Format</option>
-                            <option value="template2" {{ 'selected' if shopkeeper.template_choice=='template2' or not
-                                shopkeeper.template_choice else '' }}>Template 2 - Professional Format</option>
-                            <option value="template3" {{ 'selected' if shopkeeper.template_choice=='template3' else ''
-                                }}>Template 3 - Modern Format</option>
-                        </select>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Choose Template</h3>
+                        <div class="space-y-4">
+                            <!-- Basic Template Option -->
+                            <div class="template-option border-2 border-gray-300 rounded-xl p-4 cursor-pointer hover:border-indigo-400 transition-all duration-300" 
+                                 data-template="template1"
+                                 onclick="selectTemplate('template1')">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-12 h-16 bg-white border border-gray-200 rounded overflow-hidden shadow-sm">
+                                            <img src="{{ url_for('static', filename='images/bill-templates/basic-bill-template.png') }}" 
+                                                 alt="Basic Template" 
+                                                 class="w-full h-full object-contain">
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium text-gray-800">Basic Template</h4>
+                                            <p class="text-sm text-gray-600">Simple and clean design</p>
+                                        </div>
+                                    </div>
+                                    <input type="radio" 
+                                           id="template1" 
+                                           name="template_choice" 
+                                           value="template1" 
+                                           {{ 'checked' if shopkeeper.template_choice == 'template1' else '' }}
+                                           class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                </div>
+                            </div>
+
+                            <!-- Professional Template Option -->
+                            <div class="template-option border-2 border-gray-300 rounded-xl p-4 cursor-pointer hover:border-indigo-400 transition-all duration-300" 
+                                 data-template="template2"
+                                 onclick="selectTemplate('template2')">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-12 h-16 bg-white border border-gray-200 rounded overflow-hidden shadow-sm">
+                                            <img src="{{ url_for('static', filename='images/bill-templates/professional-bill-template.png') }}" 
+                                                 alt="Professional Template" 
+                                                 class="w-full h-full object-contain">
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium text-gray-800">Professional Template</h4>
+                                            <p class="text-sm text-gray-600">Elegant design with advanced formatting</p>
+                                        </div>
+                                    </div>
+                                    <input type="radio" 
+                                           id="template2" 
+                                           name="template_choice" 
+                                           value="template2" 
+                                           {{ 'checked' if shopkeeper.template_choice == 'template2' or not shopkeeper.template_choice else '' }}
+                                           class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                </div>
+                            </div>
+
+                            <!-- Modern Template Option -->
+                            <div class="template-option border-2 border-gray-300 rounded-xl p-4 cursor-pointer hover:border-indigo-400 transition-all duration-300" 
+                                 data-template="template3"
+                                 onclick="selectTemplate('template3')">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-12 h-16 bg-white border border-gray-200 rounded overflow-hidden shadow-sm">
+                                            <img src="{{ url_for('static', filename='images/bill-templates/modern-bill-template.png') }}" 
+                                                 alt="Modern Template" 
+                                                 class="w-full h-full object-contain">
+                                        </div>
+                                        <div>
+                                            <h4 class="font-medium text-gray-800">Modern Template</h4>
+                                            <p class="text-sm text-gray-600">Contemporary design with modern elements</p>
+                                        </div>
+                                    </div>
+                                    <input type="radio" 
+                                           id="template3" 
+                                           name="template_choice" 
+                                           value="template3" 
+                                           {{ 'checked' if shopkeeper.template_choice == 'template3' else '' }}
+                                           class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- Live Preview -->
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i data-feather="eye" class="w-4 h-4 inline mr-2 text-indigo-500"></i>
-                            Template Preview
-                        </label>
-                        <div class="form-input bg-gray-50 px-4 py-3 border-2 border-gray-300 rounded-xl text-gray-600">
-                            <span id="template-preview">Professional Format</span>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Live Preview</h3>
+                        <div class="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
+                            <!-- Loading State -->
+                            <div id="templatePreviewLoading" class="hidden flex items-center justify-center h-64">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                <span class="ml-3 text-gray-600">Loading preview...</span>
+                            </div>
+                            
+                            <!-- Preview Content -->
+                            <div id="templatePreviewContent" class="text-center">
+                                <div class="w-full max-w-sm mx-auto bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                                    <img id="templatePreviewImage" 
+                                         src="{{ url_for('static', filename='images/bill-templates/' + (
+                                             'basic-bill-template.png' if shopkeeper.template_choice == 'template1' else
+                                             'modern-bill-template.png' if shopkeeper.template_choice == 'template3' else
+                                             'professional-bill-template.png'
+                                         )) }}" 
+                                         alt="Template Preview" 
+                                         class="w-full h-auto object-contain"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="w-full h-64 hidden items-center justify-center bg-gray-100 text-gray-400">
+                                        <i data-feather="image" class="w-12 h-12"></i>
+                                        <p class="ml-2">Preview not available</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <h4 id="previewTitle" class="font-semibold text-gray-800 text-lg">
+                                        {% if shopkeeper.template_choice == 'template1' %}
+                                            Basic Template
+                                        {% elif shopkeeper.template_choice == 'template3' %}
+                                            Modern Template
+                                        {% else %}
+                                            Professional Template
+                                        {% endif %}
+                                    </h4>
+                                    <p id="previewDescription" class="text-sm text-gray-600 mt-1">
+                                        {% if shopkeeper.template_choice == 'template1' %}
+                                            Simple and clean design
+                                        {% elif shopkeeper.template_choice == 'template3' %}
+                                            Contemporary design with modern elements
+                                        {% else %}
+                                            Elegant design with advanced formatting
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -783,29 +898,123 @@
         // Initialize feather icons after DOM is loaded
         feather.replace();
 
-        // Template selection preview
-        const templateSelect = document.getElementById('template_choice');
+        // Template selection preview (updated for new UI)
         const templatePreview = document.getElementById('template-preview');
 
         function updateTemplatePreview() {
-            const selected = templateSelect.value;
-            switch (selected) {
-                case 'template1':
-                    templatePreview.textContent = 'Basic Format - Simple layout with essential details';
-                    break;
-                case 'template2':
-                    templatePreview.textContent = 'Professional Format - Enhanced design with business branding';
-                    break;
-                case 'template3':
-                    templatePreview.textContent = 'Modern Format - Contemporary design with advanced features';
-                    break;
-                default:
-                    templatePreview.textContent = 'Professional Format';
+            // This function is kept for compatibility but the new UI handles preview differently
+            const checkedTemplate = document.querySelector('input[name="template_choice"]:checked');
+            if (!checkedTemplate) return;
+            
+            const selected = checkedTemplate.value;
+            if (templatePreview) {
+                switch (selected) {
+                    case 'template1':
+                        templatePreview.textContent = 'Basic Format - Simple layout with essential details';
+                        break;
+                    case 'template2':
+                        templatePreview.textContent = 'Professional Format - Enhanced design with business branding';
+                        break;
+                    case 'template3':
+                        templatePreview.textContent = 'Modern Format - Contemporary design with advanced features';
+                        break;
+                    default:
+                        templatePreview.textContent = 'Professional Format';
+                }
+            }
+            
+            // Also update the new preview if it exists
+            if (document.getElementById('templatePreviewImage')) {
+                updateEditTemplatePreview(selected);
+                updateTemplateSelection();
             }
         }
 
-        templateSelect.addEventListener('change', updateTemplatePreview);
-        updateTemplatePreview(); // Initial call
+        // Template selection functions for new UI
+        window.selectTemplate = function(templateValue) {
+            // Update radio button
+            const radioButton = document.getElementById(templateValue);
+            if (radioButton) {
+                radioButton.checked = true;
+            }
+            
+            // Update visual selection
+            updateTemplateSelection();
+            
+            // Update preview
+            updateEditTemplatePreview(templateValue);
+        };
+
+        function updateTemplateSelection() {
+            const selectedTemplate = document.querySelector('input[name="template_choice"]:checked');
+            const templateOptions = document.querySelectorAll('.template-option');
+            
+            templateOptions.forEach(option => {
+                option.classList.remove('border-indigo-500', 'bg-indigo-50');
+                option.classList.add('border-gray-300');
+            });
+            
+            if (selectedTemplate) {
+                const selectedOption = document.querySelector(`[data-template="${selectedTemplate.value}"]`);
+                if (selectedOption) {
+                    selectedOption.classList.remove('border-gray-300');
+                    selectedOption.classList.add('border-indigo-500', 'bg-indigo-50');
+                }
+            }
+        }
+
+        function updateEditTemplatePreview(templateValue) {
+            const previewImage = document.getElementById('templatePreviewImage');
+            const previewTitle = document.getElementById('previewTitle');
+            const previewDescription = document.getElementById('previewDescription');
+            const previewLoading = document.getElementById('templatePreviewLoading');
+            const previewContent = document.getElementById('templatePreviewContent');
+            
+            // Show loading state
+            previewLoading.classList.remove('hidden');
+            previewContent.classList.add('opacity-50');
+            
+            let imagePath, title, description;
+            
+            switch(templateValue) {
+                case 'template1':
+                    imagePath = '/static/images/bill-templates/basic-bill-template.png';
+                    title = 'Basic Template';
+                    description = 'Simple and clean design';
+                    break;
+                case 'template3':
+                    imagePath = '/static/images/bill-templates/modern-bill-template.png';
+                    title = 'Modern Template';
+                    description = 'Contemporary design with modern elements';
+                    break;
+                default: // template2
+                    imagePath = '/static/images/bill-templates/professional-bill-template.png';
+                    title = 'Professional Template';
+                    description = 'Elegant design with advanced formatting';
+                    break;
+            }
+            
+            // Update preview with animation
+            setTimeout(() => {
+                previewImage.src = imagePath;
+                previewTitle.textContent = title;
+                previewDescription.textContent = description;
+                previewLoading.classList.add('hidden');
+                previewContent.classList.remove('opacity-50');
+            }, 300);
+        }
+
+        // Add click listeners to radio buttons
+        document.querySelectorAll('input[name="template_choice"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    selectTemplate(this.value);
+                }
+            });
+        });
+
+        // Initialize template selection styling
+        updateTemplateSelection();
 
         // Invoice numbering preview
         const prefixInput = document.getElementById('invoice_prefix');
@@ -842,9 +1051,37 @@
                 return false;
             }
 
-            // PAN validation
+        // Clean up empty numeric fields before submission
+        const numericFields = ['established_year', 'invoice_starting_number'];
+        numericFields.forEach(fieldName => {
+            const field = document.getElementById(fieldName);
+            if (field) {
+                const value = field.value.trim();
+                if (value === '' || value === '0' || isNaN(value)) {
+                    field.value = '';  // Ensure it's truly empty for optional fields
+                }
+            }
+        });
+
+        // Clean up text fields - remove extra whitespace but preserve content
+        const textFields = ['pan_number', 'gst_number', 'ifsc_code', 'pincode', 'contact_number', 'upi_id', 'account_number'];
+        textFields.forEach(fieldName => {
+            const field = document.getElementById(fieldName);
+            if (field) {
+                // Trim whitespace and convert to uppercase for PAN, GST, IFSC
+                if (['pan_number', 'gst_number', 'ifsc_code'].includes(fieldName)) {
+                    field.value = field.value.trim().toUpperCase();
+                } else if (fieldName === 'contact_number') {
+                    // Remove any non-digit characters
+                    const digitsOnly = field.value.replace(/\D/g, '');
+                    field.value = digitsOnly;
+                } else {
+                    field.value = field.value.trim();
+                }
+            }
+        });            // PAN validation - only check format if value is provided
             const panNumber = document.getElementById('pan_number').value.trim();
-            if (panNumber) {
+            if (panNumber && panNumber.length > 0 && panNumber != None) {
                 const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
                 if (!panPattern.test(panNumber)) {
                     e.preventDefault();
@@ -854,9 +1091,9 @@
                 }
             }
 
-            // GST validation
+            // GST validation - only check format if value is provided
             const gstNumber = document.getElementById('gst_number').value.trim();
-            if (gstNumber) {
+            if (gstNumber && gstNumber.length > 0 && gstNumber != None) {
                 const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/;
                 if (!gstPattern.test(gstNumber)) {
                     e.preventDefault();
@@ -866,9 +1103,22 @@
                 }
             }
 
-            // Pincode validation
+            // Established Year validation - only check format if value is provided
+            const establishedYear = document.getElementById('established_year').value.trim();
+            if (establishedYear && establishedYear.length > 0 && establishedYear != None) {
+                const year = parseInt(establishedYear);
+                const currentYear = new Date().getFullYear();
+                if (isNaN(year) || year < 1800 || year > currentYear) {
+                    e.preventDefault();
+                    alert(`Please enter a valid year between 1800 and ${currentYear}`);
+                    document.getElementById('established_year').focus();
+                    return false;
+                }
+            }
+
+            // Pincode validation - only check format if value is provided
             const pincode = document.getElementById('pincode').value.trim();
-            if (pincode) {
+            if (pincode && pincode.length > 0 && pincode != None) {
                 const pincodePattern = /^[1-9][0-9]{5}$/;
                 if (!pincodePattern.test(pincode)) {
                     e.preventDefault();
@@ -878,9 +1128,9 @@
                 }
             }
 
-            // IFSC validation
+            // IFSC validation - only check format if value is provided
             const ifscCode = document.getElementById('ifsc_code').value.trim();
-            if (ifscCode) {
+            if (ifscCode && ifscCode.length > 0 && ifscCode != None) {
                 const ifscPattern = /^[A-Z]{4}0[A-Z0-9]{6}$/;
                 if (!ifscPattern.test(ifscCode)) {
                     e.preventDefault();
@@ -890,14 +1140,54 @@
                 }
             }
 
-            // Email validation
-            const email = document.getElementById('email').value.trim();
-            if (email) {
-                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailPattern.test(email)) {
+            // Invoice starting number validation - only check format if value is provided
+            const invoiceStartNum = document.getElementById('invoice_starting_number').value.trim();
+            if (invoiceStartNum && invoiceStartNum.length > 0 && invoiceStartNum != None) {
+                const startNum = parseInt(invoiceStartNum);
+                if (isNaN(startNum) || startNum <= 0) {
                     e.preventDefault();
-                    alert('Please enter a valid email address');
-                    document.getElementById('email').focus();
+                    alert('Please enter a valid positive number for invoice starting number');
+                    document.getElementById('invoice_starting_number').focus();
+                    return false;
+                }
+            }
+
+            // Contact number validation - only check format if value is provided
+            const contactNumber = document.getElementById('contact_number').value.trim();
+            if (contactNumber && contactNumber.length > 0 ** contactNumber != None  ) {
+                // Remove any non-digit characters for validation
+                const digitsOnly = contactNumber.replace(/\D/g, '');
+                const phonePattern = /^[6-9]\d{9}$/;
+                if (!phonePattern.test(digitsOnly)) {
+                    e.preventDefault();
+                    alert('Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9');
+                    document.getElementById('contact_number').focus();
+                    return false;
+                }
+                // Update the input value to contain only digits
+                document.getElementById('contact_number').value = digitsOnly;
+            }
+
+            // UPI ID validation - only check format if value is provided
+            const upiId = document.getElementById('upi_id').value.trim();
+            if (upiId && upiId.length > 0 && upiId != None) {
+                const upiPattern = /^[\w.-]+@[\w.-]+$/;
+                if (!upiPattern.test(upiId)) {
+                    e.preventDefault();
+                    alert('Please enter a valid UPI ID (e.g., yourname@paytm)');
+                    document.getElementById('upi_id').focus();
+                    return false;
+                }
+            }
+
+            // Account number validation - only check if value is provided
+            const accountNumber = document.getElementById('account_number').value.trim();
+            if (accountNumber && accountNumber.length > 0 && accountNumber != None) {
+                const accountPattern = /^[0-9]{9,18}$/;
+                if (!accountPattern.test(accountNumber)) {
+                    e.preventDefault();
+                    alert('Please enter a valid bank account number (9-18 digits)');
+                    document.getElementById('account_number').focus();
                     return false;
                 }
             }
@@ -955,8 +1245,82 @@
             });
         });
 
-        // Initialize Feather icons
-        feather.replace();
+        // Real-time input formatting and validation
+        
+        // PAN number formatting
+        const panInput = document.getElementById('pan_number');
+        if (panInput) {
+            panInput.addEventListener('input', function() {
+                // Convert to uppercase and limit to 10 characters
+                this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10);
+            });
+        }
+
+        // GST number formatting
+        const gstInput = document.getElementById('gst_number');
+        if (gstInput) {
+            gstInput.addEventListener('input', function() {
+                // Convert to uppercase and limit to 15 characters
+                this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 15);
+            });
+        }
+
+        // IFSC code formatting
+        const ifscInput = document.getElementById('ifsc_code');
+        if (ifscInput) {
+            ifscInput.addEventListener('input', function() {
+                // Convert to uppercase and limit to 11 characters
+                this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 11);
+            });
+        }
+
+        // Contact number formatting
+        const contactInput = document.getElementById('contact_number');
+        if (contactInput) {
+            contactInput.addEventListener('input', function() {
+                // Allow only digits and limit to 10 characters
+                this.value = this.value.replace(/\D/g, '').substring(0, 10);
+            });
+        }
+
+        // Pincode formatting
+        const pincodeInput = document.getElementById('pincode');
+        if (pincodeInput) {
+            pincodeInput.addEventListener('input', function() {
+                // Allow only digits and limit to 6 characters
+                this.value = this.value.replace(/\D/g, '').substring(0, 6);
+            });
+        }
+
+        // Account number formatting
+        const accountInput = document.getElementById('account_number');
+        if (accountInput) {
+            accountInput.addEventListener('input', function() {
+                // Allow only digits and limit to 18 characters
+                this.value = this.value.replace(/\D/g, '').substring(0, 18);
+            });
+        }
+
+        // Established year formatting
+        const yearInput = document.getElementById('established_year');
+        if (yearInput) {
+            yearInput.addEventListener('input', function() {
+                // Allow only digits and limit to 4 characters
+                this.value = this.value.replace(/\D/g, '').substring(0, 4);
+            });
+        }
+
+        // Invoice starting number formatting
+        const invoiceInput = document.getElementById('invoice_starting_number');
+        if (invoiceInput) {
+            invoiceInput.addEventListener('input', function() {
+                // Allow only positive digits
+                this.value = this.value.replace(/\D/g, '');
+                if (this.value && parseInt(this.value) <= 0) {
+                    this.value = '';
+                }
+            });
+        }
 
         // Add hover effects to form sections
         const formSections = document.querySelectorAll('.form-section');

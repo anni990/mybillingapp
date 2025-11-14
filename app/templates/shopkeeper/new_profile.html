@@ -318,30 +318,61 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Template Preview Card -->
             <div class="group bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200 hover:border-indigo-300 transition-all duration-300 hover:shadow-lg">
-                <div class="flex items-center mb-4">
-                    <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-indigo-200 transition-colors">
-                        <i data-feather="eye" class="w-5 h-5 text-indigo-600"></i>
+                <div class="flex items-center justify-between h-full">
+                    <!-- Left Side - Template Info -->
+                    <div class="flex-1 min-w-0 flex flex-col justify-between h-full">
+                        <div>
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-indigo-200 transition-colors">
+                                    <i data-feather="eye" class="w-5 h-5 text-indigo-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">Template Preview</h4>
+                                    <p class="text-sm text-gray-600">Current bill design</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="text-sm text-gray-600 mb-1">Selected Template:</div>
+                                <div class="font-medium text-gray-800 text-lg">
+                                    {% if shopkeeper.template_choice == 'template1' %}
+                                        Basic Template
+                                    {% elif shopkeeper.template_choice == 'template3' %}
+                                        Modern Template
+                                    {% else %}
+                                        Professional Template
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <button onclick="openTemplateModal()" 
+                                   class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium py-2 px-4 rounded-lg transition-colors text-sm inline-flex items-center cursor-pointer border-none">
+                                <i data-feather="settings" class="w-4 h-4 mr-2"></i>
+                                Configure Template
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="font-semibold text-gray-800">Template Preview</h4>
-                        <p class="text-sm text-gray-600">View current bill design</p>
+                    
+                    <!-- Right Side - Template Preview Image -->
+                    <div class="flex-shrink-0 ml-6">
+                        <div class="w-54 h-58 bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                            <img src="{{ url_for('static', filename='images/bill-templates/' + (
+                                'basic-bill-template.png' if shopkeeper.template_choice == 'template1' else
+                                'modern-bill-template.png' if shopkeeper.template_choice == 'template3' else
+                                'professional-bill-template.png'
+                            )) }}" 
+                                 alt="Template Preview" 
+                                 class="w-full h-full object-contain"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-full h-full hidden items-center justify-center bg-gray-100 text-gray-400 text-xs">
+                                <i data-feather="image" class="w-8 h-8"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 text-center mt-2">Preview</p>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg p-4 border border-gray-200 mb-4">
-                    <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-600">Template Style:</span>
-                        <span class="font-medium text-gray-800">
-                            {% if shopkeeper.template_choice == 'template1' %}Basic{% elif shopkeeper.template_choice == 'template3' %}Modern{% else %}Professional{% endif %}
-                        </span>
-                    </div>
-                    <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full bg-indigo-500 rounded-full" style="width: {% if shopkeeper.template_choice == 'template1' %}33%{% elif shopkeeper.template_choice == 'template3' %}100%{% else %}66%{% endif %}"></div>
-                    </div>
-                </div>
-                <button class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium py-2 px-4 rounded-lg transition-colors text-sm">
-                    <i data-feather="external-link" class="w-4 h-4 inline mr-2"></i>
-                    Preview Template
-                </button>
             </div>
 
             <!-- Numbering Settings Card -->
@@ -374,11 +405,11 @@
                     </div>
                     {% endif %}
                 </div>
-                <a href="{{ url_for('shopkeeper.profile_edit') }}" 
-                   class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium py-2 px-4 rounded-lg transition-colors text-sm inline-block text-center">
+                <button onclick="openInvoiceModal()" 
+                   class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium py-2 px-4 rounded-lg transition-colors text-sm inline-block text-center cursor-pointer border-none">
                     <i data-feather="settings" class="w-4 h-4 inline mr-2"></i>
                     Configure Settings
-                </a>
+                </button>
             </div>
         </div>
     </div>
@@ -675,6 +706,578 @@
     </div>
 </div>
 
+<!-- Invoice Configuration Modal -->
+<div id="invoiceModal" class="fixed inset-0 backdrop-blur-sm bg-black/20 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 scale-95 opacity-0" id="invoiceModalContent">
+        <!-- Modal Header -->
+        <div class="bg-emerald-200 text-emerald-600 rounded-t-2xl px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-white/30 rounded-lg flex items-center justify-center mr-3">
+                        <i data-feather="edit-3" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold">Invoice Number Configuration</h3>
+                </div>
+                <button onclick="closeInvoiceModal()" class="text-white/80 hover:text-white transition-colors">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Modal Body -->
+        <form id="invoiceConfigForm" class="p-6 space-y-6">
+            <div class="space-y-4">
+                <!-- Invoice Prefix -->
+                <div>
+                    <label for="modal_invoice_prefix" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i data-feather="tag" class="w-4 h-4 inline mr-2 text-emerald-600"></i>
+                        Invoice Prefix (Optional)
+                    </label>
+                    <input type="text" 
+                           id="modal_invoice_prefix" 
+                           name="invoice_prefix" 
+                           value="{{ shopkeeper.invoice_prefix or '' }}"
+                           placeholder="e.g., INV, BILL" 
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-sm bg-gray-50 hover:bg-white"
+                           maxlength="10">
+                    <p class="text-xs text-gray-500 mt-1">Leave empty for automatic timestamp-based numbering</p>
+                </div>
+                
+                <!-- Starting Number -->
+                <div>
+                    <label for="modal_invoice_starting_number" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i data-feather="hash" class="w-4 h-4 inline mr-2 text-emerald-600"></i>
+                        Starting Number
+                    </label>
+                    <input type="number" 
+                           id="modal_invoice_starting_number" 
+                           name="invoice_starting_number" 
+                           value="{{ shopkeeper.invoice_starting_number or 1 }}"
+                           placeholder="1" 
+                           min="1" 
+                           max="999999"
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-sm bg-gray-50 hover:bg-white">
+                    <p class="text-xs text-gray-500 mt-1">Next invoice will start from this number</p>
+                </div>
+            </div>
+            
+            <!-- Preview Section -->
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <i data-feather="eye" class="w-4 h-4 mr-2 text-emerald-600"></i>
+                    Preview
+                </h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-600">Current:</span>
+                        <span id="current-preview" class="font-mono font-bold text-emerald-700 bg-white px-2 py-1 rounded">{{ preview_next_invoice_number(shopkeeper) if shopkeeper.invoice_prefix and shopkeeper.invoice_prefix.strip() else 'BILL' + moment().format('X') }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-600">Next:</span>
+                        <span id="next-preview" class="font-mono font-bold text-blue-700 bg-white px-2 py-1 rounded">Will be generated</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-3 pt-4">
+                <button type="button" 
+                        onclick="closeInvoiceModal()" 
+                        class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors text-sm cursor-pointer">
+                    Cancel
+                </button>
+                <button type="submit" 
+                        class="flex-1 px-4 py-3 bg-emerald-200 text-emerald-600 hover:bg-emerald-300 font-medium rounded-xl transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 cursor-pointer">
+                    <i data-feather="save" class="w-4 h-4 inline mr-2"></i>
+                    Save Settings
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Template Configuration Modal -->
+<div id="templateModal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
+    <div id="templateModalContent" class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto scale-95 opacity-0 transition-all duration-300">
+        <!-- Modal Header -->
+        <div class="bg-blue-200 text-blue-600 p-4 rounded-t-xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                        <i data-feather="settings" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold">Template Configuration</h3>
+                        <!-- <p class="text-indigo-100 text-sm">Choose your preferred bill template design</p> -->
+                    </div>
+                </div>
+                <button onclick="closeTemplateModal()" 
+                        class="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6">
+            <form id="templateConfigForm">
+                <!-- Template Options Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+                    <!-- Template Selection -->
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Available Templates</h4>
+                        <div class="space-y-4">
+                            <!-- Basic Template -->
+                            <div class="template-option border border-gray-300 rounded-lg p-4 cursor-pointer hover:border-indigo-300 transition-colors" data-template="template1">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="template1" name="template_choice" value="template1" 
+                                               {{ 'checked' if shopkeeper.template_choice == 'template1' else '' }}
+                                               class="w-4 h-4 text-blue-600 mr-3">
+                                        <div>
+                                            <label for="template1" class="text-sm font-medium text-gray-900 cursor-pointer">Basic Template</label>
+                                            <p class="text-xs text-gray-500">Simple and clean design</p>
+                                        </div>
+                                    </div>
+                                    <div class="w-16 h-20 bg-gray-100 rounded border overflow-hidden">
+                                        <img src="{{ url_for('static', filename='images/bill-templates/basic-bill-template.png') }}"
+                                             alt="Basic Template" class="w-full h-full object-contain">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Professional Template -->
+                            <div class="template-option border border-gray-300 rounded-lg p-4 cursor-pointer hover:border-indigo-300 transition-colors" data-template="template2">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="template2" name="template_choice" value="template2" 
+                                               {{ 'checked' if shopkeeper.template_choice == 'template2' or not shopkeeper.template_choice else '' }}
+                                               class="w-4 h-4 text-blue-600 mr-3">
+                                        <div>
+                                            <label for="template2" class="text-sm font-medium text-gray-900 cursor-pointer">Professional Template</label>
+                                            <p class="text-xs text-gray-500">Elegant design with advanced formatting</p>
+                                        </div>
+                                    </div>
+                                    <div class="w-16 h-20 bg-gray-100 rounded border overflow-hidden">
+                                        <img src="{{ url_for('static', filename='images/bill-templates/professional-bill-template.png') }}"
+                                             alt="Professional Template" class="w-full h-full object-contain">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Modern Template -->
+                            <div class="template-option border border-gray-300 rounded-lg p-4 cursor-pointer hover:border-indigo-300 transition-colors" data-template="template3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="template3" name="template_choice" value="template3" 
+                                               {{ 'checked' if shopkeeper.template_choice == 'template3' else '' }}
+                                               class="w-4 h-4 text-blue-600 mr-3">
+                                        <div>
+                                            <label for="template3" class="text-sm font-medium text-gray-900 cursor-pointer">Modern Template</label>
+                                            <p class="text-xs text-gray-500">Contemporary design with modern elements</p>
+                                        </div>
+                                    </div>
+                                    <div class="w-16 h-20 bg-gray-100 rounded border overflow-hidden">
+                                        <img src="{{ url_for('static', filename='images/bill-templates/modern-bill-template.png') }}"
+                                             alt="Modern Template" class="w-full h-full object-contain">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Live Preview -->
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Live Preview</h4>
+                        <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                            <!-- Preview Loading -->
+                            <div id="previewLoading" class="hidden text-center py-8">
+                                <div class="animate-spin inline-block w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+                                <p class="text-sm text-gray-600 mt-2">Loading preview...</p>
+                            </div>
+                            
+                            <!-- Preview Image -->
+                            <div class="text-center">
+                                <div class="inline-block bg-white rounded-lg shadow-lg p-4 border">
+                                    <img id="templatePreviewImage" 
+                                         src="{{ url_for('static', filename='images/bill-templates/' + (
+                                             'basic-bill-template.png' if shopkeeper.template_choice == 'template1' else
+                                             'modern-bill-template.png' if shopkeeper.template_choice == 'template3' else
+                                             'professional-bill-template.png'
+                                         )) }}" 
+                                         alt="Template Preview" 
+                                         class="w-64 h-56 object-cover rounded">
+                                </div>
+                                <div class="mt-4">
+                                    <h5 id="previewTitle" class="font-semibold text-gray-800">
+                                        {% if shopkeeper.template_choice == 'template1' %}
+                                            Basic Template
+                                        {% elif shopkeeper.template_choice == 'template3' %}
+                                            Modern Template
+                                        {% else %}
+                                            Professional Template
+                                        {% endif %}
+                                    </h5>
+                                    <p id="previewDescription" class="text-sm text-gray-600">
+                                        {% if shopkeeper.template_choice == 'template1' %}
+                                            Simple and clean design
+                                        {% elif shopkeeper.template_choice == 'template3' %}
+                                            Contemporary design with modern elements
+                                        {% else %}
+                                            Elegant design with advanced formatting
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <div class="text-sm text-gray-600">
+                        <i data-feather="info" class="w-4 h-4 inline mr-1"></i>
+                        Choose a template that best represents your business style
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="button" 
+                                onclick="closeTemplateModal()" 
+                                class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors cursor-pointer">
+                            Cancel
+                        </button>
+                        <button type="button" 
+                                onclick="saveTemplateConfig()" 
+                                class="bg-blue-200 hover:bg-blue-300 text-blue-600 px-6 py-2 rounded-lg font-medium transition-colors flex items-center cursor-pointer">
+                            <i data-feather="check" class="w-4 h-4 mr-2"></i>
+                            Save Template
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Invoice Modal Functions
+    function openInvoiceModal() {
+        const modal = document.getElementById('invoiceModal');
+        const modalContent = document.getElementById('invoiceModalContent');
+        
+        modal.classList.remove('hidden');
+        
+        // Animate modal in
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+        
+        // Update preview on load
+        updateInvoicePreview();
+        
+        // Re-initialize feather icons
+        feather.replace();
+    }
+    
+    function closeInvoiceModal() {
+        const modal = document.getElementById('invoiceModal');
+        const modalContent = document.getElementById('invoiceModalContent');
+        
+        // Animate modal out
+        modalContent.classList.add('scale-95', 'opacity-0');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+    
+    // Update preview in real-time
+    function updateInvoicePreview() {
+        const prefixInput = document.getElementById('modal_invoice_prefix');
+        const startingNumberInput = document.getElementById('modal_invoice_starting_number');
+        const currentPreview = document.getElementById('current-preview');
+        const nextPreview = document.getElementById('next-preview');
+        
+        const prefix = prefixInput.value.trim();
+        const startingNumber = parseInt(startingNumberInput.value) || 1;
+        
+        if (prefix) {
+            const formattedNumber = String(startingNumber).padStart(2, '0');
+            currentPreview.textContent = `${prefix}${formattedNumber}`;
+            nextPreview.textContent = `${prefix}${String(startingNumber + 1).padStart(2, '0')}`;
+        } else {
+            currentPreview.textContent = 'BILL' + Date.now().toString().slice(-9);
+            nextPreview.textContent = 'Will be generated automatically';
+        }
+    }
+    
+    // Add event listeners for real-time preview
+    document.addEventListener('DOMContentLoaded', function() {
+        const prefixInput = document.getElementById('modal_invoice_prefix');
+        const startingNumberInput = document.getElementById('modal_invoice_starting_number');
+        
+        if (prefixInput) {
+            prefixInput.addEventListener('input', updateInvoicePreview);
+        }
+        if (startingNumberInput) {
+            startingNumberInput.addEventListener('input', updateInvoicePreview);
+        }
+    });
+    
+    // Form submission
+    document.getElementById('invoiceConfigForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        
+        // Show loading state
+        submitButton.innerHTML = '<i data-feather="loader" class="w-4 h-4 inline mr-2 animate-spin"></i>Saving...';
+        submitButton.disabled = true;
+        feather.replace();
+        
+        try {
+            const response = await fetch('/shopkeeper/update-invoice-config', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Show success message
+                showFlashMessage('Invoice configuration updated successfully!', 'success');
+                
+                // Update the main page preview
+                location.reload();
+                
+                // Close modal
+                closeInvoiceModal();
+            } else {
+                showFlashMessage(result.message || 'Failed to update configuration', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showFlashMessage('An error occurred while updating configuration', 'error');
+        } finally {
+            // Restore button
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+            feather.replace();
+        }
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('invoiceModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeInvoiceModal();
+        }
+    });
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !document.getElementById('invoiceModal').classList.contains('hidden')) {
+            closeInvoiceModal();
+        }
+    });
+    
+    // Template Modal Functions
+    function openTemplateModal() {
+        const modal = document.getElementById('templateModal');
+        const modalContent = document.getElementById('templateModalContent');
+        
+        modal.classList.remove('hidden');
+        
+        // Animate modal in
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+        
+        // Setup template option listeners
+        setupTemplateListeners();
+        
+        // Re-initialize feather icons
+        feather.replace();
+    }
+    
+    function closeTemplateModal() {
+        const modal = document.getElementById('templateModal');
+        const modalContent = document.getElementById('templateModalContent');
+        
+        // Animate modal out
+        modalContent.classList.add('scale-95', 'opacity-0');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+    
+    function setupTemplateListeners() {
+        const templateOptions = document.querySelectorAll('.template-option');
+        const radioButtons = document.querySelectorAll('input[name="template_choice"]');
+        
+        // Add click listeners to template option divs
+        templateOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const templateValue = this.dataset.template;
+                const radioButton = document.getElementById(templateValue);
+                if (radioButton) {
+                    radioButton.checked = true;
+                    updateTemplatePreview(templateValue);
+                    updateTemplateSelection();
+                }
+            });
+        });
+        
+        // Add change listeners to radio buttons
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    updateTemplatePreview(this.value);
+                    updateTemplateSelection();
+                }
+            });
+        });
+        
+        // Update initial selection styling
+        updateTemplateSelection();
+    }
+    
+    function updateTemplateSelection() {
+        const selectedTemplate = document.querySelector('input[name="template_choice"]:checked');
+        const templateOptions = document.querySelectorAll('.template-option');
+        
+        templateOptions.forEach(option => {
+            option.classList.remove('border-indigo-500', 'bg-indigo-50');
+            option.classList.add('border-gray-300');
+        });
+        
+        if (selectedTemplate) {
+            const selectedOption = document.querySelector(`[data-template="${selectedTemplate.value}"]`);
+            if (selectedOption) {
+                selectedOption.classList.remove('border-gray-300');
+                selectedOption.classList.add('border-indigo-500', 'bg-indigo-50');
+            }
+        }
+    }
+    
+    function updateTemplatePreview(templateValue) {
+        const previewImage = document.getElementById('templatePreviewImage');
+        const previewTitle = document.getElementById('previewTitle');
+        const previewDescription = document.getElementById('previewDescription');
+        const previewLoading = document.getElementById('previewLoading');
+        
+        // Show loading state
+        previewLoading.classList.remove('hidden');
+        
+        let imagePath, title, description;
+        
+        switch(templateValue) {
+            case 'template1':
+                imagePath = '/static/images/bill-templates/basic-bill-template.png';
+                title = 'Basic Template';
+                description = 'Simple and clean design';
+                break;
+            case 'template3':
+                imagePath = '/static/images/bill-templates/modern-bill-template.png';
+                title = 'Modern Template';
+                description = 'Contemporary design with modern elements';
+                break;
+            default: // template2
+                imagePath = '/static/images/bill-templates/professional-bill-template.png';
+                title = 'Professional Template';
+                description = 'Elegant design with advanced formatting';
+                break;
+        }
+        
+        // Update preview image
+        setTimeout(() => {
+            previewImage.src = imagePath;
+            previewTitle.textContent = title;
+            previewDescription.textContent = description;
+            previewLoading.classList.add('hidden');
+        }, 200);
+    }
+    
+    async function saveTemplateConfig() {
+        const selectedTemplate = document.querySelector('input[name="template_choice"]:checked');
+        
+        if (!selectedTemplate) {
+            showFlashMessage('Please select a template', 'warning');
+            return;
+        }
+        
+        const submitButton = event.target;
+        const originalText = submitButton.innerHTML;
+        
+        // Show loading state
+        submitButton.innerHTML = '<i data-feather="loader" class="w-4 h-4 inline mr-2 animate-spin"></i>Saving...';
+        submitButton.disabled = true;
+        feather.replace();
+        
+        try {
+            const formData = new FormData();
+            formData.append('template_choice', selectedTemplate.value);
+            
+            const response = await fetch('/shopkeeper/update-template-config', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showFlashMessage('Template updated successfully!', 'success');
+                
+                // Update the main page preview
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+                
+                // Close modal
+                closeTemplateModal();
+            } else {
+                showFlashMessage(result.message || 'Failed to update template', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showFlashMessage('An error occurred while updating template', 'error');
+        } finally {
+            // Restore button
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+            feather.replace();
+        }
+    }
+    
+    // Close template modal when clicking outside
+    document.getElementById('templateModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeTemplateModal();
+        }
+    });
+    
+    // Close template modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !document.getElementById('templateModal').classList.contains('hidden')) {
+            closeTemplateModal();
+        }
+    });
+</script>
+
+</div>
+
 <script>
     // Initialize Feather icons
     feather.replace();
@@ -683,6 +1286,22 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize feather icons after DOM is loaded
         feather.replace();
+        
+        // Check URL parameters for modal opening
+        const urlParams = new URLSearchParams(window.location.search);
+        const modalParam = urlParams.get('modal');
+        
+        if (modalParam === 'template') {
+            // Wait a bit for DOM to be ready then open template modal
+            setTimeout(() => {
+                openTemplateModal();
+            }, 100);
+        } else if (modalParam === 'invoice') {
+            // Wait a bit for DOM to be ready then open invoice modal
+            setTimeout(() => {
+                openInvoiceModal();
+            }, 100);
+        }
         
         // Add hover effects to info cards
         const infoCards = document.querySelectorAll('.info-card');
