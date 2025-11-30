@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us - MyBillingApp | Effortless Billing, Unlimited Growth</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='../../../../static/logo/final mybillingapp favicon 32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='../../../../static/logo/final mybillingapp favicon 16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='images/site.webmanifest') }}">
+    <meta name="theme-color" content="#ed6a3e">
+    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -46,8 +56,15 @@
     <!-- Header -->
     <header class="bg-white shadow-lg sticky top-0 z-50">
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <a href="{{ url_for('home.index') }}" class="text-2xl sm:text-3xl font-bold theme-primary tracking-tight">
-                MyBillingApp
+            <a href="{{ url_for('home.index') }}"
+                class="flex items-center space-x-3 text-2xl sm:text-3xl font-bold theme-primary tracking-tight">
+                <!-- Logo Image -->
+                <img src="{{ url_for('static', filename='../../../../static/logo/final mybillingapp logo 1.png') }}" 
+                        alt="MyBillingApp Logo" 
+                        class="h-12 w-12 object-contain"
+                        onerror="this.style.display='none'">
+                <!-- Logo Text -->
+                <span>MyBillingApp</span>
             </a>
             
             <div class="md:hidden flex items-center">
@@ -60,6 +77,7 @@
 
             <div class="hidden md:flex items-center space-x-6">
                 <div class="flex space-x-6 text-gray-700 font-medium">
+                    <a href="{{ url_for('home.index') }}"class="hover:theme-primary transition duration-300">Home</a>
                     <a href="{{ url_for('home.features') }}" class="hover:theme-primary transition duration-300">Features</a>
                     <a href="{{ url_for('home.pricing') }}" class="hover:theme-primary transition duration-300">Pricing</a>
                     <a href="{{ url_for('home.about') }}" class="theme-primary font-semibold">About Us</a>
