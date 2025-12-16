@@ -191,18 +191,21 @@ def register_routes(bp):
             db.session.commit()
             
             # Process with Gemini AI
-            success = _process_bill_with_ai(purchase_bill, file_path, file_ext)
+            result = _process_bill_with_ai(purchase_bill, file_path, file_ext)
             
-            if success:
+            if result['success']:
                 return jsonify({
                     'success': True, 
-                    'message': 'Purchase bill scanned and processed successfully!',
+                    'message': result['message'],
                     'purchase_bill_id': purchase_bill.purchase_bill_id
                 })
             else:
+                # Handle different message types (warning for API key, error for failures)
+                message_type = result.get('message_type', 'error')
                 return jsonify({
                     'success': False, 
-                    'message': 'Bill uploaded but processing failed. Please check the file and try again.'
+                    'message': result['message'],
+                    'message_type': message_type
                 })
                 
         except Exception as e:
@@ -481,10 +484,17 @@ def _process_bill_with_ai(purchase_bill, file_path, file_ext):
         result = gemini_service.extract_purchase_bill_data(file_data, file_ext)
         
         if not result['success']:
-            purchase_bill.processing_status = 'failed'
-            purchase_bill.error_message = result.get('error', 'Unknown error')
-            db.session.commit()
-            return False
+            # Handle API key missing warning differently from actual errors
+            if result.get('message_type') == 'warning':
+                purchase_bill.processing_status = 'pending'
+                purchase_bill.error_message = result.get('error', 'Unknown error')
+                db.session.commit()
+                return {'success': False, 'message_type': 'warning', 'message': result.get('error', 'This feature is coming soon!')}
+            else:
+                purchase_bill.processing_status = 'failed'
+                purchase_bill.error_message = result.get('error', 'Unknown error')
+                db.session.commit()
+                return {'success': False, 'message_type': 'error', 'message': 'Processing failed. Please try again.'}
         
         # Store raw response for debugging
         purchase_bill.raw_llm_response = result.get('raw_response', '')
@@ -592,11 +602,11 @@ def _process_bill_with_ai(purchase_bill, file_path, file_ext):
         db.session.commit()
         
         current_app.logger.info(f"Purchase bill processed: {products_added} new products, {products_updated} updated")
-        return True
+        return {'success': True, 'message_type': 'success', 'message': 'Purchase bill processed successfully!'}
         
     except Exception as e:
         current_app.logger.error(f"Error processing bill with AI: {str(e)}")
         purchase_bill.processing_status = 'failed'
         purchase_bill.error_message = str(e)
         db.session.rollback()
-        return False
+        return {'success': False, 'message_type': 'error', 'message': 'Processing failed. Please try again.'}

@@ -372,7 +372,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     showConfirmationModal(data.bill_data);
                 } else {
                     console.error('Processing failed:', data); // Debug logging
-                    showNotification('Error processing bill: ' + (data.error || 'No data extracted'), 'error');
+                    const messageType = data.message_type || 'error';
+                    const message = data.error || 'No data extracted';
+                    showNotification(message, messageType);
                     resetFormState();
                 }
             })

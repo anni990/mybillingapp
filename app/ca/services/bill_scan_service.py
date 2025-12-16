@@ -24,14 +24,24 @@ class CABillScanService:
         """Configure Gemini AI with API key."""
         api_key = current_app.config.get('GEMINI_API_KEY')
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in configuration")
-        genai.configure(api_key=api_key)
+            return False
+        try:
+            genai.configure(api_key=api_key)
+            return True
+        except Exception:
+            return False
     
     @staticmethod
     def extract_bill_data(image_data: bytes, file_type: str) -> Dict:
         """Extract bill data from image using Gemini AI."""
         try:
-            CABillScanService.configure_gemini()
+            # Check if Gemini is configured
+            if not CABillScanService.configure_gemini():
+                return {
+                    'success': False, 
+                    'message_type': 'warning',
+                    'error': 'This feature is coming soon!'
+                }
             
             # Convert image to base64
             if file_type.lower() in ['jpg', 'jpeg', 'png']:

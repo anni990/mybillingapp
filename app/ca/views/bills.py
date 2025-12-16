@@ -197,7 +197,15 @@ def register_routes(bp):
                 extraction_result = CABillScanService.extract_bill_data(file_data, file_extension)
                 
                 if not extraction_result['success']:
-                    return jsonify({'success': False, 'error': f'Error extracting bill data: {extraction_result["error"]}'})
+                    # Check if it's a warning message (e.g., feature coming soon)
+                    message_type = extraction_result.get('message_type', 'error')
+                    error_message = extraction_result['error']
+                    
+                    return jsonify({
+                        'success': False, 
+                        'error': error_message,
+                        'message_type': message_type
+                    })
                 
                 # Return extracted data for user confirmation
                 return jsonify({

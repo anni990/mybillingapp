@@ -15,11 +15,19 @@ class GeminiService:
     def __init__(self):
         """Initialize Gemini service with API key from environment."""
         self.api_key = os.getenv('GEMINI_API_KEY')
-        if not self.api_key:
-            raise ValueError("GEMINI_API_KEY not found in environment variables")
+        self.model = None
         
-        genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        if self.api_key:
+            try:
+                genai.configure(api_key=self.api_key)
+                self.model = genai.GenerativeModel('gemini-2.5-flash')
+            except Exception as e:
+                current_app.logger.error(f"Error configuring Gemini: {str(e)}")
+                self.model = None
+    
+    def is_configured(self) -> bool:
+        """Check if Gemini service is properly configured."""
+        return self.api_key is not None and self.model is not None
     
     def extract_purchase_bill_data(self, image_data: bytes, file_type: str) -> Dict:
         """
@@ -32,6 +40,15 @@ class GeminiService:
         Returns:
             Dictionary containing extracted bill information
         """
+        # Check if service is configured
+        if not self.is_configured():
+            return {
+                'success': False,
+                'error': 'This feature is coming soon!',
+                'message_type': 'warning',
+                'data': None
+            }
+        
         try:
             # Prepare the prompt for optimal extraction
             prompt = self._get_extraction_prompt()

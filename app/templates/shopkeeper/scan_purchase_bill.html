@@ -565,7 +565,10 @@
                         window.location.href = '{{ url_for("shopkeeper.purchase_bills") }}';
                     }, 2000);
                 } else {
-                    showNotification('Error: ' + result.message, 'error');
+                    // Handle different message types (warning for API key missing, error for other failures)
+                    const messageType = result.message_type || 'error';
+                    const messagePrefix = messageType === 'warning' ? '' : 'Error: ';
+                    showNotification(messagePrefix + result.message, messageType);
                     filePreviewSection.classList.remove('hidden');
                 }
             } catch (error) {
