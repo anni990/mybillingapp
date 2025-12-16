@@ -1,0 +1,648 @@
+{% extends "ca/ca_base.html" %}
+
+{% block title %}Scan Bills - MyBillingApp{% endblock %}
+
+{% block firm_name %} {{ firm_name }} {% endblock %}
+
+{% block ca_content %}
+<div class="bg-slate-50 h-screen overflow-hidden flex flex-col" style="height: calc(100vh - 160px);">
+    <!-- Compact Header -->
+    <!-- <div class="bg-white border-b border-slate-200 px-6 py-2">
+        <div class="flex items-center justify-between max-w-7xl mx-auto w-full">
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">Scan Bills</h1>
+                <p class="text-xs text-orange-600 font-medium">{{ firm_name }}</p>
+            </div>
+            <a href="{{ url_for('ca.bills_panel') }}" 
+               class="inline-flex items-center px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 bg-white hover:bg-slate-50 transition-colors">
+                <i data-feather="arrow-left" class="w-3.5 h-3.5 mr-2"></i>
+                Back to Bills
+            </a>
+        </div>
+    </div> -->
+
+    <!-- Main Content -->
+    <div class="flex-1 flex">
+        <!-- Left Side - Upload Functionality -->
+        <div class="w-1/2 p-6 border-r border-slate-200">
+            <div class="h-full flex flex-col">
+                <!-- Upload Form -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6 flex-1" style="max-height: calc(100vh - 180px);">
+                    <form method="POST" enctype="multipart/form-data" id="scanForm" class="h-full flex flex-col space-y-4">
+                        
+                        <!-- Merged Title and Client Selection -->
+                        <div class="text-center mb-4">
+                            <h2 class="text-xl font-bold text-slate-800 mb-2">Upload & Save Bill</h2>
+                            <p class="text-sm text-slate-600">Select client and upload bill for AI analysis</p>
+                        </div>
+
+                        <!-- Client Selection -->
+                        <div>
+                            <label for="client_id" class="block text-sm font-medium text-slate-700 mb-2">
+                                <i data-feather="user" class="w-4 h-4 inline mr-2"></i>
+                                Select Client *
+                            </label>
+                            {% if clients %}
+                                <select id="client_id" name="client_id" required
+                                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm">
+                                    <option value="">Choose a client...</option>
+                                    {% for client in clients %}
+                                        <option value="{{ client.shopkeeper_id }}" 
+                                                {% if selected_client_id and selected_client_id == client.shopkeeper_id %}selected{% endif %}>
+                                            {{ client.shop_name }} 
+                                            {% if client.owner_name and client.owner_name != 'N/A' %}
+                                                - {{ client.owner_name }}
+                                            {% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <div class="bg-orange-50 rounded-lg p-4 text-center border border-orange-200">
+                                    <i data-feather="alert-circle" class="w-8 h-8 text-orange-500 mx-auto mb-2"></i>
+                                    <p class="text-orange-700 mb-3">No clients found</p>
+                                    <a href="{{ url_for('ca.add_client') }}" 
+                                       class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                                        <i data-feather="user-plus" class="w-4 h-4 mr-2"></i>
+                                        Add Client
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {% if clients %}
+                        <!-- File Upload Area -->
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">
+                                <i data-feather="upload" class="w-4 h-4 inline mr-2"></i>
+                                Upload Bill Document *
+                            </label>
+                            
+                            <div class="upload-area border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-orange-400 hover:bg-orange-50 transition-all cursor-pointer h-32 flex flex-col justify-center"
+                                 id="uploadArea">
+                                <div id="uploadContent">
+                                    <i data-feather="cloud-upload" class="w-10 h-10 text-slate-400 mx-auto mb-3"></i>
+                                    <p class="text-slate-600 mb-1">Click to upload or drag & drop</p>
+                                    <p class="text-sm text-slate-500">PDF, JPG, PNG (Max 10MB)</p>
+                                </div>
+                                <input type="file" id="bill_image" name="bill_image" accept=".jpg,.jpeg,.png,.pdf" required class="hidden">
+                            </div>
+
+                            <!-- File Info (Hidden by default) -->
+                            <div id="fileInfo" class="hidden mt-4">
+                                <div class="bg-slate-100 rounded-lg p-4 flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i data-feather="file" class="w-5 h-5 text-slate-500 mr-3"></i>
+                                        <div>
+                                            <p class="text-sm font-medium text-slate-900" id="fileName"></p>
+                                            <p class="text-xs text-slate-500" id="fileSize"></p>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="clearFile()" class="text-red-500 hover:text-red-700 p-1">
+                                        <i data-feather="x" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-3">
+                            <button type="button" id="cameraBtn" class="md:hidden flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-medium hover:bg-slate-200 transition-colors">
+                                <i data-feather="camera" class="w-4 h-4 mr-2 inline"></i>
+                                Camera
+                            </button>
+                            <button type="submit" id="submitBtn" disabled
+                                    class="flex-1 bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i data-feather="zap" class="w-4 h-4 mr-2 inline"></i>
+                                <span id="submitText">Process Bill</span>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Preview Area -->
+        <div class="w-1/2 p-6">
+            <div class="h-full">
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6 h-full" style="max-height: calc(100vh - 180px);">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-slate-800">
+                            <i data-feather="eye" class="w-5 h-5 inline mr-2"></i>
+                            Preview
+                        </h3>
+                    </div>
+                    
+                    <!-- No File State -->
+                    <div id="noFileState" class="flex flex-col items-center justify-center h-full text-center">
+                        <div class="bg-slate-100 rounded-full p-8 mb-4">
+                            <i data-feather="image" class="w-16 h-16 text-slate-400"></i>
+                        </div>
+                        <h4 class="text-lg font-medium text-slate-600 mb-2">No Bill Uploaded</h4>
+                        <p class="text-sm text-slate-500">Upload a bill document to see preview</p>
+                    </div>
+                    
+                    <!-- File Preview -->
+                    <div id="filePreview" class="hidden h-full">
+                        <div class="border border-slate-200 rounded-lg p-4 h-full flex flex-col">
+                            <div class="flex-1 flex items-center justify-center bg-slate-50 rounded-lg">
+                                <!-- Image Preview -->
+                                <img id="imagePreview" class="hidden max-w-full max-h-full object-contain rounded">
+                                <!-- PDF Preview -->
+                                <div id="pdfPreview" class="hidden text-center">
+                                    <i data-feather="file-text" class="w-16 h-16 text-orange-500 mx-auto mb-4"></i>
+                                    <p class="text-slate-600 font-medium">PDF Document</p>
+                                    <p class="text-sm text-slate-500 mt-1">Ready for processing</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-slate-200">
+                                <p class="text-sm text-slate-600" id="previewFileName"></p>
+                                <p class="text-xs text-slate-500" id="previewFileSize"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" class="fixed inset-0 backdrop-blur-sm bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto mb-6"></div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Processing Bill</h3>
+            <p class="text-slate-600">AI is extracting bill information...</p>
+        </div>
+    </div>
+
+    <!-- Data Confirmation Modal -->
+    <div id="confirmationModal" class="fixed inset-0 backdrop-blur-sm bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-200">
+                <h3 class="text-xl font-bold text-slate-900 flex items-center">
+                    <i data-feather="check-circle" class="w-6 h-6 text-green-500 mr-2"></i>
+                    Bill Data Extracted
+                </h3>
+                <p class="text-slate-600 mt-1">Please review the extracted information before saving</p>
+            </div>
+            
+            <div class="p-6">
+                <div id="extractedData" class="space-y-4">
+                    <!-- Extracted data will be populated here -->
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-slate-200 flex justify-end space-x-4">
+                <button type="button" id="cancelSave" 
+                        class="px-6 py-3 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors">
+                    Cancel
+                </button>
+                <button type="button" id="confirmSave"
+                        class="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium transition-colors">
+                    <i data-feather="save" class="w-4 h-4 mr-2 inline"></i>
+                    Save Bill Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Notification System -->
+<div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2">
+    <!-- Notifications will be added here dynamically -->
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('bill_image');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const processingModal = document.getElementById('processingModal');
+    const confirmationModal = document.getElementById('confirmationModal');
+    const scanForm = document.getElementById('scanForm');
+    const clientSelect = document.getElementById('client_id');
+    
+    // Preview elements
+    const noFileState = document.getElementById('noFileState');
+    const filePreview = document.getElementById('filePreview');
+    const imagePreview = document.getElementById('imagePreview');
+    const pdfPreview = document.getElementById('pdfPreview');
+    const previewFileName = document.getElementById('previewFileName');
+    const previewFileSize = document.getElementById('previewFileSize');
+    
+    let extractedBillData = null;
+
+    // Upload area interactions
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('border-orange-400', 'bg-orange-50');
+    });
+    
+    uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('border-orange-400', 'bg-orange-50');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('border-orange-400', 'bg-orange-50');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect();
+        }
+    });
+
+    fileInput.addEventListener('change', handleFileSelect);
+    if(clientSelect) clientSelect.addEventListener('change', checkFormValidity);
+
+    function handleFileSelect() {
+        const file = fileInput.files[0];
+        if (file) {
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+            if (!allowedTypes.includes(file.type)) {
+                showNotification('Invalid format. Please use JPG, PNG, or PDF.', 'error');
+                clearFile();
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                showNotification('File too large (Max 10MB).', 'error');
+                clearFile();
+                return;
+            }
+
+            // Update file info
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.remove('hidden');
+            
+            // Show preview
+            showFilePreview(file);
+            checkFormValidity();
+        }
+    }
+    
+    function showFilePreview(file) {
+        noFileState.classList.add('hidden');
+        filePreview.classList.remove('hidden');
+        
+        previewFileName.textContent = file.name;
+        previewFileSize.textContent = formatFileSize(file.size);
+        
+        if (file.type.startsWith('image/')) {
+            // Show image preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+                pdfPreview.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type === 'application/pdf') {
+            // Show PDF icon
+            imagePreview.classList.add('hidden');
+            pdfPreview.classList.remove('hidden');
+        }
+    }
+
+    window.clearFile = function() {
+        fileInput.value = '';
+        fileInfo.classList.add('hidden');
+        
+        // Hide preview and show no file state
+        filePreview.classList.add('hidden');
+        noFileState.classList.remove('hidden');
+        imagePreview.classList.add('hidden');
+        pdfPreview.classList.add('hidden');
+        
+        checkFormValidity();
+    }
+
+    function checkFormValidity() {
+        const clientSelected = clientSelect && clientSelect.value !== '';
+        const fileSelected = fileInput.files.length > 0;
+        submitBtn.disabled = !(clientSelected && fileSelected);
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + ['B', 'KB', 'MB', 'GB'][i];
+    }
+
+    // Form submission with confirmation flow
+    scanForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!submitBtn.disabled) {
+            submitBtn.disabled = true;
+            submitText.textContent = 'Processing...';
+            processingModal.classList.remove('hidden');
+            
+            // Create FormData and submit via fetch for processing only
+            const formData = new FormData();
+            formData.append('client_id', clientSelect.value);
+            formData.append('bill_image', fileInput.files[0]);
+            formData.append('action', 'process_bill');
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                processingModal.classList.add('hidden');
+                console.log('Server response:', data); // Debug logging
+                
+                if (data.success && data.bill_data) {
+                    console.log('Extracted bill data:', data.bill_data); // Debug logging
+                    extractedBillData = data.bill_data;
+                    showConfirmationModal(data.bill_data);
+                } else {
+                    console.error('Processing failed:', data); // Debug logging
+                    const messageType = data.message_type || 'error';
+                    const message = data.error || 'No data extracted';
+                    showNotification(message, messageType);
+                    resetFormState();
+                }
+            })
+            .catch(error => {
+                processingModal.classList.add('hidden');
+                console.error('Error:', error);
+                showNotification('Error processing bill: ' + error.message, 'error');
+                resetFormState();
+            });
+        }
+    });
+    
+    function showConfirmationModal(billData) {
+        console.log('Bill data received:', billData); // Debug logging
+        const extractedDataDiv = document.getElementById('extractedData');
+        extractedDataDiv.innerHTML = formatExtractedData(billData);
+        confirmationModal.classList.remove('hidden');
+        feather.replace(); // Refresh icons
+    }
+    
+    function formatExtractedData(data) {
+        console.log('Formatting data:', data); // Debug logging
+        
+        if (!data) {
+            return '<p class="text-red-500">No data available to display</p>';
+        }
+        
+        // Handle nested structure from Gemini AI response
+        const vendorInfo = data.vendor_info || {};
+        const billInfo = data.bill_info || {};
+        const customerInfo = data.customer_info || {};
+        const items = data.items || [];
+        
+        // Extract values with multiple fallbacks
+        const billNumber = billInfo.bill_number || data.bill_number || data.billNumber || data.invoice_number || 'N/A';
+        const billDate = billInfo.bill_date || data.bill_date || data.billDate || data.date || 'N/A';
+        const totalAmount = billInfo.total_amount || data.total_amount || data.totalAmount || data.total || '0.00';
+        const vendorName = vendorInfo.vendor_name || data.vendor_name || data.vendorName || data.vendor || data.supplier || 'N/A';
+        const vendorAddress = vendorInfo.vendor_address || data.vendor_address || '';
+        const vendorGst = vendorInfo.vendor_gst || data.vendor_gst || '';
+        const customerName = customerInfo.customer_name || data.customer_name || '';
+        
+        // Calculate GST amount from items if not directly available
+        let gstAmount = data.gst_amount || data.gstAmount || '0.00';
+        if (!gstAmount || gstAmount === '0.00') {
+            let calculatedGst = 0;
+            items.forEach(item => {
+                const itemTotal = parseFloat(item.total_amount || 0);
+                const gstRate = parseFloat(item.gst_rate || 0);
+                calculatedGst += (itemTotal * gstRate) / (100 + gstRate);
+            });
+            gstAmount = calculatedGst.toFixed(2);
+        }
+        
+        return `
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-50 p-4 rounded-lg">
+                    <label class="text-xs font-medium text-slate-500 uppercase tracking-wider">Bill Number</label>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${billNumber}</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg">
+                    <label class="text-xs font-medium text-slate-500 uppercase tracking-wider">Date</label>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${billDate}</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg">
+                    <label class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Amount</label>
+                    <p class="text-lg font-bold text-green-600 mt-1">₹${parseFloat(totalAmount || 0).toFixed(2)}</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg">
+                    <label class="text-xs font-medium text-slate-500 uppercase tracking-wider">GST Amount</label>
+                    <p class="text-lg font-bold text-blue-600 mt-1">₹${parseFloat(gstAmount || 0).toFixed(2)}</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg col-span-2">
+                    <label class="text-xs font-medium text-slate-500 uppercase tracking-wider">Vendor/Supplier</label>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${vendorName}</p>
+                    ${vendorAddress ? `<p class="text-sm text-slate-600 mt-1">${vendorAddress}</p>` : ''}
+                    ${vendorGst ? `<p class="text-xs text-slate-500 mt-1">GST: ${vendorGst}</p>` : ''}
+                </div>
+                ${customerName ? `
+                <div class="bg-blue-50 p-4 rounded-lg col-span-2">
+                    <label class="text-xs font-medium text-blue-600 uppercase tracking-wider">Customer Information</label>
+                    <p class="text-sm font-medium text-blue-900 mt-1">${customerName}</p>
+                </div>
+                ` : ''}
+            </div>
+            ${items && items.length > 0 ? `
+                <div class="mt-6">
+                    <h4 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                        <i data-feather="list" class="w-5 h-5 mr-2"></i>
+                        Items (${items.length})
+                    </h4>
+                    <div class="space-y-3 max-h-40 overflow-y-auto border border-slate-200 rounded-lg">
+                        ${items.map(item => {
+                            const itemName = item.product_name || item.name || item.description || item.product || 'Unknown Item';
+                            const itemAmount = item.total_amount || item.amount || item.price || item.cost || '0.00';
+                            const itemQty = item.quantity || item.qty || '';
+                            const itemPrice = item.unit_price || item.price || '';
+                            const gstRate = item.gst_rate || '';
+                            const hsnCode = item.hsn_code || '';
+                            return `
+                                <div class="py-3 px-4 bg-white border-b border-slate-100 last:border-b-0">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <span class="text-sm font-medium text-slate-900">${itemName}</span>
+                                            ${hsnCode ? `<span class="text-xs text-slate-500 ml-2">HSN: ${hsnCode}</span>` : ''}
+                                            <div class="flex items-center space-x-4 mt-1 text-xs text-slate-500">
+                                                ${itemQty ? `<span>Qty: ${itemQty}</span>` : ''}
+                                                ${itemPrice ? `<span>Price: ₹${parseFloat(itemPrice).toFixed(2)}</span>` : ''}
+                                                ${gstRate ? `<span>GST: ${gstRate}%</span>` : ''}
+                                            </div>
+                                        </div>
+                                        <span class="text-sm font-bold text-green-600">₹${parseFloat(itemAmount || 0).toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : `
+                <div class="mt-6 text-center py-8 bg-slate-50 rounded-lg">
+                    <i data-feather="package" class="w-12 h-12 text-slate-400 mx-auto mb-2"></i>
+                    <p class="text-slate-600">No items found in the bill</p>
+                </div>
+            `}
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p class="text-sm text-blue-800">
+                    <i data-feather="info" class="w-4 h-4 inline mr-2"></i>
+                    Please verify the extracted information before saving to database.
+                </p>
+            </div>
+        `;
+    }
+    
+    // Confirmation modal handlers
+    document.getElementById('cancelSave').addEventListener('click', function() {
+        confirmationModal.classList.add('hidden');
+        extractedBillData = null;
+        resetFormState();
+    });
+    
+    document.getElementById('confirmSave').addEventListener('click', function() {
+        if (extractedBillData) {
+            const confirmBtn = this;
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i data-feather="loader" class="w-4 h-4 mr-2 inline animate-spin"></i>Saving...';
+            
+            // Save the data to database
+            const saveData = {
+                action: 'save_bill',
+                client_id: clientSelect.value,
+                bill_data: extractedBillData
+            };
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(saveData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showNotification('Bill data saved successfully!', 'success');
+                    confirmationModal.classList.add('hidden');
+                    resetFormState();
+                    clearFile();
+                } else {
+                    showNotification('Error saving bill: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Save error:', error);
+                showNotification('Error saving bill: ' + error.message, 'error');
+            })
+            .finally(() => {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i data-feather="save" class="w-4 h-4 mr-2 inline"></i>Save Bill Data';
+                feather.replace();
+            });
+        }
+    });
+    
+    function resetFormState() {
+        submitBtn.disabled = false;
+        submitText.textContent = 'Process Bill';
+    }
+
+    // Camera functionality
+    const cameraBtn = document.getElementById('cameraBtn');
+    if (cameraBtn) {
+        cameraBtn.addEventListener('click', function() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment';
+            input.onchange = (e) => {
+                if (e.target.files.length > 0) {
+                    fileInput.files = e.target.files;
+                    handleFileSelect();
+                }
+            };
+            input.click();
+        });
+    }
+
+    // Custom notification system
+    function showNotification(message, type = 'info') {
+        const container = document.getElementById('notificationContainer');
+        const notification = document.createElement('div');
+        
+        // Set base classes
+        notification.className = `notification max-w-sm p-4 rounded-lg shadow-lg border flex items-center space-x-3 transform translate-x-full transition-transform duration-300 ease-in-out`;
+        
+        // Set type-specific styling
+        const styles = {
+            'success': 'bg-green-50 border-green-200 text-green-800',
+            'error': 'bg-red-50 border-red-200 text-red-800',
+            'warning': 'bg-yellow-50 border-yellow-200 text-yellow-800',
+            'info': 'bg-blue-50 border-blue-200 text-blue-800'
+        };
+        
+        const icons = {
+            'success': 'check-circle',
+            'error': 'x-circle',
+            'warning': 'alert-triangle',
+            'info': 'info'
+        };
+        
+        notification.classList.add(...styles[type].split(' '));
+        
+        notification.innerHTML = `
+            <i data-feather="${icons[type]}" class="w-5 h-5 flex-shrink-0"></i>
+            <span class="text-sm font-medium flex-1">${message}</span>
+            <button class="text-gray-400 hover:text-gray-600 transition-colors" onclick="this.parentElement.remove()">
+                <i data-feather="x" class="w-4 h-4"></i>
+            </button>
+        `;
+        
+        container.appendChild(notification);
+        feather.replace();
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
+
+    // Initialize
+    feather.replace();
+    checkFormValidity();
+});
+</script>
+{% endblock %}
