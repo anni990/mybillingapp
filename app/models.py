@@ -28,7 +28,7 @@ class Shopkeeper(db.Model):
     """Shopkeeper profile."""
     __tablename__ = 'shopkeepers'
     shopkeeper_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'), nullable=True)  # Allow null for CA-managed clients
     # Personal Information
     owner_name = db.Column(db.String(100))
     business_type = db.Column(db.String(50))  # Replaces domain

@@ -2,7 +2,7 @@
 Bills management routes for CA.
 Extracted from original routes.py - maintaining all original logic.
 """
-from flask import render_template, redirect, url_for, request, flash, send_file, current_app
+from flask import render_template, redirect, url_for, request, flash, send_file, current_app, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import and_
 import io
@@ -11,6 +11,7 @@ from app.models import (CharteredAccountant, CAEmployee, EmployeeClient, Bill, B
                        Shopkeeper, CAConnection, Product)
 from app.extensions import db
 from app.utils.gst import calc_line, generate_gst_summary, calculate_bill_totals
+from app.ca.services import CABillScanService
 
 
 def register_routes(bp):
@@ -43,17 +44,18 @@ def register_routes(bp):
         if not ca:
             flash('Error: Could not find CA information.', 'danger')
             return redirect(url_for('auth.login'))
+            
         # Filters
         shopkeeper_id = request.args.get('shopkeeper_id')
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
         
-        # Base query for bills and shopkeeper names
+        # Base query for bills with shopkeeper names
         query = db.session.query(Bill, Shopkeeper.shop_name).join(
             Shopkeeper, Bill.shopkeeper_id == Shopkeeper.shopkeeper_id
         )
         
-        # Modify query based on role
+        # Filter based on user role
         if current_user.role == 'CA':
             # For CA, show bills from all connected shopkeepers
             query = query.join(
@@ -75,15 +77,19 @@ def register_routes(bp):
                         EmployeeClient.employee_id == employee.employee_id
                     )
                 )
+        
+        # Apply filters
         if shopkeeper_id:
             query = query.filter(Bill.shopkeeper_id == shopkeeper_id)
         if start_date:
             query = query.filter(Bill.bill_date >= start_date)
         if end_date:
             query = query.filter(Bill.bill_date <= end_date)
+            
+        # Get bills
         bills = query.order_by(Bill.bill_date.desc()).all()
         bills_data = []
-        print(f"Found {len(bills)} bills")
+        
         for bill, shopkeeper_name in bills:
             try:
                 bills_data.append({
@@ -93,15 +99,120 @@ def register_routes(bp):
                     'bill_date': bill.bill_date,
                     'total_amount': bill.total_amount,
                     'payment_status': bill.payment_status,
-                    'paid_amount':bill.paid_amount,
-                    'due_amount':bill.due_amount
+                    'paid_amount': bill.paid_amount,
+                    'due_amount': bill.due_amount
                 })
-                # print(f"Added bill {bill.bill_id} to bills_data")
             except Exception as e:
                 print(f"Error processing bill: {e}")
-        # Shopkeepers for filter dropdown - only approved connections
-        shopkeepers = Shopkeeper.query.join(CAConnection, and_(CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id, CAConnection.ca_id == ca.ca_id, CAConnection.status == 'approved')).all()
-        return render_template('ca/bills.html', bills=bills_data, shopkeepers=shopkeepers, firm_name=firm_name)
+        
+        # Get shopkeepers for filter dropdown - only approved connections
+        shopkeepers = Shopkeeper.query.join(
+            CAConnection,
+            and_(
+                CAConnection.shopkeeper_id == Shopkeeper.shopkeeper_id,
+                CAConnection.ca_id == ca.ca_id,
+                CAConnection.status == 'approved'
+            )
+        ).all()
+        
+        return render_template('ca/bills.html', 
+                             bills=bills_data, 
+                             shopkeepers=shopkeepers, 
+                             firm_name=firm_name)
+    
+    @bp.route('/bills/scan', methods=['GET', 'POST'])
+    @login_required
+    def scan_bills():
+        """CA bill scanning functionality."""
+        # Only CA can access
+        if current_user.role != 'CA':
+            flash('Access denied. Only CAs can scan bills.', 'danger')
+            return redirect(url_for('ca.dashboard'))
+        
+        ca = CharteredAccountant.query.filter_by(user_id=current_user.user_id).first()
+        if not ca:
+            flash('CA profile not found.', 'danger')
+            return redirect(url_for('ca.dashboard'))
+        
+        # Get client options for dropdown
+        client_options = CABillScanService.get_ca_client_options(ca.ca_id)
+        
+        if request.method == 'POST':
+            # Handle JSON requests (save operation)
+            if request.is_json:
+                data = request.get_json()
+                action = data.get('action')
+                
+                if action == 'save_bill':
+                    client_id = data.get('client_id')
+                    bill_data = data.get('bill_data')
+                    
+                    if not client_id or not bill_data:
+                        return jsonify({'success': False, 'error': 'Missing client or bill data'})
+                    
+                    try:
+                        # Save bill data
+                        bill, success = CABillScanService.save_scanned_bill(
+                            ca.ca_id, 
+                            int(client_id), 
+                            bill_data
+                        )
+                        
+                        if success:
+                            return jsonify({'success': True, 'message': 'Bill saved successfully'})
+                        else:
+                            return jsonify({'success': False, 'error': 'Error saving bill data'})
+                            
+                    except Exception as e:
+                        current_app.logger.error(f"Error saving bill: {str(e)}")
+                        return jsonify({'success': False, 'error': f'Error saving bill: {str(e)}'})
+                
+                return jsonify({'success': False, 'error': 'Invalid action'})
+            
+            # Handle file upload (process operation)
+            selected_client_id = request.form.get('client_id')
+            action = request.form.get('action', 'process_bill')
+            
+            if not selected_client_id:
+                return jsonify({'success': False, 'error': 'Please select a client'})
+            
+            # Check if file was uploaded
+            if 'bill_image' not in request.files:
+                return jsonify({'success': False, 'error': 'No file selected'})
+            
+            file = request.files['bill_image']
+            if file.filename == '':
+                return jsonify({'success': False, 'error': 'No file selected'})
+            
+            # Validate file type
+            allowed_extensions = ['jpg', 'jpeg', 'png', 'pdf']
+            file_extension = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+            
+            if file_extension not in allowed_extensions:
+                return jsonify({'success': False, 'error': 'Invalid file type. Please upload JPG, PNG, or PDF files'})
+            
+            try:
+                # Extract bill data only (don't save yet)
+                file_data = file.read()
+                extraction_result = CABillScanService.extract_bill_data(file_data, file_extension)
+                
+                if not extraction_result['success']:
+                    return jsonify({'success': False, 'error': f'Error extracting bill data: {extraction_result["error"]}'})
+                
+                # Return extracted data for user confirmation
+                return jsonify({
+                    'success': True, 
+                    'bill_data': extraction_result['data'],
+                    'message': 'Bill data extracted successfully'
+                })
+                
+            except Exception as e:
+                current_app.logger.error(f"Error processing file: {str(e)}")
+                return jsonify({'success': False, 'error': f'Error processing file: {str(e)}'})
+        
+        return render_template('ca/scan_bills.html', 
+                             firm_name=ca.firm_name, 
+                             clients=client_options)
     
     @bp.route('/bill/<int:bill_id>')
     @login_required

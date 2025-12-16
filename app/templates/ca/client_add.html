@@ -1,0 +1,346 @@
+{% extends "ca/ca_base.html" %}
+
+{% block title %}Add Client - MyBillingApp{% endblock %}
+
+{% block firm_name %} {{ firm_name }} {% endblock %}
+
+{% block ca_content %}
+<div class="bg-slate-50 min-h-screen">
+  <!-- Header -->
+  <div class="bg-white border-b bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow duration-300 px-4 sm:px-6 lg:px-8 py-6">
+    <div class="max-w-6xl mx-auto rounded-xl">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Add New Client</h1>
+          <p class="text-sm text-slate-600 mt-1">{{ firm_name }}</p>
+        </div>
+        <div>
+          <a href="{{ url_for('ca.clients') }}" 
+             class="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+            <i data-feather="arrow-left" class="w-4 h-4 mr-2"></i>
+            Back to Clients
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Section -->
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow duration-300">
+      <div class="px-6 py-8">
+        <form method="POST" class="space-y-8">
+          <!-- Business Information -->
+          <div>
+            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+              <i data-feather="briefcase" class="w-5 h-5 mr-2 text-orange-500"></i>
+              Business Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="shop_name" class="block text-sm font-medium text-slate-700 mb-2">
+                  Shop/Business Name *
+                </label>
+                <input type="text" id="shop_name" name="shop_name" required
+                       value="{{ form_data.shop_name if form_data else '' }}"
+                       class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                       placeholder="Enter business name">
+              </div>
+              
+              <div>
+                <label for="domain" class="block text-sm font-medium text-slate-700 mb-2">
+                  Business Type
+                </label>
+                <select id="domain" name="domain"
+                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md">
+                  <option value="General" {% if form_data and form_data.domain == 'General' %}selected{% endif %}>General Store</option>
+                  <option value="Electronics" {% if form_data and form_data.domain == 'Electronics' %}selected{% endif %}>Electronics</option>
+                  <option value="Grocery" {% if form_data and form_data.domain == 'Grocery' %}selected{% endif %}>Grocery</option>
+                  <option value="Clothing" {% if form_data and form_data.domain == 'Clothing' %}selected{% endif %}>Clothing</option>
+                  <option value="Pharmacy" {% if form_data and form_data.domain == 'Pharmacy' %}selected{% endif %}>Pharmacy</option>
+                  <option value="Hardware" {% if form_data and form_data.domain == 'Hardware' %}selected{% endif %}>Hardware</option>
+                  <option value="Restaurant" {% if form_data and form_data.domain == 'Restaurant' %}selected{% endif %}>Restaurant</option>
+                  <option value="Services" {% if form_data and form_data.domain == 'Services' %}selected{% endif %}>Services</option>
+                  <option value="Other" {% if form_data and form_data.domain == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="business_type" class="block text-sm font-medium text-slate-700 mb-2">
+                  Business Category
+                </label>
+                <input type="text" id="business_type" name="business_type"
+                       value="{{ form_data.business_type if form_data else '' }}"
+                       class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                       placeholder="e.g., Retail, Wholesale, Manufacturing">
+              </div>
+
+              <div>
+                <label for="established_year" class="block text-sm font-medium text-slate-700 mb-2">
+                  Established Year
+                </label>
+                <input type="number" id="established_year" name="established_year" min="1900" max="2025"
+                       value="{{ form_data.established_year if form_data else '' }}"
+                       class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                       placeholder="YYYY">
+              </div>
+            </div>
+          </div>
+
+          <!-- Login Credentials -->
+          <div class="border-t border-slate-200 pt-6">
+            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+              <i data-feather="key" class="w-5 h-5 mr-2 text-orange-500"></i>
+              Login Credentials
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="email" class="block text-sm font-medium text-slate-700 mb-2">
+                  Email Address *
+                </label>
+                <input type="email" id="email" name="email" required
+                       value="{{ form_data.email if form_data else '' }}"
+                       class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                       placeholder="client@example.com">
+              </div>
+
+              <div>
+                <label for="username" class="block text-sm font-medium text-slate-700 mb-2">
+                  Username (Optional)
+                </label>
+                <input type="text" id="username" name="username"
+                       value="{{ form_data.username if form_data else '' }}"
+                       class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                       placeholder="Auto-generated if left blank">
+                <p class="text-xs text-slate-500 mt-1">Leave blank to auto-generate from business name</p>
+              </div>
+
+              <div class="md:col-span-2">
+                <label for="password" class="block text-sm font-medium text-slate-700 mb-2">
+                  Password (Optional)
+                </label>
+                <div class="relative">
+                  <input type="password" id="password" name="password"
+                         value="{{ form_data.password if form_data else '' }}"
+                         class="w-full px-4 py-3 pr-10 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                         placeholder="Auto-generated secure password if left blank">
+                  <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 px-3 flex items-center">
+                    <i data-feather="eye" class="w-5 h-5 text-slate-400"></i>
+                  </button>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Leave blank to auto-generate a secure password. You can provide credentials to client later.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Owner Information -->
+          <div class="border-t border-slate-200 pt-6">
+            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+              <i data-feather="user" class="w-5 h-5 mr-2 text-orange-500"></i>
+              Owner Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="owner_name" class="block text-sm font-medium text-slate-700 mb-2">
+                  Owner Name
+                </label>
+                <input type="text" id="owner_name" name="owner_name"
+                       value="{{ form_data.owner_name if form_data else '' }}"
+                       class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                       placeholder="Enter owner name">
+              </div>
+
+              <div>
+                <label for="contact_number" class="block text-sm font-medium text-slate-700 mb-2">
+                  Contact Number *
+                </label>
+                <input type="tel" id="contact_number" name="contact_number" required
+                       value="{{ form_data.contact_number if form_data else '' }}"
+                       class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                       placeholder="10-digit mobile number">
+              </div>
+            </div>
+          </div>
+
+          <!-- Address Information -->
+          <div class="border-t border-slate-200 pt-6">
+            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+              <i data-feather="map-pin" class="w-5 h-5 mr-2 text-orange-500"></i>
+              Address Information
+            </h3>
+            <div class="space-y-6">
+              <div>
+                <label for="business_address" class="block text-sm font-medium text-slate-700 mb-2">
+                  Business Address
+                </label>
+                <textarea id="business_address" name="business_address" rows="3"
+                          class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 resize-none shadow-sm hover:shadow-md"
+                          placeholder="Enter complete business address">{{ form_data.business_address if form_data else '' }}</textarea>
+              </div>
+              
+              <div>
+                <label for="owner_address" class="block text-sm font-medium text-slate-700 mb-2">
+                  Owner Address
+                </label>
+                <textarea id="owner_address" name="owner_address" rows="3"
+                          class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 resize-none shadow-sm hover:shadow-md"
+                          placeholder="Enter owner's residential address">{{ form_data.owner_address if form_data else '' }}</textarea>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label for="city" class="block text-sm font-medium text-slate-700 mb-2">
+                    City
+                  </label>
+                  <input type="text" id="city" name="city"
+                         value="{{ form_data.city if form_data else '' }}"
+                         class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                         placeholder="City">
+                </div>
+
+                <div>
+                  <label for="state" class="block text-sm font-medium text-slate-700 mb-2">
+                    State
+                  </label>
+                  <input type="text" id="state" name="state"
+                         value="{{ form_data.state if form_data else '' }}"
+                         class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                         placeholder="State">
+                </div>
+
+                <div>
+                  <label for="pincode" class="block text-sm font-medium text-slate-700 mb-2">
+                    Pincode
+                  </label>
+                  <input type="text" id="pincode" name="pincode" maxlength="6"
+                         value="{{ form_data.pincode if form_data else '' }}"
+                         class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                         placeholder="6-digit pincode">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tax Information -->
+          <div class="border-t border-slate-200 pt-6">
+            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+              <i data-feather="file-text" class="w-5 h-5 mr-2 text-orange-500"></i>
+              Tax Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="pan_number" class="block text-sm font-medium text-slate-700 mb-2">
+                  PAN Number
+                </label>
+                <input type="text" id="pan_number" name="pan_number" maxlength="10"
+                       value="{{ form_data.pan_number if form_data else '' }}"
+                       class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                       placeholder="AAAPL1234C"
+                       style="text-transform: uppercase;">
+              </div>
+
+              <div>
+                <label for="gst_number" class="block text-sm font-medium text-slate-700 mb-2">
+                  GST Number
+                </label>
+                <input type="text" id="gst_number" name="gst_number" maxlength="15"
+                       value="{{ form_data.gst_number if form_data else '' }}"
+                       class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors hover:border-slate-400 shadow-sm hover:shadow-md"
+                       placeholder="22AAAPL1234C1Z5"
+                       style="text-transform: uppercase;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="border-t border-slate-200 pt-6">
+            <div class="flex justify-end space-x-4">
+              <a href="{{ url_for('ca.clients') }}"
+                 class="px-6 py-3 border border-slate-300 rounded-lg text-slate-700 bg-white hover:bg-slate-50 hover:shadow-md font-medium transition-all duration-300">
+                Cancel
+              </a>
+              <button type="submit"
+                      class="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 hover:shadow-lg font-medium transition-all duration-300 transform hover:-translate-y-0.5">
+                <i data-feather="user-plus" class="w-4 h-4 mr-2 inline"></i>
+                Add Client
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Form validation and formatting
+  document.addEventListener('DOMContentLoaded', function() {
+    // Format PAN number input
+    const panInput = document.getElementById('pan_number');
+    panInput.addEventListener('input', function() {
+      this.value = this.value.toUpperCase();
+    });
+
+    // Format GST number input
+    const gstInput = document.getElementById('gst_number');
+    gstInput.addEventListener('input', function() {
+      this.value = this.value.toUpperCase();
+    });
+
+    // Contact number validation
+    const contactInput = document.getElementById('contact_number');
+    contactInput.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    // Pincode validation
+    const pincodeInput = document.getElementById('pincode');
+    pincodeInput.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    // Username generation from shop name
+    const shopNameInput = document.getElementById('shop_name');
+    const usernameInput = document.getElementById('username');
+    
+    shopNameInput.addEventListener('input', function() {
+      if (!usernameInput.value) {
+        const shopName = this.value.toLowerCase()
+          .replace(/[^a-z0-9]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '');
+        usernameInput.placeholder = shopName ? `${shopName}_xxxx` : 'Auto-generated from business name';
+      }
+    });
+
+    // Password toggle functionality
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('togglePassword');
+    
+    togglePassword.addEventListener('click', function() {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      
+      const icon = this.querySelector('i');
+      icon.setAttribute('data-feather', type === 'password' ? 'eye' : 'eye-off');
+      feather.replace();
+    });
+
+    // Email validation
+    const emailInput = document.getElementById('email');
+    emailInput.addEventListener('blur', function() {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (this.value && !emailRegex.test(this.value)) {
+        this.classList.add('border-red-500');
+        this.classList.remove('border-gray-300');
+      } else {
+        this.classList.remove('border-red-500');
+        this.classList.add('border-gray-300');
+      }
+    });
+
+    // Initialize Feather icons
+    feather.replace();
+  });
+</script>
+{% endblock %}

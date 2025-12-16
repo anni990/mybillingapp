@@ -45,3 +45,6 @@ class Config:
     if os.environ.get('FLASK_ENV') == 'production':
         SESSION_COOKIE_SECURE = True
         REMEMBER_COOKIE_SECURE = True
+    
+    # AI Service Configuration
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')

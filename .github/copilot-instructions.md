@@ -10,7 +10,7 @@ MyBillingApp is a **multi-tenant Flask ERP system** connecting Shopkeepers, Char
 - **CA Employees**: Handle assigned shopkeeper accounts via delegation
 - **Connection System**: Approval-based relationships between shopkeepers and CAs
 
-**Service Layer Architecture:** Business logic is extracted into service classes in `app/{role}/services/` (e.g., `BillService`, `CustomerService`, `GeminiService` for AI integrations)
+**Service Layer Architecture:** Business logic is extracted into service classes in `app/{role}/services/` (e.g., `BillService`, `CustomerService`, `GeminiService` for AI integrations). Only shopkeeper services exist currently - CA services would follow the same pattern.
 
 ## 🚨 Critical Foreign Key Patterns (Most Important!)
 
@@ -32,6 +32,8 @@ customers = Customer.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id)  # 
 ```
 
 **Why this matters:** `customers.shopkeeper_id` → `users.user_id`, but `bills.shopkeeper_id` → `shopkeepers.shopkeeper_id`
+
+**Pattern Summary:** Most tables link to `shopkeepers.shopkeeper_id`, but Customer/CustomerLedger link to `users.user_id`
 
 ## 🧩 Modular Blueprint Structure
 

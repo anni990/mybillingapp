@@ -104,6 +104,28 @@
       transition: margin-left 0.3s ease-in-out;
     }
 
+    /* Dropdown Animations */
+    .dropdown-menu {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out;
+      opacity: 0;
+    }
+
+    .dropdown-menu.open {
+      max-height: 200px;
+      opacity: 1;
+    }
+
+    /* Dropdown Arrow Rotation */
+    .dropdown-arrow {
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .dropdown-arrow.open {
+      transform: rotate(180deg);
+    }
+
     /* Mobile responsive styles */
     @media (max-width: 768px) {
       .sidebar {
@@ -197,6 +219,30 @@
         display: none;
       }
     }
+
+    /* Dropdown menu styles */
+    .dropdown-menu {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out;
+    }
+
+    .dropdown-menu.open {
+      max-height: 200px;
+    }
+
+    .dropdown-arrow {
+      transition: transform 0.3s ease;
+    }
+
+    .dropdown-arrow.open {
+      transform: rotate(180deg);
+    }
+
+    .dropdown-item {
+      padding-left: 2.5rem;
+      font-size: 0.875rem;
+    }
   </style>
 </head>
 
@@ -241,20 +287,63 @@
               <span class="sidebar-text ml-3 whitespace-nowrap">Dashboard Home</span>
             </a>
           </li>
+          
+          <!-- Client Management Dropdown -->
           <li>
-            <a href="/ca/clients"
-              class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-              <i data-feather="users" class="w-5 h-5"></i>
-              <span class="sidebar-text ml-3 whitespace-nowrap">Clients List</span>
-            </a>
+            <div class="dropdown-container">
+              <button onclick="toggleDropdown('client-dropdown')" 
+                class="flex items-center w-full px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
+                <i data-feather="users" class="w-5 h-5"></i>
+                <span class="sidebar-text ml-3 whitespace-nowrap">Client Management</span>
+                <i data-feather="chevron-down" class="dropdown-arrow w-4 h-4 ml-auto sidebar-text"></i>
+              </button>
+              <ul id="client-dropdown" class="dropdown-menu open space-y-1 mt-1">
+                <li>
+                  <a href="/ca/clients"
+                    class="dropdown-item flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 group">
+                    <i data-feather="eye" class="w-4 h-4"></i>
+                    <span class="sidebar-text ml-3 whitespace-nowrap">View Clients</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="/ca/clients/add"
+                    class="dropdown-item flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 group">
+                    <i data-feather="user-plus" class="w-4 h-4"></i>
+                    <span class="sidebar-text ml-3 whitespace-nowrap">Add Client</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
           </li>
+          
+          <!-- Billing Dropdown -->
           <li>
-            <a href="/ca/bills"
-              class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-              <i data-feather="file-text" class="w-5 h-5"></i>
-              <span class="sidebar-text ml-3 whitespace-nowrap">Bills Panel</span>
-            </a>
+            <div class="dropdown-container">
+              <button onclick="toggleDropdown('billing-dropdown')" 
+                class="flex items-center w-full px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
+                <i data-feather="file-text" class="w-5 h-5"></i>
+                <span class="sidebar-text ml-3 whitespace-nowrap">Billing</span>
+                <i data-feather="chevron-down" class="dropdown-arrow w-4 h-4 ml-auto sidebar-text"></i>
+              </button>
+              <ul id="billing-dropdown" class="dropdown-menu open space-y-1 mt-1">
+                <li>
+                  <a href="/ca/bills"
+                    class="dropdown-item flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 group">
+                    <i data-feather="list" class="w-4 h-4"></i>
+                    <span class="sidebar-text ml-3 whitespace-nowrap">Bills Panel</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="/ca/bills/scan"
+                    class="dropdown-item flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 group">
+                    <i data-feather="camera" class="w-4 h-4"></i>
+                    <span class="sidebar-text ml-3 whitespace-nowrap">Scan Bills</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
           </li>
+          
           <li>
             <a href="/ca/messages"
               class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
@@ -495,9 +584,6 @@
     </div>
 
 <script>
-
-  feather.replace();
-
   // Sidebar functionality
   const sidebar = document.getElementById('sidebar');
   const sidebarToggle = document.getElementById('sidebar-toggle');
@@ -703,6 +789,39 @@
     notifDropdown.classList.remove('opacity-100', 'scale-100');
     notifDropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
   }
+
+  // Sidebar dropdown functionality
+  function toggleDropdown(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    const arrow = dropdown.parentElement.querySelector('.dropdown-arrow');
+    
+    if (dropdown.classList.contains('open')) {
+      dropdown.classList.remove('open');
+      arrow.classList.remove('open');
+    } else {
+      dropdown.classList.add('open');
+      arrow.classList.add('open');
+    }
+  }
+
+  // Initialize dropdowns as open by default
+  document.addEventListener('DOMContentLoaded', function() {
+    const dropdowns = document.querySelectorAll('.dropdown-menu');
+    const arrows = document.querySelectorAll('.dropdown-arrow');
+    
+    // Initialize dropdowns as open
+    dropdowns.forEach(dropdown => {
+      dropdown.classList.add('open');
+    });
+    
+    // Initialize arrows as rotated (open state)
+    arrows.forEach(arrow => {
+      arrow.classList.add('open');
+    });
+    
+    // Initialize feather icons
+    feather.replace();
+  });
 </script>
 </body>
 
