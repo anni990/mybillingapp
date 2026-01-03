@@ -480,6 +480,158 @@
         </div>
     </div>
 
+    <!-- Watermark Settings Section -->
+    <div class="bg-white rounded-2xl p-8 shadow-xl border border-teal-100 fade-in-up mb-8">
+        <div class="flex items-center mb-8">
+            <div class="p-3 bg-teal-100 rounded-xl shadow-lg">
+                <i data-feather="image" class="w-6 h-6 text-teal-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 ml-4">Watermark Settings</h2>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Current Settings Card -->
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+                <div class="flex items-center mb-6">
+                    <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center mr-3">
+                        <i data-feather="settings" class="w-5 h-5 text-teal-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Current Settings</h4>
+                        <p class="text-sm text-gray-600">Your watermark configuration</p>
+                    </div>
+                </div>
+                
+                <!-- Current Status Display -->
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Subscription Plan</span>
+                            <span class="bg-{{ 'orange' if shopkeeper.subscription_plan == 'free' else ('blue' if shopkeeper.subscription_plan == 'lite' else 'purple') }}-100 text-{{ 'orange' if shopkeeper.subscription_plan == 'free' else ('blue' if shopkeeper.subscription_plan == 'lite' else 'purple') }}-800 text-xs px-3 py-1 rounded-full font-medium">
+                                {{ shopkeeper.subscription_plan|title }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500">{{ watermark_info.plan_description }}</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Watermark Status</span>
+                            <div class="flex items-center">
+                                {% if shopkeeper.watermark_enabled %}
+                                <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium">Enabled</span>
+                                {% else %}
+                                <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">Disabled</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">
+                            {% if shopkeeper.watermark_enabled %}
+                                Watermarks are shown on your bill receipts
+                            {% else %}
+                                No watermarks on your bill receipts
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Watermark Style</span>
+                            <span class="bg-indigo-100 text-indigo-800 text-xs px-3 py-1 rounded-full font-medium">
+                                {{ watermark_types[shopkeeper.watermark_type] }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500">Current watermark design style</p>
+                    </div>
+                </div>
+                 <!-- Configure Button -->
+                    <button onclick="openWatermarkModal()" class="w-full bg-teal-50 hover:bg-teal-100 text-teal-700 font-medium py-3 px-4 rounded-lg transition-colors text-sm inline-flex items-center justify-center cursor-pointer border-none mt-5">
+                        <i data-feather="settings" class="w-4 h-4 mr-2"></i>
+                        Advanced Settings
+                    </button>
+            </div>
+
+            <!-- Watermark Configuration Card -->
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+                <div class="flex items-center mb-6">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+                        <i data-feather="edit-3" class="w-5 h-5 text-indigo-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Configure Settings</h4>
+                        <p class="text-sm text-gray-600">Manage your watermark preferences</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Watermark Enable/Disable Toggle -->
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700">Show Watermark</label>
+                                <p class="text-xs text-gray-500">
+                                    {% if watermark_info.is_mandatory %}
+                                        Free users must show watermark
+                                    {% else %}
+                                        Choose to show/hide watermark on bills
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="relative inline-block w-12 h-6 mr-2 align-middle select-none">
+                                <input 
+                                    type="checkbox" 
+                                    id="watermarkToggle" 
+                                    {% if shopkeeper.watermark_enabled %}checked{% endif %}
+                                    {% if watermark_info.is_mandatory %}disabled{% endif %}
+                                    class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer transition-all duration-300 ease-in-out transform top-0.5 left-0.5 {% if shopkeeper.watermark_enabled %}translate-x-5 border-green-500{% else %}translate-x-0 border-gray-400{% endif %}"
+                                    onchange="toggleWatermark(this.checked)"
+                                />
+                                <label 
+                                    for="watermarkToggle" 
+                                    class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer transition-all duration-300 ease-in-out {% if shopkeeper.watermark_enabled %}bg-green-500{% else %}bg-gray-300{% endif %}"
+                                ></label>
+                            </div>
+                        </div>
+                        
+                        {% if watermark_info.is_mandatory %}
+                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mt-2">
+                            <div class="flex items-center">
+                                <i data-feather="info" class="w-4 h-4 mr-2 text-orange-600"></i>
+                                <p class="text-xs text-orange-700">
+                                    <a href="{{ url_for('shopkeeper.subscription') }}" class="font-medium hover:underline">Upgrade your plan</a> to remove watermarks from your bills
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Watermark Style Selection -->
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Watermark Style</label>
+                        <div class="space-y-2">
+                            {% for type_key, type_name in watermark_types.items() %}
+                            <div class="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer" onclick="selectWatermarkType('{{ type_key }}')">
+                                <input 
+                                    type="radio" 
+                                    id="watermark_type_{{ type_key }}" 
+                                    name="watermark_type" 
+                                    value="{{ type_key }}"
+                                    {% if shopkeeper.watermark_type == type_key %}checked{% endif %}
+                                    class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 focus:ring-indigo-500 focus:ring-2"
+                                    onchange="updateWatermarkType('{{ type_key }}')"
+                                >
+                                <label for="watermark_type_{{ type_key }}" class="ml-3 text-sm text-gray-700 font-medium cursor-pointer">
+                                    {{ type_name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Documents Section -->
     <div class="bg-white rounded-2xl p-8 shadow-xl border border-indigo-100 fade-in-up mb-8">
         <div class="flex items-center mb-8">
@@ -836,7 +988,7 @@
                 <div class="space-y-2">
                     <div class="flex justify-between items-center text-sm">
                         <span class="text-gray-600">Current:</span>
-                        <span id="current-preview" class="font-mono font-bold text-emerald-700 bg-white px-2 py-1 rounded">{{ preview_next_invoice_number(shopkeeper) if shopkeeper.invoice_prefix and shopkeeper.invoice_prefix.strip() else 'BILL' + moment().format('X') }}</span>
+                        <span id="current-preview" class="font-mono font-bold text-emerald-700 bg-white px-2 py-1 rounded">{{ preview_next_invoice_number(shopkeeper) if shopkeeper.invoice_prefix and shopkeeper.invoice_prefix.strip() else 'BILL' + (range(100000000, 999999999) | random | string) }}</span>
                     </div>
                     <div class="flex justify-between items-center text-sm">
                         <span class="text-gray-600">Next:</span>
@@ -1380,5 +1532,409 @@
         });
     });
 </script>
+
+<!-- Upgrade Modal for Free Users -->
+<div id="upgradeModal" class="fixed inset-0 backdrop-blur-sm bg-black/20 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 scale-95 opacity-0" id="upgradeModalContent">
+        <!-- Modal Header -->
+        <div class="bg-gradient-to-r from-orange-400 to-orange-600 text-white rounded-t-2xl px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-white/30 rounded-lg flex items-center justify-center mr-3">
+                        <i data-feather="star" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold">Upgrade Required</h3>
+                </div>
+                <button onclick="closeUpgradeModal()" class="text-white/80 hover:text-white transition-colors">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-feather="image" class="w-8 h-8 text-orange-600"></i>
+                </div>
+                <h4 class="text-xl font-semibold text-gray-800 mb-2">Remove Watermarks</h4>
+                <p class="text-gray-600">Upgrade to Lite or Gold plan to remove watermarks from your bill receipts and enjoy a professional, clean look.</p>
+            </div>
+
+            <!-- Features -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <h5 class="font-semibold text-gray-800 mb-3">Premium Plan Benefits:</h5>
+                <ul class="space-y-2">
+                    <li class="flex items-center text-sm text-gray-600">
+                        <i data-feather="check" class="w-4 h-4 text-green-600 mr-2"></i>
+                        Remove watermarks from bills
+                    </li>
+                    <li class="flex items-center text-sm text-gray-600">
+                        <i data-feather="check" class="w-4 h-4 text-green-600 mr-2"></i>
+                        Unlimited GST billing
+                    </li>
+                    <li class="flex items-center text-sm text-gray-600">
+                        <i data-feather="check" class="w-4 h-4 text-green-600 mr-2"></i>
+                        Advanced inventory management
+                    </li>
+                    <li class="flex items-center text-sm text-gray-600">
+                        <i data-feather="check" class="w-4 h-4 text-green-600 mr-2"></i>
+                        Customer ledger system
+                    </li>
+                    <li class="flex items-center text-sm text-gray-600">
+                        <i data-feather="check" class="w-4 h-4 text-green-600 mr-2"></i>
+                        CA connectivity & reports
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-3">
+                <button type="button" 
+                        onclick="closeUpgradeModal()" 
+                        class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors text-sm">
+                    Maybe Later
+                </button>
+                <a href="{{ url_for('shopkeeper.subscription') }}" 
+                   class="flex-1 px-4 py-3 bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:from-orange-500 hover:to-orange-700 font-medium rounded-xl transition-all duration-200 text-sm text-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                    <i data-feather="star" class="w-4 h-4 inline mr-2"></i>
+                    Upgrade Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Watermark Advanced Settings Modal -->
+<div id="watermarkModal" class="fixed inset-0 backdrop-blur-sm bg-black/20 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto transform transition-all duration-300 scale-95 opacity-0" id="watermarkModalContent">
+        <!-- Modal Header -->
+        <div class="bg-teal-200 text-teal-600 rounded-t-2xl px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-white/30 rounded-lg flex items-center justify-center mr-3">
+                        <i data-feather="image" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold">Watermark Settings</h3>
+                </div>
+                <button onclick="closeWatermarkModal()" class="text-white/80 hover:text-white transition-colors">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6">
+            <!-- Current Plan Info -->
+            <div class="bg-{{ 'orange' if shopkeeper.subscription_plan == 'free' else 'blue' }}-50 border border-{{ 'orange' if shopkeeper.subscription_plan == 'free' else 'blue' }}-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center mb-2">
+                    <i data-feather="info" class="w-4 h-4 mr-2 text-{{ 'orange' if shopkeeper.subscription_plan == 'free' else 'blue' }}-600"></i>
+                    <h4 class="text-sm font-semibold text-{{ 'orange' if shopkeeper.subscription_plan == 'free' else 'blue' }}-800">Your Plan: {{ shopkeeper.subscription_plan|title }}</h4>
+                </div>
+                <p class="text-sm text-{{ 'orange' if shopkeeper.subscription_plan == 'free' else 'blue' }}-700">{{ watermark_info.plan_description }}</p>
+            </div>
+
+            <!-- Watermark Type Selection -->
+            <div class="space-y-4">
+                <h5 class="font-semibold text-gray-800">Choose Watermark Style</h5>
+                
+                <div class="grid grid-cols-1 gap-3">
+                    {% for type_key, type_name in watermark_types.items() %}
+                    <label class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <input 
+                            type="radio" 
+                            name="modal_watermark_type" 
+                            value="{{ type_key }}"
+                            {% if shopkeeper.watermark_type == type_key %}checked{% endif %}
+                            class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 focus:ring-teal-500 focus:ring-2"
+                        >
+                        <div class="ml-3">
+                            <div class="text-sm font-medium text-gray-700">{{ type_name }}</div>
+                            <div class="text-xs text-gray-500">
+                                {% if type_key == 'diagonal' %}
+                                    Repeated pattern across the bill
+                                {% elif type_key == 'bottom' %}
+                                    Small logo at bottom corner
+                                {% else %}
+                                    Large centered background text
+                                {% endif %}
+                            </div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-3 mt-6">
+                <button type="button" 
+                        onclick="closeWatermarkModal()" 
+                        class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors text-sm">
+                    Cancel
+                </button>
+                <button type="button" 
+                        onclick="saveWatermarkSettings()" 
+                        class="flex-1 px-4 py-3 bg-teal-200 text-teal-600 hover:bg-teal-300 font-medium rounded-xl transition-all duration-200 text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                    <i data-feather="save" class="w-4 h-4 inline mr-2"></i>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Watermark Toggle Function
+    function toggleWatermark(enabled) {
+        // Check if user is on free plan and trying to disable
+        {% if shopkeeper.subscription_plan == 'free' %}
+        if (!enabled) {
+            // Reset the toggle
+            document.getElementById('watermarkToggle').checked = true;
+            // Show upgrade modal
+            openUpgradeModal();
+            return;
+        }
+        {% endif %}
+        
+        // Update watermark setting
+        updateWatermarkSetting(enabled, '{{ shopkeeper.watermark_type }}');
+    }
+
+    // Update watermark type
+    function updateWatermarkType(type) {
+        updateWatermarkSetting({{ 'true' if shopkeeper.watermark_enabled else 'false' }}, type);
+    }
+
+    // Select watermark type (for clicking on div)
+    function selectWatermarkType(type) {
+        const radio = document.getElementById('watermark_type_' + type);
+        if (radio) {
+            radio.checked = true;
+            updateWatermarkType(type);
+        }
+    }
+
+    // Send watermark update to server
+    async function updateWatermarkSetting(enabled, type) {
+        try {
+            const response = await fetch('/shopkeeper/update-watermark-settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    watermark_enabled: enabled,
+                    watermark_type: type
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                showFlashMessage(result.message, 'success');
+                // Refresh page to show updated settings
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showFlashMessage(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showFlashMessage('An error occurred while updating watermark settings', 'error');
+        }
+    }
+
+    // Upgrade Modal Functions
+    function openUpgradeModal() {
+        const modal = document.getElementById('upgradeModal');
+        const modalContent = document.getElementById('upgradeModalContent');
+        
+        modal.classList.remove('hidden');
+        
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+        
+        feather.replace();
+    }
+
+    function closeUpgradeModal() {
+        const modal = document.getElementById('upgradeModal');
+        const modalContent = document.getElementById('upgradeModalContent');
+        
+        modalContent.classList.add('scale-95', 'opacity-0');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    // Watermark Modal Functions
+    function openWatermarkModal() {
+        const modal = document.getElementById('watermarkModal');
+        const modalContent = document.getElementById('watermarkModalContent');
+        
+        modal.classList.remove('hidden');
+        
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+        
+        feather.replace();
+    }
+
+    function closeWatermarkModal() {
+        const modal = document.getElementById('watermarkModal');
+        const modalContent = document.getElementById('watermarkModalContent');
+        
+        modalContent.classList.add('scale-95', 'opacity-0');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    function saveWatermarkSettings() {
+        const selectedType = document.querySelector('input[name="modal_watermark_type"]:checked');
+        
+        if (selectedType) {
+            updateWatermarkSetting({{ 'true' if shopkeeper.watermark_enabled else 'false' }}, selectedType.value);
+            closeWatermarkModal();
+        }
+    }
+
+    // Flash message function
+    function showFlashMessage(message, type) {
+        // Create flash message element
+        const flashDiv = document.createElement('div');
+        flashDiv.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all duration-500 transform translate-x-full opacity-0 ${
+            type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 
+            type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
+            'bg-blue-100 text-blue-800 border border-blue-200'
+        }`;
+        
+        flashDiv.innerHTML = `
+            <div class="flex items-center">
+                <i data-feather="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" class="w-4 h-4 mr-2"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-gray-500 hover:text-gray-700">
+                    <i data-feather="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(flashDiv);
+        feather.replace();
+        
+        // Animate in
+        setTimeout(() => {
+            flashDiv.classList.remove('translate-x-full', 'opacity-0');
+            flashDiv.classList.add('translate-x-0', 'opacity-100');
+        }, 100);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            flashDiv.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => {
+                if (flashDiv.parentElement) {
+                    flashDiv.remove();
+                }
+            }, 500);
+        }, 5000);
+    }
+
+    // Close modals when clicking outside
+    document.getElementById('upgradeModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeUpgradeModal();
+        }
+    });
+
+    document.getElementById('watermarkModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeWatermarkModal();
+        }
+    });
+
+    // Close modals on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (!document.getElementById('upgradeModal').classList.contains('hidden')) {
+                closeUpgradeModal();
+            }
+            if (!document.getElementById('watermarkModal').classList.contains('hidden')) {
+                closeWatermarkModal();
+            }
+        }
+    });
+
+    // Toggle styling updates
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('watermarkToggle');
+        const toggleLabel = document.querySelector('.toggle-label');
+        
+        function updateToggleStyles() {
+            if (toggle && toggle.checked) {
+                toggle.classList.remove('translate-x-0', 'border-gray-400');
+                toggle.classList.add('translate-x-6', 'border-green-500');
+                if (toggleLabel) {
+                    toggleLabel.classList.add('bg-green-500');
+                    toggleLabel.classList.remove('bg-gray-300');
+                }
+            } else if (toggle) {
+                toggle.classList.remove('translate-x-6', 'border-green-500');
+                toggle.classList.add('translate-x-0', 'border-gray-400');
+                if (toggleLabel) {
+                    toggleLabel.classList.remove('bg-green-500');
+                    toggleLabel.classList.add('bg-gray-300');
+                }
+            }
+        }
+        
+        if (toggle) {
+            updateToggleStyles();
+            toggle.addEventListener('change', updateToggleStyles);
+        }
+    });
+</script>
+
+<style>
+    /* Custom Toggle Styles */
+    .toggle-checkbox:checked {
+        border-color: #10b981 !important;
+    }
+    
+    .toggle-label {
+        width: 48px;
+        transition: all 0.3s ease-in-out;
+    }
+    
+    /* Smooth animations */
+    .toggle-checkbox {
+        z-index: 10;
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .toggle-checkbox:checked + .toggle-label {
+        background-color: #10b981 !important;
+    }
+    
+    .toggle-checkbox:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .toggle-checkbox:disabled + .toggle-label {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+</style>
 
 {% endblock %}

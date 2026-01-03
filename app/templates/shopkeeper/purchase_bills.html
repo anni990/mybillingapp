@@ -22,12 +22,20 @@
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <div class="flex space-x-2">
+                    <a href="{{ url_for('shopkeeper.manual_purchase_entry') }}" 
+                       class="flex items-center space-x-2 bg-blue-100 hover:bg-blue-200 text-blue-600 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base font-bold">
+                        <i data-feather="edit-3" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Manual Entry</span>
+                        <span class="sm:hidden">Manual</span>
+                    </a>
+                    {% if shopkeeper.subscription_plan == 'gold' %}
                     <a href="{{ url_for('shopkeeper.scan_purchase_bill') }}" 
                        class="flex items-center space-x-2 bg-green-100 hover:bg-green-200 text-green-600 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base font-bold">
                         <i data-feather="camera" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Scan Bill</span>
+                        <span class="hidden sm:inline">AI Scan</span>
                         <span class="sm:hidden">Scan</span>
                     </a>
+                    {% endif %}
                     <!-- <a href="{{ url_for('shopkeeper.dashboard') }}" 
                        class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
                         <i data-feather="home" class="w-4 h-4"></i>
@@ -291,11 +299,20 @@
             <i data-feather="shopping-cart" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
             <h3 class="text-lg font-medium text-gray-900 mb-2">No purchase bills found</h3>
             <p class="text-gray-500 mb-6">Start scanning your purchase bills to track inventory purchases.</p>
-            <a href="{{ url_for('shopkeeper.scan_purchase_bill') }}"
-                class="inline-flex items-center px-4 py-2 bg-[#ed6a3e] text-white rounded-lg hover:bg-orange-700 transition duration-300">
-                <i data-feather="camera" class="w-4 h-4 mr-2"></i>
-                Scan Purchase Bill
-            </a>
+            <div class="flex space-x-3 justify-center">
+                <a href="{{ url_for('shopkeeper.manual_purchase_entry') }}"
+                    class="inline-flex items-center px-4 py-2 bg-[#ed6a3e] text-white rounded-lg hover:bg-orange-700 transition duration-300">
+                    <i data-feather="edit-3" class="w-4 h-4 mr-2"></i>
+                    Manual Entry
+                </a>
+                {% if shopkeeper.subscription_plan == 'gold' %}
+                <a href="{{ url_for('shopkeeper.scan_purchase_bill') }}"
+                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300">
+                    <i data-feather="camera" class="w-4 h-4 mr-2"></i>
+                    AI Scan Bill
+                </a>
+                {% endif %}
+            </div>
         </div>
         {% endif %}
     </div>

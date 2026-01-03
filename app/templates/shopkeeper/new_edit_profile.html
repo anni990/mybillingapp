@@ -870,6 +870,89 @@
                 </div>
             </div>
 
+            <!-- Watermark Settings Section -->
+            <div class="form-section bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i data-feather="image" class="w-5 h-5 mr-3 text-orange-600"></i>
+                    Watermark Settings
+                </h3>
+                <div class="space-y-6">
+                    
+                    <!-- Subscription Plan Info -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-center mb-2">
+                            <i data-feather="info" class="w-4 h-4 mr-2 text-blue-600"></i>
+                            <h4 class="text-sm font-semibold text-blue-800">Your Plan: {{ shopkeeper.subscription_plan|title }}</h4>
+                        </div>
+                        <p class="text-sm text-blue-700">{{ watermark_info.plan_description }}</p>
+                    </div>
+
+                    <!-- Watermark Enable/Disable -->
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                            <div class="flex-1">
+                                <label class="text-sm font-medium text-gray-700">Show Watermark on Bills</label>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    {% if watermark_info.is_mandatory %}
+                                        Free users must show watermark. Upgrade to remove watermarks.
+                                    {% else %}
+                                        Choose whether to display watermark on your bill receipts.
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="hidden" name="watermark_enabled" value="false">
+                                <input 
+                                    type="checkbox" 
+                                    id="watermark_enabled" 
+                                    name="watermark_enabled" 
+                                    value="true"
+                                    {% if shopkeeper.watermark_enabled %}checked{% endif %}
+                                    {% if watermark_info.is_mandatory %}disabled{% endif %}
+                                    class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+                                >
+                                <label for="watermark_enabled" class="ml-2 text-sm font-medium text-gray-700">
+                                    {% if shopkeeper.watermark_enabled %}Enabled{% else %}Disabled{% endif %}
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Watermark Type Selection -->
+                        <div class="space-y-3">
+                            <label class="text-sm font-medium text-gray-700">Watermark Style</label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                {% for type_key, type_name in watermark_types.items() %}
+                                <div class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200">
+                                    <input 
+                                        type="radio" 
+                                        id="watermark_type_{{ type_key }}" 
+                                        name="watermark_type" 
+                                        value="{{ type_key }}"
+                                        {% if shopkeeper.watermark_type == type_key %}checked{% endif %}
+                                        class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 focus:ring-orange-500 focus:ring-2"
+                                    >
+                                    <label for="watermark_type_{{ type_key }}" class="ml-2 text-sm text-gray-700 font-medium cursor-pointer">
+                                        {{ type_name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Watermark Preview Note -->
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <i data-feather="eye" class="w-4 h-4 mr-2 text-gray-600 mt-0.5"></i>
+                                <div class="text-sm text-gray-600">
+                                    <p class="font-medium mb-1">Watermark Preview</p>
+                                    <p>Changes will be visible on your next bill receipt. The watermark helps identify bills generated through MyBillingApp.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Form Actions -->
             <div class="form-section bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
                 <div class="flex flex-col md:flex-row gap-4 md:justify-end">

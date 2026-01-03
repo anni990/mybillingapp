@@ -1,0 +1,444 @@
+{% extends 'shopkeeper/s_base.html' %}
+{% block title %}Subscription | MyBillingApp{% endblock %}
+{% block shop_name %} {{ shop_name }} {% endblock %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
+<script src="https://unpkg.com/feather-icons"></script>
+
+<style>
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  .plan-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+  }
+
+  .plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  .plan-card.current {
+    border-color: #ed6a3e;
+    background: linear-gradient(135deg, #fef3f0 0%, #fff5f5 100%);
+  }
+
+  .feature-check {
+    color: #22c55e;
+  }
+
+  .feature-cross {
+    color: #ef4444;
+  }
+
+  .upgrade-btn {
+    background: linear-gradient(135deg, #ed6a3e 0%, #f97316 100%);
+    transition: all 0.3s ease;
+  }
+
+  .upgrade-btn:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 15px rgba(237, 106, 62, 0.3);
+  }
+</style>
+
+<div class="p-4 md:p-8">
+  <!-- Header Section -->
+  <div class="fade-in-up bg-gradient-to-r from-orange-50 to-orange-100 rounded-3xl p-8 mb-8 shadow-xl">
+    <div class="text-center">
+      <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gray-800">
+        <span class="text-orange-600">MBA</span> Subscription Plans
+      </h1>
+      <p class="text-xl text-gray-600 mb-6">Choose the perfect plan for your business needs</p>
+      
+      <!-- Current Plan Status -->
+      <div class="inline-flex items-center bg-white rounded-full px-6 py-3 shadow-md">
+        <span class="text-gray-600 mr-2">Current Plan:</span>
+        <span class="font-bold text-orange-600 text-lg">{{ usage_stats.plan_name }}</span>
+        {% if usage_stats.plan == 'free' and usage_stats.daily_gst_limit %}
+          <span class="ml-3 text-sm bg-gray-100 px-3 py-1 rounded-full">
+            {{ usage_stats.daily_gst_used }}/{{ usage_stats.daily_gst_limit }} GST bills today
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Plans Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    
+    <!-- Free Plan -->
+    <div class="plan-card bg-white rounded-2xl p-8 shadow-xl {% if usage_stats.plan == 'free' %}current{% endif %}">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="text-2xl">💫</span>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Free MBA</h3>
+        <div class="text-3xl font-bold text-gray-600 mb-2">₹0<span class="text-lg font-normal">/month</span></div>
+        <p class="text-gray-500">Perfect for getting started</p>
+      </div>
+
+      <ul class="space-y-3 mb-8">
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">GST billing (5 bills/day)</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">Unlimited non-GST billing</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">Basic bill templates</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-times feature-cross mr-3"></i>
+          <span class="text-sm text-gray-500">Inventory management</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-times feature-cross mr-3"></i>
+          <span class="text-sm text-gray-500">Customer ledger</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-times feature-cross mr-3"></i>
+          <span class="text-sm text-gray-500">CA connectivity</span>
+        </li>
+      </ul>
+
+      {% if usage_stats.plan != 'free' %}
+      <form method="POST" action="{{ url_for('shopkeeper.update_subscription') }}">
+        <input type="hidden" name="plan" value="free">
+        <button type="submit" class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-colors">
+          Downgrade to Free
+        </button>
+      </form>
+      {% else %}
+      <div class="w-full bg-orange-100 text-orange-700 py-3 rounded-xl font-semibold text-center border-2 border-orange-200">
+        <i class="fas fa-crown mr-2"></i>
+        Current Plan
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Lite Plan -->
+    <div class="plan-card bg-white rounded-2xl p-8 shadow-xl {% if usage_stats.plan == 'lite' %}current{% endif %} relative">
+      {% if usage_stats.plan != 'lite' %}
+      <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+        <span class="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">Most Popular</span>
+      </div>
+      {% endif %}
+      
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="text-2xl">✨</span>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">MBA Lite</h3>
+        <div class="text-3xl font-bold text-blue-600 mb-2">₹499<span class="text-lg font-normal">/month</span></div>
+        <p class="text-gray-500">Best for growing businesses</p>
+      </div>
+
+      <ul class="space-y-3 mb-8">
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">Unlimited GST billing</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">No watermark on bills</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">Inventory management</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">Customer ledger & management</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">CA connectivity</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">Custom bill templates</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-times feature-cross mr-3"></i>
+          <span class="text-sm">AI-powered bill scanning</span>
+        </li>
+      </ul>
+
+      {% if usage_stats.plan != 'lite' %}
+      <form method="POST" action="{{ url_for('shopkeeper.update_subscription') }}">
+        <input type="hidden" name="plan" value="lite">
+        <button type="submit" class="w-full upgrade-btn text-white py-3 rounded-xl font-semibold">
+          {% if usage_stats.plan == 'free' %}Upgrade to Lite{% else %}Switch to Lite{% endif %}
+        </button>
+      </form>
+      {% else %}
+      <div class="w-full bg-blue-100 text-blue-700 py-3 rounded-xl font-semibold text-center border-2 border-blue-200">
+        <i class="fas fa-crown mr-2"></i>
+        Current Plan
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Gold Plan -->
+    <div class="plan-card bg-white rounded-2xl p-8 shadow-xl {% if usage_stats.plan == 'gold' %}current{% endif %} relative">
+      {% if usage_stats.plan != 'gold' %}
+      <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+        <span class="bg-yellow-500 text-white px-4 py-1 rounded-full text-sm font-semibold">Premium</span>
+      </div>
+      {% endif %}
+      
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="text-2xl">👑</span>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">MBA Gold</h3>
+        <div class="text-3xl font-bold text-yellow-600 mb-2">₹999<span class="text-lg font-normal">/month</span></div>
+        <p class="text-gray-500">For advanced businesses</p>
+      </div>
+
+      <ul class="space-y-3 mb-8">
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">Everything in Lite</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">AI-powered bill scanning</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">Advanced analytics</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">PNL report</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">GST Report</span>
+        </li>
+        <li class="flex items-center">
+          <i class="fas fa-check feature-check mr-3"></i>
+          <span class="text-sm">Inventory Report</span>
+        </li>
+      </ul>
+
+      {% if usage_stats.plan != 'gold' %}
+      <form method="POST" action="{{ url_for('shopkeeper.update_subscription') }}">
+        <input type="hidden" name="plan" value="gold">
+        <button type="submit" class="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white py-3 rounded-xl font-semibold hover:from-yellow-600 hover:to-yellow-700 transition-all transform hover:-translate-y-1 hover:shadow-lg">
+          {% if usage_stats.plan == 'free' %}Upgrade to Gold{% else %}Upgrade to Gold{% endif %}
+        </button>
+      </form>
+      {% else %}
+      <div class="w-full bg-yellow-100 text-yellow-700 py-3 rounded-xl font-semibold text-center border-2 border-yellow-200">
+        <i class="fas fa-crown mr-2"></i>
+        Current Plan
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Usage Statistics (for Free Plan) -->
+  {% if usage_stats.plan == 'free' and usage_stats.daily_gst_limit %}
+  <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 mb-8">
+    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+      <i class="fas fa-chart-bar text-orange-600 mr-3"></i>
+      Today's Usage
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-orange-50 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium text-orange-700">GST Bills</span>
+          <span class="text-xs text-orange-600">{{ usage_stats.daily_gst_used }}/{{ usage_stats.daily_gst_limit }}</span>
+        </div>
+        <div class="w-full bg-orange-200 rounded-full h-3">
+          <div class="bg-orange-500 h-3 rounded-full" 
+               style="width: {% if usage_stats.daily_gst_limit and usage_stats.daily_gst_limit > 0 %}{{ ((usage_stats.daily_gst_used|int / usage_stats.daily_gst_limit|int) * 100)|round(1) }}{% else %}0{% endif %}%"></div>
+        </div>
+      </div>
+      
+      <div class="bg-green-50 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium text-green-700">Non-GST Bills</span>
+          <span class="text-xs text-green-600">Unlimited</span>
+        </div>
+        <div class="flex items-center">
+          <i class="fas fa-infinity text-green-500 mr-2"></i>
+          <span class="text-sm text-green-600">No limits</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- FAQ Section -->
+  <div class="bg-gray-50 rounded-2xl p-8 shadow-lg">
+    <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Frequently Asked Questions</h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl p-6 shadow-sm">
+        <h4 class="font-semibold text-gray-800 mb-3">Can I switch plans anytime?</h4>
+        <p class="text-gray-600 text-sm">Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.</p>
+      </div>
+      
+      <div class="bg-white rounded-xl p-6 shadow-sm">
+        <h4 class="font-semibold text-gray-800 mb-3">What happens to my data?</h4>
+        <p class="text-gray-600 text-sm">All your data remains safe. Only access to certain features changes based on your plan.</p>
+      </div>
+      
+      <div class="bg-white rounded-xl p-6 shadow-sm">
+        <h4 class="font-semibold text-gray-800 mb-3">Is there a free trial?</h4>
+        <p class="text-gray-600 text-sm">The Free plan is available forever. You can upgrade to premium features anytime.</p>
+      </div>
+      
+      <div class="bg-white rounded-xl p-6 shadow-sm">
+        <h4 class="font-semibold text-gray-800 mb-3">Need help choosing?</h4>
+        <p class="text-gray-600 text-sm">Contact our support team for personalized recommendations based on your business needs.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  feather.replace();
+  
+  // Plan configurations with icons
+  const planConfigs = {
+    'free': { name: 'Free MBA', icon: '💫' },
+    'lite': { name: 'MBA Lite', icon: '✨' },
+    'gold': { name: 'MBA Gold', icon: '👑' }
+  };
+  
+  // Custom confirmation modal function
+  function showCustomConfirm(message, onConfirm, onCancel) {
+    // Create modal backdrop
+    const backdrop = document.createElement('div');
+    backdrop.className = 'fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+    backdrop.id = 'customConfirmModal';
+    
+    // Create modal content
+    backdrop.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300">
+        <div class="p-6 text-center">
+          <div class="mb-4">
+            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Confirm Plan Change</h3>
+          </div>
+          
+          <div class="mb-6">
+            <p class="text-gray-600 leading-relaxed">${message}</p>
+          </div>
+          
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button id="confirmCancel" class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-colors">
+              Cancel
+            </button>
+            <button id="confirmProceed" class="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+              Confirm Change
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Add to document
+    document.body.appendChild(backdrop);
+    
+    // Add event listeners
+    document.getElementById('confirmCancel').onclick = () => {
+      document.body.removeChild(backdrop);
+      if (onCancel) onCancel();
+    };
+    
+    document.getElementById('confirmProceed').onclick = () => {
+      document.body.removeChild(backdrop);
+      if (onConfirm) onConfirm();
+    };
+    
+    // Close on backdrop click
+    backdrop.onclick = (e) => {
+      if (e.target === backdrop) {
+        document.body.removeChild(backdrop);
+        if (onCancel) onCancel();
+      }
+    };
+    
+    // Close on Escape key
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        document.body.removeChild(backdrop);
+        document.removeEventListener('keydown', handleEscape);
+        if (onCancel) onCancel();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+  }
+  
+  // Add confirmation for plan changes with custom modal
+  document.querySelectorAll('form[action*="update-subscription"]').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault(); // Always prevent default first
+      
+      const planInput = this.querySelector('input[name="plan"]');
+      const newPlan = planInput.value.toLowerCase();
+      const planConfig = planConfigs[newPlan] || { name: newPlan.toUpperCase(), icon: '💫' };
+      
+      // Create custom confirmation message
+      const confirmMessage = `${planConfig.icon} Are you sure you want to change your plan to <strong>${planConfig.name}</strong>?<br><br><small class="text-gray-500">This change will take effect immediately.</small>`;
+      
+      // Show custom confirmation modal
+      showCustomConfirm(
+        confirmMessage,
+        () => {
+          // User confirmed - submit the form
+          form.submit();
+          
+          // Show loading notification if supported
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Plan Update', {
+              body: `Updating to ${planConfig.name} plan...`,
+              icon: '/static/images/favicon.ico'
+            });
+          }
+        },
+        () => {
+          // User cancelled - do nothing
+          console.log('Plan change cancelled');
+        }
+      );
+    });
+  });
+  
+  // Request notification permission on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  });
+</script>
+
+{% endblock %}

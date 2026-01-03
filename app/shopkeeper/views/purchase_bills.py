@@ -12,7 +12,7 @@ import os
 import uuid
 from decimal import Decimal
 
-from ..utils import shopkeeper_required, get_current_shopkeeper
+from ..utils import shopkeeper_required, get_current_shopkeeper, require_gold_plan
 from app.models import (Bill, BillItem, Product, Customer, CustomerLedger, 
                        Shopkeeper, CharteredAccountant, CAConnection, EmployeeClient, 
                        PurchaseBill, PurchaseBillItem)
@@ -109,10 +109,47 @@ def register_routes(bp):
         )
 
 
-    # Scan Purchase Bill Page
+    # Manual Purchase Entry Page (for all plans)
+    @bp.route('/manual_purchase_entry')
+    @login_required
+    @shopkeeper_required
+    def manual_purchase_entry():
+        """Display the purchase bill manual entry interface for all subscription plans."""
+        shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        if not shopkeeper:
+            flash('Shopkeeper profile not found.', 'error')
+            return redirect(url_for('auth.login'))
+        
+        shop_name = shopkeeper.shop_name
+        
+        # Get all products for the shopkeeper (for product suggestions)
+        products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all()
+        products_js = [
+            {
+                'id': p.product_id,
+                'name': p.product_name,
+                'price': float(p.price),
+                'stock': p.stock_qty,
+                'gst_rate': float(p.gst_rate or 0),
+                'hsn_code': p.hsn_code or ''
+            } for p in products
+        ]
+        
+        return render_template(
+            'shopkeeper/scan_purchase_bill.html',
+            shop_name=shop_name,
+            shopkeeper=shopkeeper,
+            products=products,
+            products_js=products_js,
+            now=datetime.datetime.now(),
+            active_tab='manual'  # Force manual tab to be active
+        )
+
+    # Scan Purchase Bill Page (Gold plan only)
     @bp.route('/scan_purchase_bill')
     @login_required
     @shopkeeper_required
+    @require_gold_plan
     def scan_purchase_bill():
         """Display the purchase bill scanning interface."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
@@ -141,7 +178,8 @@ def register_routes(bp):
             shopkeeper=shopkeeper,
             products=products,
             products_js=products_js,
-            now=datetime.datetime.now()
+            now=datetime.datetime.now(),
+            active_tab='upload'  # AI scan tab active for gold users
         )
 
 
@@ -149,6 +187,7 @@ def register_routes(bp):
     @bp.route('/scan_purchase_bill', methods=['POST'])
     @login_required
     @shopkeeper_required
+    @require_gold_plan
     def process_scanned_purchase_bill():
         """Handle purchase bill scanning via file upload or camera with AI processing."""
         try:
@@ -171,6 +210,47 @@ def register_routes(bp):
             if file_ext not in allowed_extensions:
                 return jsonify({'success': False, 'message': 'Invalid file type. Please upload PDF, JPG, JPEG, or PNG files.'})
             
+            # Validate file size (max 10MB)
+            max_file_size = 10 * 1024 * 1024  # 10MB in bytes
+            file.seek(0, 2)  # Seek to end of file
+            file_size = file.tell()
+            file.seek(0)  # Reset to beginning
+            
+            if file_size > max_file_size:
+                return jsonify({'success': False, 'message': 'File size too large. Please upload files smaller than 10MB.'})
+            
+            if file_size == 0:
+                return jsonify({'success': False, 'message': 'File is empty. Please select a valid file.'})
+            
+            # CRITICAL: Check API key and AI service availability BEFORE creating any database records
+            try:
+                gemini_service = get_gemini_service()
+                
+                # Check if service is properly configured
+                if not gemini_service.is_configured():
+                    return jsonify({
+                        'success': False, 
+                        'message': 'This feature is coming soon.',
+                        'message_type': 'warning'
+                    })
+                
+                # Validate the service can process the file type
+                if not gemini_service.can_process_file_type(file_ext):
+                    return jsonify({
+                        'success': False,
+                        'message': f'File type "{file_ext.upper()}" is not supported for AI processing. Please upload JPG, PNG, or PDF files.',
+                        'message_type': 'error'
+                    })
+                    
+            except Exception as e:
+                current_app.logger.error(f"Error checking AI service: {str(e)}")
+                return jsonify({
+                    'success': False, 
+                    'message': 'This feature is coming soon.',
+                    'message_type': 'warning'
+                })
+            
+            # Only proceed with database operations if all validations pass
             # Create purchase bill record
             purchase_bill = PurchaseBill(
                 shopkeeper_id=shopkeeper.shopkeeper_id,
@@ -200,7 +280,22 @@ def register_routes(bp):
                     'purchase_bill_id': purchase_bill.purchase_bill_id
                 })
             else:
-                # Handle different message types (warning for API key, error for failures)
+                # If AI processing fails after file is saved, clean up the record and file
+                try:
+                    # Delete the file
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                    
+                    # Delete the database record
+                    PurchaseBillItem.query.filter_by(purchase_bill_id=purchase_bill.purchase_bill_id).delete()
+                    db.session.delete(purchase_bill)
+                    db.session.commit()
+                    
+                except Exception as cleanup_error:
+                    current_app.logger.error(f"Error during cleanup: {str(cleanup_error)}")
+                    db.session.rollback()
+                
+                # Return the original error
                 message_type = result.get('message_type', 'error')
                 return jsonify({
                     'success': False, 
@@ -403,7 +498,8 @@ def register_routes(bp):
         try:
             shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
             if not shopkeeper:
-                return jsonify({'success': False, 'message': 'Shopkeeper not found'}), 404
+                flash('Shopkeeper profile not found.', 'error')
+                return redirect(url_for('shopkeeper.purchase_bills'))
             
             # Get the purchase bill
             purchase_bill = PurchaseBill.query.filter_by(
@@ -412,7 +508,11 @@ def register_routes(bp):
             ).first()
             
             if not purchase_bill:
-                return jsonify({'success': False, 'message': 'Purchase bill not found'}), 404
+                flash('Purchase bill not found.', 'error')
+                return redirect(url_for('shopkeeper.purchase_bills'))
+            
+            # Store bill info for success message
+            invoice_info = f"Invoice #{purchase_bill.invoice_number}" if purchase_bill.invoice_number else f"Bill ID #{purchase_bill.purchase_bill_id}"
             
             # Delete associated file if exists
             if purchase_bill.file_path:
@@ -430,12 +530,14 @@ def register_routes(bp):
             db.session.delete(purchase_bill)
             db.session.commit()
             
-            return jsonify({'success': True, 'message': 'Purchase bill deleted successfully'})
+            flash(f'Purchase bill {invoice_info} has been deleted successfully.', 'success')
+            return redirect(url_for('shopkeeper.purchase_bills'))
             
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error deleting purchase bill: {str(e)}")
-            return jsonify({'success': False, 'message': 'Error deleting purchase bill'}), 500
+            flash('Error deleting purchase bill. Please try again.', 'error')
+            return redirect(url_for('shopkeeper.purchase_bills'))
 
 
     # View Purchase Bill Details

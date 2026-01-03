@@ -11,6 +11,13 @@
                 display: none !important;
             }
             
+            /* Hide watermarks during print for clean output */
+            .watermark-diagonal,
+            .watermark-bottom,
+            .watermark-centered {
+                display: none !important;
+            }
+            
             /* Print-specific table styling */
             .overflow-x-auto {
                 overflow-x: visible !important;
@@ -59,6 +66,14 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+            
+            /* Ensure watermarks print correctly */
+            .watermark-diagonal,
+            .watermark-bottom,
+            .watermark-centered {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
         }
         
         /* Prevent layout shifts */
@@ -81,6 +96,85 @@
             overflow-x: visible !important;
         }
         
+        /* Watermark Styles - Only one should be active at a time */
+        
+        /* Watermark Style 1: Diagonal Repeated Pattern (ACTIVE) */
+        .watermark-diagonal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+            opacity: 0.08;
+        }
+        
+        .watermark-text-pattern {
+            position: absolute;
+            top: -40%;
+            left: -40%;
+            width: 140%;
+            height: 140%;
+            font-size: 15px;
+            font-weight: bold;
+            color: #ed6a3e;
+            transform: rotate(-45deg);
+            line-height: 30px;
+            letter-spacing: 4px;
+            white-space: nowrap;
+        }
+        
+        /* Watermark Style 2: Bottom Small Logo (INACTIVE) */
+        
+        .watermark-bottom {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #ed6a3e;
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #ed6a3e;
+        }
+       
+        
+        /* Watermark Style 3: Large Centered Background (INACTIVE) */
+        
+        .watermark-centered {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 120px;
+            font-weight: 100;
+            color: #ed6a3e;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1;
+            white-space: nowrap;
+            letter-spacing: 10px;
+        }
+       
+        
+        /* Ensure content is above watermark */
+        .print-container {
+            position: relative;
+            z-index: 0;
+            background: white;
+        }
+        
+        .bill-content {
+            position: relative;
+            z-index: 2;
+        }
+        
         /* Responsive table handling for smaller content */
         @media screen and (max-width: 768px) {
             .gst-table {
@@ -90,11 +184,46 @@
             .gst-table th, .gst-table td {
                 padding: 2px 1px;
             }
+            
+            .watermark-text-pattern {
+                font-size: 18px;
+                line-height: 60px;
+                letter-spacing: 15px;
+            }
         }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
-    <div class="max-w-4xl mx-auto bg-white p-6 mt-10 rounded shadow-lg print-container">
+    
+    <div class="max-w-4xl mx-auto bg-white p-6 mt-10 rounded shadow-lg print-container mb-10">
+        
+        <!-- Watermark Elements - Database driven watermark display -->
+        <!-- Only show watermark if enabled by shopkeeper settings -->
+        
+        {% if shopkeeper.watermark_enabled %}
+            {% if shopkeeper.watermark_type == 'diagonal' %}
+            <!-- Watermark Style 1: Diagonal Repeated Pattern -->
+            <div class="watermark-diagonal">
+                <div class="watermark-text-pattern" id="watermark-pattern"></div>
+            </div>
+            {% elif shopkeeper.watermark_type == 'bottom' %}
+            <!-- Watermark Style 2: Bottom Small Logo -->
+            <div class="watermark-bottom">
+                MyBillingApp<br>
+                <small>Powered by MBA</small>
+            </div>
+            {% elif shopkeeper.watermark_type == 'centered' %}
+            <!-- Watermark Style 3: Large Centered Background -->
+            <div class="watermark-centered">
+                MYBILLINGAPP
+            </div>
+            {% endif %}
+        {% endif %}
+       
+        
+        <!-- Bill content wrapper -->
+        <div class="bill-content">
+        
         <div class="mb-4 flex justify-between items-start no-print">
             <!-- Left side: Back button -->
             <a href="{{ back_url }}" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-4 py-2 rounded flex items-center gap-2">
@@ -351,7 +480,8 @@
             <div class="text-center text-xs text-gray-400 mt-4">
                 Thank you for shopping with us!
             </div>
-    </div>
+        </div> <!-- End bill-content wrapper -->
+    </div> <!-- End print-container -->
 
     <script>
 
@@ -479,11 +609,37 @@
 
         // Initialize everything when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            // Generate diagonal watermark pattern only if enabled and type is diagonal
+            {% if shopkeeper.watermark_enabled and shopkeeper.watermark_type == 'diagonal' %}
+            generateWatermarkPattern();
+            {% endif %}
+            
             // Start countdown timer if edit button is available (only for shopkeeper)
             {% if current_user.role == 'shopkeeper' and is_editable and remaining_edit_time %}
             startEditCountdown();
             {% endif %}
         });
+
+        // Function to generate diagonal watermark pattern
+        function generateWatermarkPattern() {
+            const watermarkElement = document.getElementById('watermark-pattern');
+            if (!watermarkElement) return;
+            
+            let pattern = '';
+            const text = 'MyBillingApp'; // Watermark text
+            const rows = 50; // Number of rows
+            const cols = 20; // Number of columns per row
+            
+            for (let row = 0; row < rows; row++) {
+                let rowText = '';
+                for (let col = 0; col < cols; col++) {
+                    rowText += text + '    '; // Add spacing between repetitions
+                }
+                pattern += '<div style="white-space: nowrap;">' + rowText + '</div>';
+            }
+            
+            watermarkElement.innerHTML = pattern;
+        }
     </script>
 
     <!-- Remark Modal for both CA and Shopkeeper users -->

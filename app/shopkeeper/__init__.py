@@ -7,6 +7,10 @@ from flask import Blueprint
 # Create the blueprint
 shopkeeper_bp = Blueprint('shopkeeper', __name__, url_prefix='/shopkeeper')
 
+# Register context processor
+from .utils import get_subscription_context
+shopkeeper_bp.context_processor(get_subscription_context)
+
 # Import routes - import AFTER blueprint creation to avoid circular imports
 # from . import routes
 

@@ -333,6 +333,37 @@
             transform: rotate(180deg);
         }
 
+        /* Customer Dropdown Styles */
+        .customer-dropdown-content {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        
+        .customer-dropdown-content.open {
+            max-height: 200px;
+            opacity: 1;
+            margin-top: 0.25rem;
+        }
+
+        .customer-arrow {
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .customer-arrow.rotated {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-collapsed .customer-dropdown-content {
+            display: none;
+        }
+
+        .sidebar-collapsed .customer-arrow {
+            display: none;
+        }
+
         .sidebar-collapsed .tools-dropdown-content {
             display: none;
         }
@@ -405,7 +436,8 @@
                 { type: 'create-bill', defaultOpen: true },
                 { type: 'purchase-bills', defaultOpen: true },
                 { type: 'messages', defaultOpen: true },
-                { type: 'tools', defaultOpen: true }
+                { type: 'tools', defaultOpen: true },
+                { type: 'customer', defaultOpen: true }
             ];
             
             dropdowns.forEach(dropdown => {
@@ -476,6 +508,17 @@
                             {% block shop_name_2 %}My Shop2{% endblock %}
                         {% endif %}
                     </div>
+
+                    <!-- Subscription Status Badge -->
+                    {% if current_subscription_plan %}
+                    <a href="{{ url_for('shopkeeper.subscription') }}" 
+                       class="inline-flex items-center px-2 py-1 lg:px-3 lg:py-1.5 {{ subscription_badge_class }} rounded-full hover:opacity-80 transition-all text-xs lg:text-sm font-medium cursor-pointer transform hover:scale-105"
+                       title="Current Plan: {{ subscription_display_name }} - Click to manage">
+                        <span class="mr-1">{{ subscription_icon }}</span>
+                        <span class="hidden sm:inline">{{ subscription_display_name }}</span>
+                        <span class="sm:hidden">{{ subscription_display_name[0] }}</span>
+                    </a>
+                    {% endif %}
                 </div>
 
                 <!-- Header Actions -->
@@ -710,44 +753,127 @@
                                     <i data-feather="list" class="w-4 h-4 flex-shrink-0"></i>
                                     <span class="ml-2 whitespace-nowrap">All Bills</span>
                                 </a>
+                                {% if current_subscription_plan == 'gold' %}
                                 <a href="{{ url_for('shopkeeper.scan_purchase_bill') }}"
                                    class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mb-2 mr-2">
                                     <i data-feather="camera" class="w-4 h-4 flex-shrink-0"></i>
                                     <span class="ml-2 whitespace-nowrap">Scan Bill</span>
                                 </a>
+                                {% else %}
+                                <a href="javascript:void(0)" onclick="showUpgradeAlert('AI Bill Scanning', 'gold')"
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mb-2 mr-2 cursor-not-allowed">
+                                    <i data-feather="camera" class="w-4 h-4 flex-shrink-0 opacity-60"></i>
+                                    <span class="ml-2 whitespace-nowrap opacity-60">Scan Bill</span>
+                                    <span class="ml-auto text-lg" title="Requires MBA Gold">👑</span>
+                                </a>
+                                {% endif %}
                             </div>
                         </div>
                     </li>
                     <li>
+                        {% if current_subscription_plan == 'free' %}
+                        <div class="relative">
+                            <a href="javascript:void(0)" onclick="showUpgradeAlert('Stock Management', 'lite')"
+                                class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group  cursor-not-allowed">
+                                <i data-feather="package" class="w-5 h-5 flex-shrink-0 text-white opacity-60"></i>
+                                <span class="sidebar-text ml-3 whitespace-nowrap opacity-60">Stock Management</span>
+                                <span class="ml-auto text-lg sidebar-text" title="Requires MBA Lite">✨</span>
+                            </a>
+                        </div>
+                        {% else %}
                         <a href="{{ url_for('shopkeeper.products_stock') }}"
                             class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-                            <i data-feather="box" class="w-5 h-5 flex-shrink-0"></i>
+                            <i data-feather="package" class="w-5 h-5 flex-shrink-0 text-white"></i>
                             <span class="sidebar-text ml-3 whitespace-nowrap">Stock Management</span>
                         </a>
+                        {% endif %}
                     </li>
                     <li>
+                        {% if current_subscription_plan == 'free' %}
+                        <div class="relative">
+                            <a href="javascript:void(0)" onclick="showUpgradeAlert('Sales Reports', 'lite')"
+                                class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group  cursor-not-allowed">
+                                <i data-feather="bar-chart-2" class="w-5 h-5 flex-shrink-0 opacity-60"></i>
+                                <span class="sidebar-text ml-3 whitespace-nowrap opacity-60">Sales Reports</span>
+                                <span class="ml-auto text-lg sidebar-text" title="Requires MBA Lite">✨</span>
+                            </a>
+                        </div>
+                        {% else %}
                         <a href="{{ url_for('shopkeeper.sales_reports') }}"
                             class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
                             <i data-feather="bar-chart-2" class="w-5 h-5 flex-shrink-0"></i>
                             <span class="sidebar-text ml-3 whitespace-nowrap">Sales Reports</span>
                         </a>
+                        {% endif %}
                     </li>
                     <li>
-                        <a href="{{ url_for('shopkeeper.customer_management') }}"
-                            class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-                            <i data-feather="users" class="w-5 h-5 flex-shrink-0"></i>
-                            <span class="sidebar-text ml-3 whitespace-nowrap">Customer Management</span>
-                        </a>
+                        <!-- Customer Dropdown -->
+                        {% if current_subscription_plan == 'free' %}
+                        <div class="relative">
+                            <a href="javascript:void(0)" onclick="showUpgradeAlert('Customer Management', 'lite')"
+                                class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group  cursor-not-allowed">
+                                <i data-feather="users" class="w-5 h-5 flex-shrink-0 text-white opacity-60"></i>
+                                <span class="sidebar-text ml-3 whitespace-nowrap opacity-60">Customers</span>
+                                <span class="ml-auto text-lg sidebar-text" title="Requires MBA Lite">✨</span>
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="customer-dropdown hover:bg-white/10 rounded-xl">
+                            <button class="flex items-center justify-between w-full px-3 py-3 transition duration-300 group text-left"
+                                    onclick="toggleCustomerDropdown(event)">
+                                <div class="flex items-center">
+                                    <i data-feather="users" class="w-5 h-5 flex-shrink-0 text-white"></i>
+                                    <span class="sidebar-text ml-3 whitespace-nowrap">Customers</span>
+                                </div>
+                                <i data-feather="chevron-up" class="w-6 h-6 transition-transform duration-300 sidebar-text customer-arrow dropdown-loading"></i>
+                            </button>
+                            
+                            <!-- Dropdown Content -->
+                            <div class="customer-dropdown-content ml-8 mt-1 space-y-1 dropdown-loading">
+                                <a href="{{ url_for('shopkeeper.customer_management') }}"
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mr-2">
+                                    <i data-feather="user-plus" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">Manage Customer</span>
+                                </a>
+                                <a href="{{ url_for('shopkeeper.customer_ledger_overview') }}"
+                                   class="flex items-center px-3 py-2 rounded-lg transition duration-300 hover:bg-white/10 text-md sidebar-text mb-2 mr-2">
+                                    <i data-feather="book" class="w-4 h-4 flex-shrink-0"></i>
+                                    <span class="ml-2 whitespace-nowrap">Ledger</span>
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
                     </li>
                     <li>
-                        <a href="{{ url_for('shopkeeper.customer_ledger_overview') }}"
+                        {% if current_subscription_plan == 'free' %}
+                        <div class="relative">
+                            <a href="javascript:void(0)" onclick="showUpgradeAlert('CA Marketplace', 'lite')"
+                                class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group  cursor-not-allowed">
+                                <i data-feather="briefcase" class="w-5 h-5 flex-shrink-0 opacity-60"></i>
+                                <span class="sidebar-text ml-3 whitespace-nowrap opacity-60">CA Marketplace</span>
+                                <span class="ml-auto text-lg sidebar-text" title="Requires MBA Lite">✨</span>
+                            </a>
+                        </div>
+                        {% else %}
+                        <a href="{{ url_for('shopkeeper.ca_marketplace') }}"
                             class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-                            <i data-feather="book-open" class="w-5 h-5 flex-shrink-0"></i>
-                            <span class="sidebar-text ml-3 whitespace-nowrap">Customer Ledger</span>
+                            <i data-feather="briefcase" class="w-5 h-5 flex-shrink-0"></i>
+                            <span class="sidebar-text ml-3 whitespace-nowrap">CA Marketplace</span>
                         </a>
+                        {% endif %}
                     </li>
                     <li>
                         <!-- Messages Dropdown -->
+                         {% if current_subscription_plan == 'free' %}
+                        <div class="relative">
+                            <a href="javascript:void(0)" onclick="showUpgradeAlert('Messenger', 'gold')"
+                                class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group  cursor-not-allowed">
+                                <i data-feather="users" class="w-5 h-5 flex-shrink-0 text-white opacity-60"></i>
+                                <span class="sidebar-text ml-3 whitespace-nowrap opacity-60">Messages</span>
+                                <span class="ml-auto text-lg sidebar-text" title="Requires MBA Gold">👑</span>
+                            </a>
+                        </div>
+                        {% else %}
                         <div class="messages-dropdown hover:bg-white/10 rounded-xl">
                             <button onclick="toggleMessagesDropdown(event)" 
                                     class="w-full flex items-center justify-between px-3 py-3 rounded-xl transition duration-300 group">
@@ -773,13 +899,7 @@
                                 </a>
                             </div>
                         </div>
-                    </li>
-                    <li>
-                        <a href="{{ url_for('shopkeeper.ca_marketplace') }}"
-                            class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group">
-                            <i data-feather="briefcase" class="w-5 h-5 flex-shrink-0"></i>
-                            <span class="sidebar-text ml-3 whitespace-nowrap">CA Marketplace</span>
-                        </a>
+                        {% endif %}
                     </li>
                     <li>
                         <!-- Tools Dropdown -->
@@ -1220,6 +1340,27 @@
             }
         }
 
+        // Customer Dropdown functionality
+        function toggleCustomerDropdown(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const dropdownContent = document.querySelector('.customer-dropdown-content');
+            const arrow = document.querySelector('.customer-arrow');
+            
+            if (dropdownContent && arrow) {
+                const isOpen = dropdownContent.classList.contains('open');
+                const newState = !isOpen;
+                
+                // Save state to localStorage
+                localStorage.setItem('customerDropdownOpen', newState.toString());
+                
+                // Update UI
+                setDropdownState('customer', newState);
+                feather.replace();
+            }
+        }
+
         // Close dropdown when clicking outside - but maintain initial open state
         document.addEventListener('click', function(event) {
             // We don't auto-close dropdowns on outside clicks since they should remain open by default
@@ -1238,7 +1379,108 @@
                 }, 100);
             }
         }
+
+        // Show upgrade alert for restricted features
+        function showUpgradeAlert(featureName, requiredPlan) {
+            const planConfigs = {
+                'lite': { name: 'MBA Lite', icon: '✨' },
+                'gold': { name: 'MBA Gold', icon: '👑' }
+            };
+            
+            const planConfig = planConfigs[requiredPlan];
+            const planName = planConfig ? planConfig.name : requiredPlan.toUpperCase();
+            const planIcon = planConfig ? planConfig.icon : '✨';
+            
+            const modal = document.getElementById('upgradeModal');
+            const featureNameElement = document.getElementById('upgradeFeatureName');
+            const planNameElement = document.getElementById('upgradePlanName');
+            const upgradeIcon = document.getElementById('upgradeIcon');
+            
+            // Update modal content
+            featureNameElement.textContent = featureName;
+            planNameElement.textContent = planName;
+            
+            // Set appropriate icon based on plan
+            if (requiredPlan === 'lite') {
+                upgradeIcon.setAttribute('data-feather', 'zap');
+                upgradeIcon.className = 'w-8 h-8 text-blue-500 mb-4 mx-auto';
+            } else {
+                upgradeIcon.setAttribute('data-feather', 'star');
+                upgradeIcon.className = 'w-8 h-8 text-yellow-500 mb-4 mx-auto';
+            }
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Re-render feather icons
+            feather.replace();
+        }
+        
+        // Close upgrade modal
+        function closeUpgradeModal() {
+            const modal = document.getElementById('upgradeModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('upgradeModal');
+            const modalContent = modal.querySelector('.bg-white');
+            
+            if (event.target === modal && !modalContent.contains(event.target)) {
+                closeUpgradeModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeUpgradeModal();
+            }
+        });
+        
+        // Redirect to subscription page
+        function redirectToSubscription() {
+            window.location.href = '{{ url_for("shopkeeper.subscription") }}';
+        }
     </script>
+    
+    <!-- Custom Upgrade Modal -->
+    <div id="upgradeModal" class="fixed inset-0 bg-opacity-50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 max-h-screen overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-6 text-center">
+                <div class="mb-4">
+                    <i id="upgradeIcon" data-feather="zap" class="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mb-3 sm:mb-4 mx-auto"></i>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">Upgrade Required</h3>
+                </div>
+                
+                <div class="mb-4 sm:mb-6">
+                    <p class="text-gray-600 leading-relaxed text-sm sm:text-base">
+                        <span class="font-semibold" id="upgradeFeatureName">Feature</span> requires 
+                        <span class="font-semibold text-orange-600" id="upgradePlanName">Plan</span> to access.
+                    </p>
+                    <p class="text-xs sm:text-sm text-gray-500 mt-2">
+                        Unlock this feature and many more with a plan upgrade!
+                    </p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <button onclick="closeUpgradeModal()" 
+                            class="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-colors text-xs sm:text-sm order-2 sm:order-1">
+                        Cancel
+                    </button>
+                    <button onclick="redirectToSubscription()" 
+                            class="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl transition-all duration-200 text-xs sm:text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 order-1 sm:order-2">
+                        Upgrade Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Walkthrough System -->
     <script src="{{ url_for('static', filename='js/walkthrough.js') }}"></script>

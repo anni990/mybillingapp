@@ -118,66 +118,99 @@
 -- ADD COLUMN gstin VARCHAR(15) NULL 
 -- COMMENT 'Customer GST Identification Number (15 characters max)';
 
+-- Subscription System Migration Script
+-- Adds subscription_plan, daily_gst_bill_count, and last_bill_date to shopkeepers table
+-- Run this script to update existing database schema
 
--- Add new columns to chartered_accountants table
-ALTER TABLE chartered_accountants 
-ADD ca_name VARCHAR(100) NULL COMMENT 'CA personal name',
-ADD ca_email_id VARCHAR(100) NULL COMMENT 'CA professional email address',
-ADD domain_expertise TEXT NULL COMMENT 'JSON array of expertise areas',
-ADD experience INT NULL COMMENT 'Years of experience',
-ADD industries_served TEXT NULL COMMENT 'JSON array of industries served',
-ADD about_me TEXT NULL COMMENT 'Professional summary';
+-- -- Step 1: Create ENUM type for plan_types (MySQL uses ENUM syntax)
+-- ALTER TABLE shopkeepers 
+-- ADD COLUMN subscription_plan ENUM('free', 'lite', 'gold') NOT NULL DEFAULT 'free' AFTER current_invoice_number;
 
--- Update existing records with default values if needed
--- Note: These fields are optional and can remain NULL for existing records
+-- -- Step 2: Add daily billing counter field
+-- ALTER TABLE shopkeepers 
+-- ADD COLUMN daily_gst_bill_count INT NOT NULL DEFAULT 0 AFTER subscription_plan;
 
--- Optional: Add indexes for better performance
-CREATE INDEX idx_ca_experience ON chartered_accountants(experience);
-CREATE INDEX idx_ca_email ON chartered_accountants(ca_email_id);
+-- -- Step 3: Add last bill date field
+-- ALTER TABLE shopkeepers 
+-- ADD COLUMN last_bill_date DATE DEFAULT NULL AFTER daily_gst_bill_count;
 
--- Verify the changes
-DESCRIBE chartered_accountants;
+-- -- Step 4: Update all existing shopkeepers to 'free' plan (default already set above)
+-- UPDATE shopkeepers SET subscription_plan = 'free' WHERE subscription_plan IS NULL;
 
--- Show sample data structure
-SELECT 
-    ca_id,
-    firm_name,
-    ca_name,
-    ca_email_id,
-    experience,
-    domain_expertise,
-    industries_served,
-    about_me
-FROM chartered_accountants 
-LIMIT 5;
+-- -- Step 5: Reset all daily counters to 0 (default already set above)  
+-- UPDATE shopkeepers SET daily_gst_bill_count = 0 WHERE daily_gst_bill_count IS NULL;
 
+-- -- Verify the changes
+-- SELECT COUNT(*) as total_shopkeepers, 
+--        COUNT(CASE WHEN subscription_plan = 'free' THEN 1 END) as free_plan_count,
+--        COUNT(CASE WHEN subscription_plan = 'lite' THEN 1 END) as lite_plan_count,
+--        COUNT(CASE WHEN subscription_plan = 'gold' THEN 1 END) as gold_plan_count
+-- FROM shopkeepers;
 
--- Add new fields to shopkeepers table
-ALTER TABLE shopkeepers 
-ADD COLUMN owner_name VARCHAR(100) AFTER user_id,
-ADD COLUMN business_type VARCHAR(50) AFTER owner_name,
-ADD COLUMN owner_address VARCHAR(255) AFTER business_type,
-ADD COLUMN business_address VARCHAR(255) AFTER owner_address,
-ADD COLUMN established_year INT AFTER business_address,
-ADD COLUMN pan_number VARCHAR(20) AFTER established_year;
+-- -- Show sample data to verify migration
+-- SELECT shopkeeper_id, shop_name, subscription_plan, daily_gst_bill_count, last_bill_date 
+-- FROM shopkeepers 
+-- LIMIT 5;
 
--- Add UPI ID field to shopkeepers table (if not already exists)
-ALTER TABLE shopkeepers 
-ADD COLUMN upi_id VARCHAR(100) AFTER ifsc_code;
+-- -- SQL commands to update database for Google OAuth integration
+-- -- Run these commands in your MySQL database
 
--- Update existing data to maintain backward compatibility
--- Copy domain to business_type for existing records
-UPDATE shopkeepers 
-SET business_type = domain 
-WHERE business_type IS NULL AND domain IS NOT NULL;
+-- -- 1. Make password_hash nullable for OAuth users
+-- ALTER TABLE users MODIFY COLUMN password_hash VARCHAR(255) NULL;
 
--- Copy address to business_address for existing records
-UPDATE shopkeepers 
-SET business_address = address 
-WHERE business_address IS NULL AND address IS NOT NULL;
+-- -- 2. Add Google OAuth columns
+-- ALTER TABLE users ADD COLUMN google_id VARCHAR(256) UNIQUE NULL COMMENT 'Google OAuth user ID';
+-- ALTER TABLE users ADD COLUMN oauth_provider VARCHAR(50) NULL COMMENT 'OAuth provider (google, etc.)';
+-- ALTER TABLE users ADD COLUMN avatar_url VARCHAR(512) NULL COMMENT 'User avatar/profile picture URL';
 
--- Optional: Add indexes for better performance
-CREATE INDEX idx_shopkeeper_owner_name ON shopkeepers(owner_name);
-CREATE INDEX idx_shopkeeper_business_type ON shopkeepers(business_type);
-CREATE INDEX idx_shopkeeper_city_state ON shopkeepers(city, state);
-CREATE INDEX idx_shopkeeper_established_year ON shopkeepers(established_year);
+-- -- 3. Add index for faster OAuth lookups
+-- CREATE INDEX idx_users_google_id ON users(google_id);
+-- CREATE INDEX idx_users_oauth_provider ON users(oauth_provider);
+
+-- -- 4. Verify the changes
+-- DESCRIBE users;
+
+-- -- 5. Optional: Check if columns were added successfully
+-- SELECT 
+--     COLUMN_NAME, 
+--     DATA_TYPE, 
+--     IS_NULLABLE, 
+--     COLUMN_DEFAULT,
+--     COLUMN_COMMENT
+-- FROM INFORMATION_SCHEMA.COLUMNS 
+-- WHERE TABLE_NAME = 'users' 
+-- AND TABLE_SCHEMA = DATABASE()
+-- ORDER BY ORDINAL_POSITION;
+
+-- -- Notes:
+-- -- - Run these commands one by one in your MySQL client
+-- -- - If any column already exists, you'll get a "Duplicate column name" error (which is safe to ignore)
+-- -- - Make sure to backup your database before running these commands
+-- -- - Replace 'your_database_name' with your actual database name if needed
+
+-- -- SQL commands to update database for Watermark Logic Implementation
+-- -- Run these commands in your MySQL database
+
+-- -- 1. Add watermark settings to shopkeepers table
+-- ALTER TABLE shopkeepers ADD COLUMN watermark_enabled BOOLEAN DEFAULT TRUE COMMENT 'Whether watermark is enabled on bills';
+-- ALTER TABLE shopkeepers ADD COLUMN watermark_type VARCHAR(20) DEFAULT 'diagonal' COMMENT 'Type of watermark: diagonal, bottom, centered';
+
+-- -- 2. Set watermark defaults based on subscription plan
+-- UPDATE shopkeepers SET 
+--     watermark_enabled = CASE 
+--         WHEN subscription_plan = 'free' THEN TRUE 
+--         ELSE FALSE 
+--     END,
+--     watermark_type = 'diagonal'
+-- WHERE watermark_enabled IS NULL OR watermark_type IS NULL;
+
+-- -- 3. Verify the changes
+-- DESCRIBE shopkeepers;
+
+-- -- 4. Check the updated shopkeeper records
+-- SELECT shop_name, subscription_plan, watermark_enabled, watermark_type FROM shopkeepers LIMIT 10;
+
+-- -- Notes:
+-- -- - Free users: watermark_enabled = TRUE (mandatory, cannot be changed)
+-- -- - Lite/Gold users: watermark_enabled = FALSE (can be toggled from profile)
+-- -- - All users can select watermark_type: 'diagonal', 'bottom', or 'centered'

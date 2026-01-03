@@ -85,23 +85,23 @@
 
             <!-- ============= Scan Purchase Bill button active ==================== -->
 
-            <!-- <button id="scan-bill-btn"
+            <a href="{{ url_for('shopkeeper.scan_purchase_bill') }}"
                 class="flex items-center space-x-2 bg-green-100 hover:bg-green-200 text-green-600 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base">
                 <i data-feather="camera" class="w-4 h-4"></i>
                 <span class="hidden md:inline">
                     Scan Purchase Bill</span>
                 <span class="md:hidden">Scan</span>
-            </button> -->
+                </a>
 
             <!-- ============= Scan Purchase Bill button inactive ==================== -->
 
-            <button onclick="showEditRestriction()" id="editBtn"
+            <!-- <button onclick="showEditRestriction()" id="editBtn"
                 class="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 md:px-4 py-2 rounded-lg transition duration-300 text-sm md:text-base cursor-not-allowed">
                 <i data-feather="camera" class="w-4 h-4"></i>
                 <span class="hidden md:inline">
                     Scan Purchase Bill</span>
                 <span class="md:hidden">Scan</span>
-            </button>
+            </button> -->
         </div>
     </div>
 
@@ -400,133 +400,6 @@
                 </button>
             </div>
         </form>
-    </div>
-</div>
-
-
-<!-- Scan Purchase Bill Modal -->
-<div id="scan-bill-modal" class="fixed inset-0 modal-backdrop hidden flex items-center justify-center z-50 p-4">
-    <div
-        class="bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 transform transition-all duration-300 max-h-[90vh] overflow-hidden">
-        <div class="flex justify-between items-center p-6 border-b border-gray-200">
-            <h3 class="text-lg font-bold text-gray-800">Scan Purchase Bill</h3>
-            <button id="close-scan-modal" class="text-gray-400 hover:text-gray-600 transition duration-200">
-                <i class="fas fa-times w-5 h-5"></i>
-            </button>
-        </div>
-
-        <!-- Main Content Area -->
-        <div class="flex flex-col lg:flex-row h-full max-h-[80vh]">
-            <!-- Left Side - Controls -->
-            <div class="lg:w-1/2 p-6 border-r border-gray-200">
-                <div id="control-section" class="space-y-4">
-                    <div class="text-center">
-                        <p class="text-gray-600 mb-6">Choose how you want to upload your purchase bill:</p>
-
-                        <!-- Upload from Device -->
-                        <div class="mb-4">
-                            <button id="upload-from-device"
-                                class="w-full flex items-center justify-center space-x-3 bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-lg transition duration-300">
-                                <i class="fas fa-upload w-5 h-5"></i>
-                                <span>Upload from Device</span>
-                            </button>
-                            <p class="text-xs text-gray-500 mt-2">Supports PDF, JPG, JPEG, PNG files</p>
-                        </div>
-
-                        <!-- Scan with Camera -->
-                        <div class="mb-6">
-                            <button id="scan-with-camera"
-                                class="w-full flex items-center justify-center space-x-3 bg-green-500 hover:bg-green-600 text-white px-6 py-4 rounded-lg transition duration-300">
-                                <i class="fas fa-camera w-5 h-5"></i>
-                                <span>Scan with Camera</span>
-                            </button>
-                            <p class="text-xs text-gray-500 mt-2">Use your device camera to capture the bill</p>
-                        </div>
-                    </div>
-
-                    <!-- Hidden file input -->
-                    <input type="file" id="bill-file-input" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
-
-                    <!-- Camera section (initially hidden) -->
-                    <div id="camera-section" class="hidden">
-                        <video id="camera-preview" class="w-full rounded-lg mb-4" autoplay playsinline></video>
-                        <canvas id="camera-canvas" style="display: none;"></canvas>
-                        <div class="flex space-x-3">
-                            <button id="capture-photo"
-                                class="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition duration-300">
-                                <i class="fas fa-camera w-4 h-4 inline mr-2"></i>
-                                Capture
-                            </button>
-                            <button id="cancel-camera"
-                                class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-300">
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- File Actions (when file is selected) -->
-                    <div id="file-actions" class="hidden space-y-3">
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-3"></i>
-                                <div>
-                                    <p class="text-sm font-medium text-green-800">File Ready for Processing</p>
-                                    <p class="text-xs text-green-600" id="file-name"></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex space-x-3">
-                            <button id="process-file"
-                                class="flex-1 bg-[#ed6a3e] hover:bg-orange-700 text-white px-4 py-3 rounded-lg transition duration-300 font-medium">
-                                <i class="fas fa-robot w-4 h-4 inline mr-2"></i>
-                                Process with AI
-                            </button>
-                            <button id="change-file"
-                                class="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-300">
-                                <i class="fas fa-sync-alt w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Side - Preview -->
-            <div class="lg:w-1/2 p-6 bg-gray-50">
-                <div id="preview-section">
-                    <!-- Empty State -->
-                    <div id="preview-empty"
-                        class="flex items-center justify-center h-full min-h-[300px] border-2 border-dashed border-gray-300 rounded-lg">
-                        <div class="text-center">
-                            <i class="fas fa-file-alt text-gray-400 text-6xl mb-4"></i>
-                            <p class="text-gray-500 text-lg font-medium">File Preview</p>
-                            <p class="text-gray-400 text-sm">Select a file to see preview here</p>
-                        </div>
-                    </div>
-
-                    <!-- Image Preview -->
-                    <div id="image-preview" class="hidden">
-                        <div class="text-center mb-3">
-                            <span class="text-sm font-medium text-gray-700">Preview</span>
-                        </div>
-                        <div class="border border-gray-300 rounded-lg overflow-hidden bg-white">
-                            <img id="preview-image" class="w-full h-auto max-h-96 object-contain" alt="Bill Preview">
-                        </div>
-                    </div>
-
-                    <!-- PDF Preview -->
-                    <div id="pdf-preview" class="hidden">
-                        <div class="text-center mb-3">
-                            <span class="text-sm font-medium text-gray-700">PDF Document</span>
-                        </div>
-                        <div class="border border-gray-300 rounded-lg overflow-hidden bg-white p-6 text-center">
-                            <i class="fas fa-file-pdf text-red-500 text-6xl mb-4"></i>
-                            <p class="text-gray-700 font-medium" id="pdf-name"></p>
-                            <p class="text-gray-500 text-sm mt-2">PDF files will be processed by AI</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 

@@ -10,6 +10,8 @@ import os
 from ..utils import shopkeeper_required, update_shopkeeper_verification
 from app.models import Shopkeeper, CharteredAccountant, CAConnection, ShopConnection
 from app.extensions import db
+from ..services.watermark_service import WatermarkService
+from ..services.watermark_service import WatermarkService
 
 
 def generate_next_invoice_number(shopkeeper):
@@ -57,7 +59,9 @@ def register_routes(bp):
         return render_template('shopkeeper/new_profile.html', 
                              shopkeeper=shopkeeper,
                              shop_name=shop_name,
-                             preview_next_invoice_number=preview_next_invoice_number)
+                             preview_next_invoice_number=preview_next_invoice_number,
+                             watermark_info=WatermarkService.get_watermark_display_info(shopkeeper),
+                             watermark_types=WatermarkService.get_watermark_types())
 
     @bp.route('/profile/edit', methods=['GET', 'POST'])
     @login_required
@@ -195,6 +199,19 @@ def register_routes(bp):
                     except (ValueError, TypeError):
                         flash('Invalid starting number provided. Please enter a valid number.', 'warning')
                 
+                # Handle watermark settings
+                watermark_enabled = request.form.get('watermark_enabled') == 'true'
+                watermark_type = safe_get_form_value('watermark_type') or 'diagonal'
+                
+                # Validate watermark settings with business rules
+                validation = WatermarkService.validate_watermark_update(shopkeeper, watermark_enabled, watermark_type)
+                if validation['valid']:
+                    shopkeeper.watermark_enabled = watermark_enabled
+                    shopkeeper.watermark_type = watermark_type
+                    flash('Watermark settings updated successfully.', 'success')
+                else:
+                    flash(validation['message'], 'warning')
+                
                 # Commit all changes
                 db.session.commit()
                 update_shopkeeper_verification(shopkeeper)
@@ -209,7 +226,9 @@ def register_routes(bp):
         return render_template('shopkeeper/new_edit_profile.html', 
                              shop_name=shop_name,
                              shopkeeper=shopkeeper,
-                             preview_next_invoice_number=preview_next_invoice_number)
+                             preview_next_invoice_number=preview_next_invoice_number,
+                             watermark_info=WatermarkService.get_watermark_display_info(shopkeeper),
+                             watermark_types=WatermarkService.get_watermark_types())
 
     def update_shopkeeper_verification(shopkeeper):
         required_fields = [
@@ -478,3 +497,85 @@ def register_routes(bp):
             db.session.rollback()
             current_app.logger.error(f"Error updating template config: {e}")
             return jsonify({'success': False, 'message': 'An error occurred while updating template configuration'}), 500
+
+    
+    @bp.route('/subscription')
+    @login_required
+    @shopkeeper_required
+    def subscription():
+        """Subscription management page."""
+        shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        
+        from ..services import SubscriptionService
+        usage_stats = SubscriptionService.get_usage_stats(shopkeeper)
+        
+        return render_template('shopkeeper/subscription.html',
+                             shopkeeper=shopkeeper,
+                             shop_name=shopkeeper.shop_name,
+                             usage_stats=usage_stats,
+                             plan_features=SubscriptionService.PLAN_FEATURES)
+    
+    
+    @bp.route('/update-subscription', methods=['POST'])
+    @login_required
+    @shopkeeper_required
+    def update_subscription():
+        """Update shopkeeper subscription plan."""
+        shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        new_plan = request.form.get('plan')
+        
+        if not new_plan or new_plan not in ['free', 'lite', 'gold']:
+            if request.is_json:
+                return jsonify({'success': False, 'message': 'Invalid plan selected'}), 400
+            flash('Invalid plan selected.', 'error')
+            return redirect(url_for('shopkeeper.subscription'))
+        
+        from ..services import SubscriptionService
+        success = SubscriptionService.update_plan(shopkeeper, new_plan)
+        
+        if success:
+            if request.is_json:
+                return jsonify({'success': True, 'message': f'Plan updated to {new_plan.upper()} successfully'})
+            flash(f'Plan updated to {new_plan.upper()} successfully!', 'success')
+        else:
+            if request.is_json:
+                return jsonify({'success': False, 'message': 'Failed to update plan'}), 500
+            flash('Failed to update plan. Please try again.', 'error')
+        
+        return redirect(url_for('shopkeeper.subscription'))
+
+    @bp.route('/update-watermark-settings', methods=['POST'])
+    @login_required
+    @shopkeeper_required
+    def update_watermark_settings():
+        """Update watermark settings from profile page."""
+        shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+        
+        try:
+            watermark_enabled = request.json.get('watermark_enabled', True)
+            watermark_type = request.json.get('watermark_type', 'diagonal')
+            
+            # Validate watermark settings with business rules
+            validation = WatermarkService.validate_watermark_update(shopkeeper, watermark_enabled, watermark_type)
+            
+            if validation['valid']:
+                shopkeeper.watermark_enabled = watermark_enabled
+                shopkeeper.watermark_type = watermark_type
+                db.session.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Watermark settings updated successfully!'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': validation['message']
+                })
+                
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'message': f'An error occurred: {str(e)}'
+            }), 500

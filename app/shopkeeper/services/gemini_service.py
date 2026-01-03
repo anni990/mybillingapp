@@ -29,6 +29,19 @@ class GeminiService:
         """Check if Gemini service is properly configured."""
         return self.api_key is not None and self.model is not None
     
+    def can_process_file_type(self, file_extension: str) -> bool:
+        """
+        Check if the given file type can be processed by Gemini AI.
+        
+        Args:
+            file_extension: File extension without dot (e.g., 'jpg', 'png', 'pdf')
+            
+        Returns:
+            Boolean indicating if file type is supported
+        """
+        supported_types = {'jpg', 'jpeg', 'png', 'pdf'}
+        return file_extension.lower() in supported_types
+    
     def extract_purchase_bill_data(self, image_data: bytes, file_type: str) -> Dict:
         """
         Extract purchase bill information from image using Gemini AI.
