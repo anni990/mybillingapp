@@ -659,7 +659,7 @@ const shopkeeperWalkthroughSteps = [
         position: "bottom"
     },
     {
-        title: isMobileDevice ? "Quick Actions ⚡" : "Quick Actions Hub",
+        title: isMobileDevice ? "Quick Actions ✨" : "Quick Actions Hub",
         description: isMobileDevice ?
             "Create bills, manage inventory, and view reports." :
             "These are your most-used features! Create bills, manage existing ones, check inventory, and view reports. Everything you need for daily operations is just one click away.",

@@ -10,7 +10,7 @@ from flask_login import login_required, current_user
 from decimal import Decimal
 from werkzeug.utils import secure_filename
 
-from ..utils import shopkeeper_required, get_current_shopkeeper
+from ..utils import shopkeeper_required, get_current_shopkeeper, require_lite_plan
 from app.models import Product, Shopkeeper, PurchaseBill, PurchaseBillItem
 from app.extensions import db
 from ..services.gemini_service import get_gemini_service
@@ -24,6 +24,7 @@ def register_routes(bp):
     @bp.route('/products', methods=['GET'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def products_stock():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         shop_name = shopkeeper.shop_name
@@ -33,6 +34,7 @@ def register_routes(bp):
     @bp.route('/products/add', methods=['POST'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def add_product():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         if not shopkeeper:
@@ -66,6 +68,7 @@ def register_routes(bp):
     @bp.route('/products/edit/<int:product_id>', methods=['POST'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def edit_product(product_id):
         product = Product.query.get_or_404(product_id)
         if product.shopkeeper.user_id != current_user.user_id:
@@ -88,6 +91,7 @@ def register_routes(bp):
     @bp.route('/products/delete/<int:product_id>', methods=['POST'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def delete_product(product_id):
         product = Product.query.get_or_404(product_id)
         if product.shopkeeper.user_id != current_user.user_id:

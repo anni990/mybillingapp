@@ -11,13 +11,14 @@ import io
 import os
 from decimal import Decimal
 
-from ..utils import shopkeeper_required, get_current_shopkeeper
+from ..utils import shopkeeper_required, get_current_shopkeeper, check_daily_limits
 from app.models import (Bill, BillItem, Product, Customer, CustomerLedger, 
                        Shopkeeper, CharteredAccountant, CAConnection, EmployeeClient, 
                        PurchaseBill, PurchaseBillItem)
 from app.extensions import db
 from app.utils.gst import calc_line, generate_gst_summary, calculate_bill_totals
 from .profile import generate_next_invoice_number, is_custom_numbering_enabled
+from ..services import SubscriptionService
 from ..services.ledger_service import CustomerLedgerService
 import datetime
 import io
@@ -1229,6 +1230,14 @@ def register_routes(bp):
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         products = Product.query.filter_by(shopkeeper_id=shopkeeper.shopkeeper_id).all() if shopkeeper else []
         
+        # Check GST bill limits for free plan users before processing
+        bill_gst_type = request.form.get('bill_gst_type', 'GST')
+        if bill_gst_type == 'GST':
+            can_create, error_message = SubscriptionService.can_create_gst_bill(shopkeeper)
+            if not can_create:
+                flash(error_message, 'warning')
+                return redirect(url_for('shopkeeper.create_bill'))
+        
         # Customer information
         customer_type = request.form.get('customer_type', 'new')
         existing_customer_id = request.form.get('existing_customer_id')
@@ -1585,6 +1594,10 @@ def register_routes(bp):
         bill.payment_status = payment_status
         
         db.session.commit()
+        
+        # Increment GST bill counter for free plan users
+        if bill_gst_type == 'GST':
+            SubscriptionService.increment_gst_bill_counter(shopkeeper)
         
         # Check if bill is editable based on timing (60 minutes from creation) and user role
         current_time = datetime.datetime.now()

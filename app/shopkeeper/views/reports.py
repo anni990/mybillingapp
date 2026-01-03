@@ -6,7 +6,7 @@ from flask import render_template, request
 from flask_login import login_required, current_user
 import datetime
 
-from ..utils import shopkeeper_required
+from ..utils import shopkeeper_required, require_lite_plan
 from app.models import Bill, Shopkeeper
 from app.extensions import db
 
@@ -16,6 +16,7 @@ def register_routes(bp):
     
     @bp.route('/sales_reports')
     @login_required
+    @require_lite_plan
     @shopkeeper_required
     def sales_reports():
         """Sales reports with date filtering - preserves original logic."""

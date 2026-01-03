@@ -42,13 +42,16 @@ def create_app():
         return None
     
     # Import and register blueprints
-    from .auth.routes import auth_bp
+    from .auth.routes import auth_bp, init_oauth
     from .shopkeeper import shopkeeper_bp 
     from .ca import ca_bp
     from .api.routes import api_bp
     from .api.walkthrough_routes import walkthrough_bp
     from .api.gst_preview import preview_bp
     from .home_routes import home_bp
+
+    # Initialize OAuth
+    init_oauth(app)
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(shopkeeper_bp)

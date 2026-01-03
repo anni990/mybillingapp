@@ -9,7 +9,7 @@ import datetime
 from sqlalchemy import desc
 import io
 
-from ..utils import shopkeeper_required
+from ..utils import shopkeeper_required, require_lite_plan
 from app.models import Customer, CustomerLedger, Shopkeeper, Bill
 from app.extensions import db
 
@@ -21,6 +21,7 @@ def register_routes(bp):
     @bp.route('/customer_management')
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def customer_management():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         shop_name = shopkeeper.shop_name
@@ -63,6 +64,7 @@ def register_routes(bp):
     @bp.route('/add_customer', methods=['POST'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def add_customer():
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         if not shopkeeper:
@@ -99,6 +101,7 @@ def register_routes(bp):
     @bp.route('/get_customer/<int:customer_id>')
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def get_customer(customer_id):
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
@@ -121,6 +124,7 @@ def register_routes(bp):
     @bp.route('/update_customer/<int:customer_id>', methods=['PUT'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def update_customer(customer_id):
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
@@ -158,6 +162,7 @@ def register_routes(bp):
     @bp.route('/delete_customer/<int:customer_id>', methods=['DELETE'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def delete_customer(customer_id):
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
@@ -185,6 +190,7 @@ def register_routes(bp):
     @bp.route('/get_customer_details/<int:customer_id>')
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def get_customer_details(customer_id):
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
@@ -221,6 +227,7 @@ def register_routes(bp):
     @bp.route('/customer_ledger/<int:customer_id>')
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def customer_ledger(customer_id):
         print(f"🔍 Customer ledger route called for customer ID: {customer_id}")
         
@@ -252,6 +259,7 @@ def register_routes(bp):
     @bp.route('/add_ledger_entry/<int:customer_id>', methods=['POST'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def add_ledger_entry(customer_id):
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         customer = Customer.query.filter_by(customer_id=customer_id, shopkeeper_id=shopkeeper.user_id).first()
@@ -300,6 +308,7 @@ def register_routes(bp):
     @bp.route('/complete_payment/<int:customer_id>', methods=['POST'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def complete_payment(customer_id):
         print(f"🔍 Complete payment route called for customer ID: {customer_id}")
         
@@ -360,6 +369,7 @@ def register_routes(bp):
     @bp.route('/get_customers_list')
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def get_customers_list():
         """Get list of customers for bill creation dropdown"""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
@@ -385,6 +395,7 @@ def register_routes(bp):
     @bp.route('/export_customers')
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def export_customers():
         """Export customers to CSV"""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
@@ -426,6 +437,7 @@ def register_routes(bp):
     @bp.route('/customer_ledger_overview')
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def customer_ledger_overview():
         """Customer ledger overview page showing all customers with ledger access"""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()

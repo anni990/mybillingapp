@@ -11,11 +11,15 @@ class User(db.Model, UserMixin):
     user_id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)  # Nullable for OAuth users
     role = db.Column(db.Enum('shopkeeper', 'CA', 'employee'), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     plain_password = db.Column(db.String(255), nullable=True)  # Only for employees
     walkthrough_completed = db.Column(db.Boolean, default=False)
+    # OAuth fields
+    google_id = db.Column(db.String(256), unique=True, nullable=True)
+    oauth_provider = db.Column(db.String(50), nullable=True)
+    avatar_url = db.Column(db.String(512), nullable=True)
     # Relationships
     shopkeeper = db.relationship('Shopkeeper', backref='user', uselist=False)
     ca = db.relationship('CharteredAccountant', backref='user', uselist=False)
@@ -66,6 +70,13 @@ class Shopkeeper(db.Model):
     invoice_prefix = db.Column(db.String(20), default='INV')
     invoice_starting_number = db.Column(db.Integer, default=1)
     current_invoice_number = db.Column(db.Integer, default=1)
+    # Subscription fields
+    subscription_plan = db.Column(db.Enum('free', 'lite', 'gold', name='plan_types'), default='free', nullable=False)
+    daily_gst_bill_count = db.Column(db.Integer, default=0)
+    last_bill_date = db.Column(db.Date, default=None)
+    # Watermark fields
+    watermark_enabled = db.Column(db.Boolean, default=True)  # Whether watermark is enabled
+    watermark_type = db.Column(db.String(20), default='diagonal')  # Type: diagonal, bottom, centered
     # Relationships
     products = db.relationship('Product', backref='shopkeeper', cascade='all, delete-orphan')
     bills = db.relationship('Bill', backref='shopkeeper', cascade='all, delete-orphan')

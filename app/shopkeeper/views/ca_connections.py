@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 from datetime import datetime
 import json
 
-from ..utils import shopkeeper_required
+from ..utils import shopkeeper_required, require_lite_plan
 from app.models import (
     Shopkeeper, CharteredAccountant, ShopConnection, CAConnection, 
     EmployeeClient, CAEmployee
@@ -109,6 +109,7 @@ def register_routes(bp):
     @bp.route('/ca_marketplace', methods=['GET', 'POST'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def ca_marketplace():
         """CA marketplace view - preserves original logic."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
@@ -183,6 +184,7 @@ def register_routes(bp):
     @bp.route('/ca_profile/<int:ca_id>')
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def ca_profile(ca_id):
         """View CA profile - preserves original logic."""
         ca = CharteredAccountant.query.get_or_404(ca_id)
@@ -191,6 +193,7 @@ def register_routes(bp):
     @bp.route('/request_connection/<int:ca_id>', methods=['POST'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def request_connection(ca_id):
         """Request connection to a CA - preserves original logic."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
@@ -245,6 +248,7 @@ def register_routes(bp):
     @bp.route('/my_cas')
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def my_cas():
         """View connected CAs - preserves original logic."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
@@ -287,6 +291,7 @@ def register_routes(bp):
     @bp.route('/disconnect_ca/<int:ca_id>', methods=['POST'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def disconnect_ca(ca_id):
         """Disconnect from a CA - preserves original logic."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
@@ -317,6 +322,7 @@ def register_routes(bp):
     @bp.route('/cancel_request/<int:ca_id>', methods=['POST'])
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def cancel_request(ca_id):
         """Cancel connection request - preserves original logic."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
@@ -383,6 +389,7 @@ def register_routes(bp):
     @bp.route('/search_cas')
     @login_required
     @shopkeeper_required
+    @require_lite_plan
     def search_cas():
         """Search CAs - preserves original logic."""
         query = request.args.get('q', '').strip()
