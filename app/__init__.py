@@ -1,6 +1,6 @@
 from flask import Flask, redirect, url_for
 from .config import Config
-from .extensions import db, login_manager, bcrypt, session
+from .extensions import db, login_manager, bcrypt, session, csrf
 
 def create_app():
     app = Flask(__name__)
@@ -11,6 +11,7 @@ def create_app():
     login_manager.init_app(app)
     bcrypt.init_app(app)
     session.init_app(app)
+    csrf.init_app(app)
 
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
@@ -78,6 +79,12 @@ def create_app():
             user_info['dashboard_url'] = get_dashboard_url_for_role(current_user.role)
         
         return user_info
+
+    # Context processor to make CSRF token available in templates
+    @app.context_processor
+    def inject_csrf_token():
+        from flask_wtf.csrf import generate_csrf
+        return dict(csrf_token=generate_csrf)
 
     # Custom template filters
     @app.template_filter('format_bill_date')

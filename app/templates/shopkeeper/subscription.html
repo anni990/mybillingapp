@@ -4,6 +4,7 @@
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <style>
   @keyframes fadeInUp {
@@ -53,6 +54,117 @@
     background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
     transform: translateY(-1px);
     box-shadow: 0 8px 15px rgba(237, 106, 62, 0.3);
+  }
+
+  /* Celebration Animations */
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(-100vh) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes modal-appear {
+    0% {
+      opacity: 0;
+      transform: scale(0.8) translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .confetti {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #f39c12;
+    animation: confetti-fall 3s linear infinite;
+  }
+
+  .confetti:nth-child(odd) {
+    background: #e74c3c;
+    animation-delay: 0.5s;
+  }
+
+  .confetti:nth-child(3n) {
+    background: #3498db;
+    animation-delay: 1s;
+  }
+
+  .confetti:nth-child(4n) {
+    background: #2ecc71;
+    animation-delay: 1.5s;
+  }
+
+  .confetti:nth-child(5n) {
+    background: #9b59b6;
+    animation-delay: 2s;
+  }
+
+  @keyframes check-bounce {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes sparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+    50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+  }
+
+  .sparkle {
+    animation: sparkle 1.5s ease-in-out infinite;
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .slide-in-up {
+    animation: slideInUp 0.6s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeInScale {
+    0% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .success-modal-content {
+    animation: modal-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .check-icon {
+    animation: check-bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.5s forwards;
+    transform: scale(0);
+  }
+
+  @keyframes title-glow {
+    0%, 100% { text-shadow: 0 0 5px rgba(34, 197, 94, 0.3); }
+    50% { text-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4); }
+  }
+
+  .title-glow {
+    animation: title-glow 2s ease-in-out infinite;
   }
 </style>
 
@@ -183,12 +295,10 @@
       </ul>
 
       {% if usage_stats.plan != 'lite' %}
-      <form method="POST" action="{{ url_for('shopkeeper.update_subscription') }}">
-        <input type="hidden" name="plan" value="lite">
-        <button type="submit" class="w-full upgrade-btn text-white py-3 rounded-xl font-semibold">
-          {% if usage_stats.plan == 'free' %}Upgrade to Lite{% else %}Switch to Lite{% endif %}
-        </button>
-      </form>
+      <button type="button" class="w-full upgrade-btn text-white py-3 rounded-xl font-semibold payment-btn" 
+              data-plan="lite" data-amount="499">
+        {% if usage_stats.plan == 'free' %}Upgrade to Lite - ₹499{% else %}Switch to Lite - ₹499{% endif %}
+      </button>
       {% else %}
       <div class="w-full bg-blue-100 text-blue-700 py-3 rounded-xl font-semibold text-center border-2 border-blue-200">
         <i class="fas fa-crown mr-2"></i>
@@ -210,7 +320,7 @@
           <span class="text-2xl">👑</span>
         </div>
         <h3 class="text-2xl font-bold text-gray-800 mb-2">MBA Gold</h3>
-        <div class="text-3xl font-bold text-yellow-600 mb-2">₹999<span class="text-lg font-normal">/month</span></div>
+        <div class="text-3xl font-bold text-yellow-600 mb-2">₹699<span class="text-lg font-normal">/month</span></div>
         <p class="text-gray-500">For advanced businesses</p>
       </div>
 
@@ -242,12 +352,10 @@
       </ul>
 
       {% if usage_stats.plan != 'gold' %}
-      <form method="POST" action="{{ url_for('shopkeeper.update_subscription') }}">
-        <input type="hidden" name="plan" value="gold">
-        <button type="submit" class="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white py-3 rounded-xl font-semibold hover:from-yellow-600 hover:to-yellow-700 transition-all transform hover:-translate-y-1 hover:shadow-lg">
-          {% if usage_stats.plan == 'free' %}Upgrade to Gold{% else %}Upgrade to Gold{% endif %}
-        </button>
-      </form>
+      <button type="button" class="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white py-3 rounded-xl font-semibold hover:from-yellow-600 hover:to-yellow-700 transition-all transform hover:-translate-y-1 hover:shadow-lg payment-btn" 
+              data-plan="gold" data-amount="699">
+        {% if usage_stats.plan == 'free' %}Upgrade to Gold - ₹699{% else %}Upgrade to Gold - ₹699{% endif %}
+      </button>
       {% else %}
       <div class="w-full bg-yellow-100 text-yellow-700 py-3 rounded-xl font-semibold text-center border-2 border-yellow-200">
         <i class="fas fa-crown mr-2"></i>
@@ -291,6 +399,40 @@
   </div>
   {% endif %}
 
+  <!-- Payment History Section -->
+  {% if payment_history %}
+  <div class="bg-white rounded-2xl p-8 shadow-lg mb-8">
+    <h3 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+      <i class="fas fa-history text-orange-600 mr-3"></i>
+      Recent Payments
+    </h3>
+    
+    <div class="space-y-4">
+      {% for payment in payment_history %}
+      <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+        <div class="flex items-center">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center mr-4
+                      {% if payment.status == 'captured' %}bg-green-100{% elif payment.status == 'failed' %}bg-red-100{% else %}bg-yellow-100{% endif %}">
+            <i class="fas {% if payment.status == 'captured' %}fa-check text-green-600{% elif payment.status == 'failed' %}fa-times text-red-600{% else %}fa-clock text-yellow-600{% endif %}"></i>
+          </div>
+          <div>
+            <div class="font-medium text-gray-900">{{ payment.plan_type.upper() }} Plan</div>
+            <div class="text-sm text-gray-500">{{ payment.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-semibold text-gray-900">₹{{ payment.amount }}</div>
+          <div class="text-sm 
+                      {% if payment.status == 'captured' %}text-green-600{% elif payment.status == 'failed' %}text-red-600{% else %}text-yellow-600{% endif %}">
+            {{ payment.status.title() }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- FAQ Section -->
   <div class="bg-gray-50 rounded-2xl p-8 shadow-lg">
     <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Frequently Asked Questions</h3>
@@ -319,122 +461,491 @@
   </div>
 </div>
 
+<!-- Payment Processing Modal -->
+<div id="paymentModal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+    <div class="text-center">
+      <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-credit-card text-orange-600 text-2xl"></i>
+      </div>
+      <h3 id="modalTitle" class="text-xl font-bold text-gray-800 mb-2">Processing Payment</h3>
+      <p id="modalMessage" class="text-gray-600 mb-6">Please wait while we process your payment...</p>
+      
+      <div id="loadingSpinner" class="hidden mb-4">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+      </div>
+      
+      <div id="modalButtons" class="flex space-x-3">
+        <button id="modalClose" type="button" class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+    <div class="text-center">
+      <div id="confirmIcon" class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <span id="confirmIconText" class="text-2xl">❓</span>
+      </div>
+      <h3 id="confirmTitle" class="text-xl font-bold text-gray-800 mb-2">Confirm Action</h3>
+      <p id="confirmMessage" class="text-gray-600 mb-6">Are you sure you want to proceed?</p>
+      
+      <div class="flex space-x-3">
+        <button id="confirmCancel" type="button" class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+          Cancel
+        </button>
+        <button id="confirmOk" type="button" class="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Success Celebration Modal -->
+<div id="successModal" class="fixed inset-0 backdrop-blur-sm hidden flex items-center justify-center z-50">
+  <div class="success-modal-content bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full mx-4 relative overflow-hidden">
+    <!-- Confetti Animation -->
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="confetti-container"></div>
+    </div>
+    
+    <div class="text-center relative z-10">
+      <!-- Success Icon -->
+      <div class="w-28 h-28 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg check-icon">
+        <i class="fas fa-check text-white text-5xl"></i>
+      </div>
+      
+      <!-- Title -->
+      <h3 class="text-4xl font-bold text-gray-800 mb-3 title-glow">
+        🎉 Congratulations! 🎉
+      </h3>
+      
+      <!-- Success Message -->
+      <p id="successMessage" class="text-xl text-gray-600 mb-8 slide-in-up" style="animation-delay: 0.8s;">
+        Your subscription has been upgraded successfully!
+      </p>
+      
+      <!-- Unlocked Features Section -->
+      <div id="unlockedFeatures" class="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl p-8 mb-8 shadow-inner slide-in-up" style="animation-delay: 1s;">
+        <h4 class="text-2xl font-bold text-gray-800 mb-6 flex items-center justify-center">
+          <i class="fas fa-unlock text-orange-500 mr-3 sparkle"></i>
+          Features Unlocked for You!
+        </h4>
+        <div id="featuresList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Features will be populated dynamically -->
+        </div>
+      </div>
+      
+      <!-- Action Button -->
+      <button id="successClose" type="button" class="bg-gradient-to-r from-green-500 to-green-600 text-white py-4 px-12 rounded-2xl font-bold text-lg hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105 shadow-lg slide-in-up" style="animation-delay: 1.2s;">
+        <i class="fas fa-rocket mr-2"></i>
+        Start Using Features! ✨
+      </button>
+      
+      <!-- Professional Note -->
+      <p class="text-sm text-gray-500 mt-6 slide-in-up" style="animation-delay: 1.4s;">
+        <i class="fas fa-info-circle mr-1"></i>
+        Your plan will be active for 30 days from now
+      </p>
+    </div>
+  </div>
+</div>
+
 <script>
   feather.replace();
   
-  // Plan configurations with icons
+  // Razorpay configuration
+  const RAZORPAY_KEY = '{{ config.RAZORPAY_KEY_ID }}';
+  
+  // Plan configurations
   const planConfigs = {
-    'free': { name: 'Free MBA', icon: '💫' },
-    'lite': { name: 'MBA Lite', icon: '✨' },
-    'gold': { name: 'MBA Gold', icon: '👑' }
+    'lite': { 
+      name: 'MBA Lite', 
+      icon: '✨',
+      amount: 49900, // Amount in paise (₹499 = 49900 paise)
+      description: 'MBA Lite Plan - ₹499/month'
+    },
+    'gold': { 
+      name: 'MBA Gold', 
+      icon: '👑',
+      amount: 69900, // Amount in paise (₹699 = 69900 paise)  
+      description: 'MBA Gold Plan - ₹699/month'
+    },
+    'free': { name: 'Free MBA', icon: '💫' }
   };
   
-  // Custom confirmation modal function
-  function showCustomConfirm(message, onConfirm, onCancel) {
-    // Create modal backdrop
-    const backdrop = document.createElement('div');
-    backdrop.className = 'fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4';
-    backdrop.id = 'customConfirmModal';
-    
-    // Create modal content
-    backdrop.innerHTML = `
-      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300">
-        <div class="p-6 text-center">
-          <div class="mb-4">
-            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Confirm Plan Change</h3>
-          </div>
-          
-          <div class="mb-6">
-            <p class="text-gray-600 leading-relaxed">${message}</p>
-          </div>
-          
-          <div class="flex flex-col sm:flex-row gap-3">
-            <button id="confirmCancel" class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-colors">
-              Cancel
-            </button>
-            <button id="confirmProceed" class="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-              Confirm Change
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    // Add to document
-    document.body.appendChild(backdrop);
-    
-    // Add event listeners
-    document.getElementById('confirmCancel').onclick = () => {
-      document.body.removeChild(backdrop);
-      if (onCancel) onCancel();
-    };
-    
-    document.getElementById('confirmProceed').onclick = () => {
-      document.body.removeChild(backdrop);
-      if (onConfirm) onConfirm();
-    };
-    
-    // Close on backdrop click
-    backdrop.onclick = (e) => {
-      if (e.target === backdrop) {
-        document.body.removeChild(backdrop);
-        if (onCancel) onCancel();
-      }
-    };
-    
-    // Close on Escape key
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        document.body.removeChild(backdrop);
-        document.removeEventListener('keydown', handleEscape);
-        if (onCancel) onCancel();
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
+  // Modal management
+  function showModal(title, message, showSpinner = false) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').innerHTML = message;
+    document.getElementById('loadingSpinner').classList.toggle('hidden', !showSpinner);
+    document.getElementById('paymentModal').classList.remove('hidden');
   }
   
-  // Add confirmation for plan changes with custom modal
-  document.querySelectorAll('form[action*="update-subscription"]').forEach(form => {
-    form.addEventListener('submit', function(e) {
-      e.preventDefault(); // Always prevent default first
+  function hideModal() {
+    document.getElementById('paymentModal').classList.add('hidden');
+  }
+  
+  // Close modal handlers
+  document.getElementById('modalClose').onclick = hideModal;
+  document.getElementById('paymentModal').onclick = function(e) {
+    if (e.target === this) hideModal();
+  };
+  
+  // Confirmation modal management
+  function showConfirmModal(title, message, icon = '❓', iconText = null) {
+    return new Promise((resolve) => {
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMessage').innerHTML = message;
       
-      const planInput = this.querySelector('input[name="plan"]');
-      const newPlan = planInput.value.toLowerCase();
-      const planConfig = planConfigs[newPlan] || { name: newPlan.toUpperCase(), icon: '💫' };
+      if (iconText) {
+        document.getElementById('confirmIconText').textContent = iconText;
+      } else {
+        document.getElementById('confirmIconText').textContent = icon;
+      }
       
-      // Create custom confirmation message
-      const confirmMessage = `${planConfig.icon} Are you sure you want to change your plan to <strong>${planConfig.name}</strong>?<br><br><small class="text-gray-500">This change will take effect immediately.</small>`;
+      document.getElementById('confirmModal').classList.remove('hidden');
       
-      // Show custom confirmation modal
-      showCustomConfirm(
-        confirmMessage,
-        () => {
-          // User confirmed - submit the form
-          form.submit();
-          
-          // Show loading notification if supported
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Plan Update', {
-              body: `Updating to ${planConfig.name} plan...`,
-              icon: '/static/images/favicon.ico'
-            });
-          }
-        },
-        () => {
-          // User cancelled - do nothing
-          console.log('Plan change cancelled');
+      // Handle confirm button
+      const confirmOk = document.getElementById('confirmOk');
+      const confirmCancel = document.getElementById('confirmCancel');
+      
+      const handleConfirm = () => {
+        hideConfirmModal();
+        resolve(true);
+      };
+      
+      const handleCancel = () => {
+        hideConfirmModal();
+        resolve(false);
+      };
+      
+      // Remove existing event listeners
+      confirmOk.onclick = null;
+      confirmCancel.onclick = null;
+      
+      // Add new event listeners
+      confirmOk.onclick = handleConfirm;
+      confirmCancel.onclick = handleCancel;
+      
+      // Handle click outside modal
+      document.getElementById('confirmModal').onclick = function(e) {
+        if (e.target === this) {
+          handleCancel();
         }
-      );
+      };
     });
+  }
+  
+  function hideConfirmModal() {
+    document.getElementById('confirmModal').classList.add('hidden');
+  }
+  
+  // Success celebration modal management
+  function showSuccessModal(planName, features = []) {
+    const modal = document.getElementById('successModal');
+    const message = document.getElementById('successMessage');
+    const featuresList = document.getElementById('featuresList');
+    
+    // Update message
+    message.innerHTML = `Your subscription has been upgraded to <strong class="text-orange-600">${planName || 'Premium'}</strong> successfully!`;
+    
+    // Populate unlocked features with null checks
+    featuresList.innerHTML = '';
+    if (features && Array.isArray(features) && features.length > 0) {
+      features.forEach((feature, index) => {
+        const featureDiv = document.createElement('div');
+        featureDiv.className = 'flex items-center text-gray-700 slide-in-up p-3 bg-white rounded-lg shadow-sm border border-gray-100';
+        featureDiv.style.animationDelay = `${1.2 + (index * 0.15)}s`;
+        featureDiv.innerHTML = `
+          <div class="w-8 h-8 bg-gradient-to-r from-green-400 to-green-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+            <i class="fas fa-check text-white text-sm"></i>
+          </div>
+          <span class="text-sm font-medium">${feature}</span>
+        `;
+        featuresList.appendChild(featureDiv);
+      });
+    } else {
+      // Fallback message if no features provided
+      const fallbackDiv = document.createElement('div');
+      fallbackDiv.className = 'text-center text-gray-600 p-4 slide-in-up';
+      fallbackDiv.style.animationDelay = '1.2s';
+      fallbackDiv.innerHTML = `
+        <div class="w-12 h-12 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-3">
+          <i class="fas fa-star text-white sparkle"></i>
+        </div>
+        <span class="font-semibold">All premium features are now unlocked!</span>
+      `;
+      featuresList.appendChild(fallbackDiv);
+    }
+    
+    // Create confetti
+    createConfetti();
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    
+    // Play celebration sound (if available)
+    try {
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvGIcBSuIt+3PjTcHGn+t+d+V');
+      audio.play().catch(() => {/* Ignore audio errors */});
+    } catch (e) {/* Ignore audio errors */}
+  }
+  
+  function hideSuccessModal() {
+    document.getElementById('successModal').classList.add('hidden');
+    // Clear confetti
+    document.querySelector('.confetti-container').innerHTML = '';
+  }
+  
+  function createConfetti() {
+    const container = document.querySelector('.confetti-container');
+    container.innerHTML = ''; // Clear existing confetti
+    
+    // Create more confetti with better distribution
+    for (let i = 0; i < 75; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = Math.random() * 100 + '%';
+      confetti.style.animationDelay = Math.random() * 3 + 's';
+      confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+      
+      // Add different shapes and sizes
+      if (Math.random() > 0.5) {
+        confetti.style.borderRadius = '50%';
+      }
+      
+      const size = Math.random() * 6 + 4; // 4-10px
+      confetti.style.width = size + 'px';
+      confetti.style.height = size + 'px';
+      
+      container.appendChild(confetti);
+    }
+    
+    // Auto-clear confetti after animation
+    setTimeout(() => {
+      container.innerHTML = '';
+    }, 6000);
+  }
+  
+  // Close success modal handler
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('successClose').onclick = function() {
+      hideSuccessModal();
+      // Refresh page to show new features
+      window.location.reload();
+    };
+    
+    document.getElementById('successModal').onclick = function(e) {
+      if (e.target === this) {
+        hideSuccessModal();
+        window.location.reload();
+      }
+    };
   });
   
-  // Request notification permission on page load
+  // Payment initiation
+  async function initiatePayment(plan) {
+    const planConfig = planConfigs[plan];
+    if (!planConfig) {
+      alert('Invalid plan selected');
+      return;
+    }
+    
+    showModal('Initiating Payment', 'Setting up your payment...', true);
+    
+    try {
+      // Create Razorpay order
+      const response = await fetch('{{ url_for("shopkeeper.initiate_payment") }}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({
+          plan_type: plan
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to create payment order');
+      }
+      
+      hideModal();
+      
+      // Initialize Razorpay checkout
+      const options = {
+        key: data.key_id,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'MyBillingApp',
+        description: `Upgrade to ${data.plan_name}`,
+        order_id: data.order_id,
+        prefill: {
+          name: '{{ shopkeeper.owner_name or shopkeeper.shop_name }}',
+          email: '{{ current_user.email }}',
+          contact: '{{ shopkeeper.contact_number or "" }}'
+        },
+        theme: {
+          color: '#ed6a3e'
+        },
+        handler: function(response) {
+          handlePaymentSuccess(response);
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('Payment cancelled by user');
+          }
+        }
+      };
+      
+      const rzp = new Razorpay(options);
+      rzp.open();
+      
+    } catch (error) {
+      console.error('Payment initiation error:', error);
+      showModal('Payment Error', `Failed to initiate payment: ${error.message}`, false);
+    }
+  }
+  
+  // Handle successful payment
+  async function handlePaymentSuccess(response) {
+    showModal('Processing Payment', 'Verifying your payment and upgrading your plan...', true);
+    
+    try {
+      const verifyResponse = await fetch('{{ url_for("shopkeeper.payment_success") }}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature
+        })
+      });
+      
+      const data = await verifyResponse.json();
+      
+      if (verifyResponse.ok && data.success) {
+        hideModal();
+        
+        // Show celebration modal with plan-specific features
+        const upgradeToLite = data.plan_upgraded === 'lite';
+        const upgradeToGold = data.plan_upgraded === 'gold';
+        
+        let planName = 'Premium Plan';
+        let features = ['All premium features are now unlocked!'];
+        
+        if (upgradeToGold) {
+          planName = 'MBA Gold';
+          features = [
+            'Unlimited GST billing',
+            'No watermark on bills', 
+            'AI-powered bill scanning',
+            'Advanced analytics & reports',
+            'Inventory management',
+            'Customer ledger system',
+            'CA connectivity',
+            'Custom bill templates'
+          ];
+        } else if (upgradeToLite) {
+          planName = 'MBA Lite';
+          features = [
+            'Unlimited GST billing',
+            'No watermark on bills',
+            'Inventory management', 
+            'Customer ledger system',
+            'CA connectivity',
+            'Custom bill templates'
+          ];
+        }
+        
+        // Ensure features is always an array
+        features = Array.isArray(features) ? features : ['All premium features are now unlocked!'];
+        
+        showSuccessModal(planName, features);
+      } else {
+        throw new Error(data.error || 'Payment verification failed');
+      }
+      
+    } catch (error) {
+      console.error('Payment verification error:', error);
+      showModal('Payment Verification Failed', 
+        `There was an issue verifying your payment: ${error.message}.<br><br>Please contact support if the amount was deducted.`, false);
+    }
+  }
+  
+  // Get CSRF token
+  function getCSRFToken() {
+    let token = document.querySelector('[name=csrf_token]')?.value;
+    if (!token) {
+      // Create CSRF token input if not exists
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = 'csrf_token';
+      csrfInput.value = '{{ csrf_token() }}';
+      document.body.appendChild(csrfInput);
+      token = csrfInput.value;
+    }
+    return token;
+  }
+  
+  // Attach payment handlers to buttons
   document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.payment-btn').forEach(btn => {
+      btn.addEventListener('click', async function() {
+        const plan = this.dataset.plan;
+        const amount = this.dataset.amount;
+        
+        // Show confirmation first
+        const planConfig = planConfigs[plan];
+        const confirmMessage = `Upgrade to ${planConfig.name} for ₹${amount}/month?`;
+        
+        const confirmed = await showConfirmModal(
+          'Confirm Upgrade',
+          confirmMessage,
+          planConfig.icon
+        );
+        
+        if (confirmed) {
+          initiatePayment(plan);
+        }
+      });
+    });
+    
+    // Handle free plan form submissions with confirmation
+    document.querySelectorAll('form[action*="update-subscription"]').forEach(form => {
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const planInput = this.querySelector('input[name="plan"]');
+        const newPlan = planInput.value.toLowerCase();
+        const planConfig = planConfigs[newPlan] || { name: newPlan.toUpperCase(), icon: '💫' };
+        
+        const confirmMessage = `Are you sure you want to change your plan to ${planConfig.name}?`;
+        
+        const confirmed = await showConfirmModal(
+          'Confirm Plan Change',
+          confirmMessage,
+          planConfig.icon
+        );
+        
+        if (confirmed) {
+          this.submit();
+        }
+      });
+    });
+    
+    // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }

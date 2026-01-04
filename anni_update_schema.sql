@@ -214,3 +214,54 @@
 -- -- - Free users: watermark_enabled = TRUE (mandatory, cannot be changed)
 -- -- - Lite/Gold users: watermark_enabled = FALSE (can be toggled from profile)
 -- -- - All users can select watermark_type: 'diagonal', 'bottom', or 'centered'
+
+-- CORRECTED Razorpay Payment Schema with payment_metadata column name
+-- Run this if creating tables from scratch
+
+CREATE TABLE subscription_payments (
+    payment_id INT AUTO_INCREMENT PRIMARY KEY,
+    shopkeeper_id INT NOT NULL,
+    razorpay_payment_id VARCHAR(255) UNIQUE,
+    razorpay_order_id VARCHAR(255) NOT NULL,
+    razorpay_signature VARCHAR(512),
+    plan_type ENUM('lite', 'gold') NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'INR',
+    status ENUM('created', 'authorized', 'captured', 'failed', 'cancelled') DEFAULT 'created',
+    webhook_verified BOOLEAN DEFAULT FALSE,
+    failure_reason TEXT,
+    payment_method VARCHAR(50),
+    payment_metadata JSON,  -- CORRECTED: was 'metadata', now 'payment_metadata'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    -- Foreign key constraint to shopkeepers table
+    FOREIGN KEY (shopkeeper_id) REFERENCES shopkeepers(shopkeeper_id) ON DELETE CASCADE,
+    
+    -- Indexes for better performance
+    INDEX idx_shopkeeper_payments (shopkeeper_id),
+    INDEX idx_razorpay_order (razorpay_order_id),
+    INDEX idx_payment_status (status),
+    INDEX idx_created_at (created_at)
+);
+
+-- Add payment tracking to shopkeepers table for quick reference
+ALTER TABLE shopkeepers 
+ADD COLUMN last_payment_id INT NULL,
+ADD COLUMN subscription_expires_at TIMESTAMP NULL,
+ADD FOREIGN KEY (last_payment_id) REFERENCES subscription_payments(payment_id);
+
+-- Create audit log table for payment state changes
+CREATE TABLE payment_audit_log (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    payment_id INT NOT NULL,
+    old_status ENUM('created', 'authorized', 'captured', 'failed', 'cancelled'),
+    new_status ENUM('created', 'authorized', 'captured', 'failed', 'cancelled'),
+    change_reason VARCHAR(255),
+    webhook_event_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (payment_id) REFERENCES subscription_payments(payment_id) ON DELETE CASCADE,
+    INDEX idx_payment_audit (payment_id),
+    INDEX idx_audit_timestamp (created_at)
+);
