@@ -237,14 +237,17 @@
                 <div class="flex items-center space-x-2">
                     <!-- Only show edit button for shopkeeper role -->
                     {% if current_user.role == 'shopkeeper' %}
-                        {% if is_editable and remaining_edit_time and subscription_plan == 'gold' %}
-                        <a href="{{ url_for('shopkeeper.edit_bill', bill_id=bill.bill_id) }}" target="_blank" id="editBtn" class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-4 py-2 rounded inline-block font-bold">
-                            Edit Bill
-                        </a>
-                        {% elif remaining_edit_time and subscription_plan != 'gold' %}
-                        <button onclick="showUpgradeAlert()" id="editBtn" class="bg-orange-100 hover:bg-orange-200 text-orange-600 px-4 py-2 rounded font-bold">
-                            Edit Bill 🔒
-                        </button>
+                        <!-- Check time first, then subscription -->
+                        {% if remaining_edit_time %}
+                            {% if subscription_plan == 'gold' %}
+                            <a href="{{ url_for('shopkeeper.edit_bill', bill_id=bill.bill_id) }}" target="_blank" id="editBtn" class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-4 py-2 rounded inline-block font-bold">
+                                Edit Bill
+                            </a>
+                            {% else %}
+                            <button onclick="showUpgradeAlert('edit')" id="editBtn" class="bg-orange-100 hover:bg-orange-200 text-orange-600 px-4 py-2 rounded font-bold">
+                                Edit Bill 🔒
+                            </button>
+                            {% endif %}
                         {% elif bill.shopkeeper.user_id == current_user.user_id %}
                         <button onclick="showTimeExpiredMessage()" id="editBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded cursor-not-allowed font-bold">
                             Edit Bill (Expired)
@@ -278,7 +281,7 @@
                 </div>
                 
                 <!-- Countdown timer below edit button (only for shopkeeper) -->
-                {% if current_user.role == 'shopkeeper' and is_editable and remaining_edit_time %}
+                {% if current_user.role == 'shopkeeper' and remaining_edit_time %}
                 <div class="text-xs text-orange-600 font-medium" id="countdown">
                     Edit expires in: <span id="timer">{{ remaining_edit_time.minutes }}:{{ '%02d'|format(remaining_edit_time.seconds) }}</span>
                 </div>
@@ -667,7 +670,7 @@
             {% endif %}
             
             // Start countdown timer if edit button is available (only for shopkeeper)
-            {% if current_user.role == 'shopkeeper' and is_editable and remaining_edit_time %}
+            {% if current_user.role == 'shopkeeper' and remaining_edit_time %}
             startEditCountdown();
             {% endif %}
         });
