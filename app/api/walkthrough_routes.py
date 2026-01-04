@@ -4,10 +4,13 @@ Handles walkthrough completion tracking and related functionality.
 """
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
-from app.extensions import db
+from app.extensions import db, csrf
 
 # Create blueprint for walkthrough API
 walkthrough_bp = Blueprint('walkthrough_api', __name__, url_prefix='/api')
+
+# Exempt walkthrough API from CSRF for internal calls
+csrf.exempt(walkthrough_bp)
 
 @walkthrough_bp.route('/mark_walkthrough_completed', methods=['POST'])
 @login_required
