@@ -9,6 +9,7 @@ from sqlalchemy import or_, desc
 import datetime
 import io
 import os
+import pytz
 from decimal import Decimal
 
 from ..utils import shopkeeper_required, get_current_shopkeeper, check_daily_limits
@@ -83,9 +84,12 @@ def register_routes(bp):
                 if is_custom_numbering_enabled(shopkeeper):
                     invoice_number = generate_next_invoice_number(shopkeeper)
                 else:
-                    invoice_number = f"BILL{int(datetime.datetime.now().timestamp())}"
+                    # Use IST timezone for timestamp generation
+                    ist = pytz.timezone('Asia/Kolkata')
+                    current_time_ist = datetime.datetime.now(ist)
+                    invoice_number = f"BILL{int(current_time_ist.timestamp())}"
                 
-                # Create bill with new fields
+                # Create bill with IST timezone
                 bill = Bill(
                     shopkeeper_id=shopkeeper.shopkeeper_id,
                     bill_number=invoice_number,
@@ -93,7 +97,7 @@ def register_routes(bp):
                     customer_contact=customer_contact,
                     customer_address=customer_address,
                     customer_gstin=customer_gstin,
-                    bill_date=datetime.datetime.now(),
+                    bill_date=current_time_ist,  # Use IST timezone
                     gst_type=gst_type,
                     gst_mode=gst_mode,  # New field
                     payment_status=payment_status,
@@ -189,7 +193,7 @@ def register_routes(bp):
             products=products,
             products_js=products_js,
             shopkeeper=shopkeeper,
-            now=datetime.datetime.now()  # Pass current datetime as 'now'
+            now=datetime.datetime.now(pytz.timezone('Asia/Kolkata'))  # Pass current IST datetime
         )
 
     # Sales Bills
@@ -1329,19 +1333,28 @@ def register_routes(bp):
         current_app.logger.debug(f"Product names: {product_names}")
         current_app.logger.debug(f"Quantities: {quantities}")
         
-        # Parse bill_date from form (datetime-local input)
+        # Parse bill_date from form (datetime-local input) and ensure IST timezone handling
+        import pytz
+        ist = pytz.timezone('Asia/Kolkata')
+        
         bill_date_str = request.form.get('bill_date')
         if bill_date_str:
-            bill_date = datetime.datetime.strptime(bill_date_str, '%Y-%m-%dT%H:%M')
+            # Parse the datetime from form (assume it's in IST from user input)
+            naive_bill_date = datetime.datetime.strptime(bill_date_str, '%Y-%m-%dT%H:%M')
+            # Localize to IST
+            bill_date = ist.localize(naive_bill_date)
         else:
-            bill_date = datetime.datetime.now()
+            # Use current IST time for bill creation
+            bill_date = datetime.datetime.now(ist)
         
         total_amount = 0
         # Generate invoice number - use custom format if enabled, otherwise use timestamp
         if is_custom_numbering_enabled(shopkeeper):
             bill_number = generate_next_invoice_number(shopkeeper)
         else:
-            bill_number = f"BILL{int(datetime.datetime.now().timestamp())}"
+            # Use IST timezone for consistent timestamp generation
+            current_time_ist = datetime.datetime.now(ist)
+            bill_number = f"BILL{int(current_time_ist.timestamp())}"
         
         # Determine payment status and amounts
         # For existing customers use the form selection. For new customers that are being saved
@@ -1414,7 +1427,7 @@ def register_routes(bp):
                 current_app.logger.exception("Error checking existing customer")
                 created_customer_id = None
 
-        # Create bill object
+        # Create bill object with IST timezone
         bill = Bill(
             shopkeeper_id=shopkeeper.shopkeeper_id,
             customer_id=created_customer_id if created_customer_id else (int(existing_customer_id) if existing_customer_id and customer_type == 'existing' else None),
@@ -1423,7 +1436,7 @@ def register_routes(bp):
             customer_contact=customer_contact,
             customer_address=customer_address,
             customer_gstin=customer_gstin,
-            bill_date=bill_date,
+            bill_date=bill_date,  # Already converted to IST above
             gst_type=bill_gst_type,
             gst_mode=gst_mode,  # Add GST mode field
             date_with_time=date_with_time,  # Add date/time display toggle
@@ -1660,14 +1673,12 @@ def register_routes(bp):
         if bill_gst_type == 'GST':
             SubscriptionService.increment_gst_bill_counter(shopkeeper)
         
-        # Check if bill is editable based on timing (60 minutes from creation) and user role - Use IST
-        import pytz
-        ist = pytz.timezone('Asia/Kolkata')
+        # Check if bill is editable based on timing (60 minutes from creation) - Use consistent IST handling
         current_time_ist = datetime.datetime.now(ist)
         
-        # Ensure bill_date is timezone-aware in IST
+        # Ensure bill_date is timezone-aware in IST (it should already be from creation above)
         if bill.bill_date.tzinfo is None:
-            # If bill_date is naive, assume it's in IST
+            # If somehow bill_date is naive, assume it's in IST
             bill_date_ist = ist.localize(bill.bill_date)
         else:
             # Convert to IST if it has timezone info
@@ -1676,18 +1687,23 @@ def register_routes(bp):
         time_diff = current_time_ist - bill_date_ist
         is_time_editable = time_diff.total_seconds() <= 3600  # 60 minutes = 3600 seconds
         
+        # Calculate remaining edit time regardless of subscription (pure time check)
+        remaining_edit_time = None
+        if is_time_editable:
+            remaining_seconds = max(0, 3600 - int(time_diff.total_seconds()))
+            remaining_edit_time = {
+                'minutes': remaining_seconds // 60,
+                'seconds': remaining_seconds % 60
+            }
+        
         # Final editability check: must be within time limit AND user must be the shopkeeper owner
         is_editable = False
-        remaining_edit_time = None
         
         if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id == current_user.user_id:
             is_editable = is_time_editable
-            if is_editable:
-                remaining_seconds = 3600 - int(time_diff.total_seconds())
-                remaining_edit_time = {
-                    'minutes': remaining_seconds // 60,
-                    'seconds': remaining_seconds % 60
-                }
+        elif current_user.role in ['CA', 'employee']:
+            # For CA/employees: Only check time limit (no subscription restriction)
+            is_editable = is_time_editable
 
         # Prepare data for receipt
         bill_data = {
@@ -1707,6 +1723,8 @@ def register_routes(bp):
             'amount_paid': paid_amount,
             'amount_unpaid': due_amount,
             'payment_status': payment_status,
+            'subscription_plan': shopkeeper.subscription_plan,  # Add for frontend restrictions
+            'is_time_editable': is_time_editable,  # Add separate time check
             # Add timing variables for edit functionality
             'is_editable': is_editable,
             'remaining_edit_time': remaining_edit_time,
