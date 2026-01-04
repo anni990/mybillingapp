@@ -13,11 +13,11 @@ flask_bcrypt==1.0.1
 Authlib==1.3.0
 xlsxwriter
 pyodbc>=5.0.0
-pandas
+pandas==2.3.1
 gunicorn
 python-dateutil
 pymysql
 weasyprint
-google-generativeai
-razorpay
-pytz==1.3.0
+google-generativeai==0.8.5
+razorpay==1.3.0
+pytz==2025.2
