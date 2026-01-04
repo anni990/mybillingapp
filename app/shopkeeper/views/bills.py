@@ -218,11 +218,22 @@ def register_routes(bp):
             query = query.filter(Bill.payment_status.in_(selected_statuses))
         bills = query.order_by(Bill.bill_date.desc()).all() if shopkeeper else []
         
-        # Add edit availability to each bill (60 minutes from creation)
-        current_time = datetime.datetime.now()
+        # Add edit availability to each bill (60 minutes from creation) - Use IST
+        import pytz
+        ist = pytz.timezone('Asia/Kolkata')
+        current_time_ist = datetime.datetime.now(ist)
+        
         for bill in bills:
-            # Calculate time difference between current time and bill creation
-            time_diff = current_time - bill.bill_date
+            # Ensure bill_date is timezone-aware in IST
+            if bill.bill_date.tzinfo is None:
+                # If bill_date is naive, assume it's in IST
+                bill_date_ist = ist.localize(bill.bill_date)
+            else:
+                # Convert to IST if it has timezone info
+                bill_date_ist = bill.bill_date.astimezone(ist)
+                
+            # Calculate time difference between current IST time and bill creation
+            time_diff = current_time_ist - bill_date_ist
             # Bill is editable if created within last 60 minutes (3600 seconds)
             bill.is_editable = time_diff.total_seconds() <= 3600
             # Calculate remaining time for editing
@@ -248,7 +259,8 @@ def register_routes(bp):
                              shop_name=shop_name,
                              bills=bills, 
                              selected_statuses=selected_statuses,
-                             current_time=current_time)
+                             current_time=current_time_ist.replace(tzinfo=None),  # Pass as naive for template
+                             subscription_plan=shopkeeper.subscription_plan)  # Add for frontend restrictions
 
         
     @bp.route('/bill/<int:bill_id>')
@@ -494,23 +506,36 @@ def register_routes(bp):
             total_sgst_amount = 0
             total_gst_amount = 0
 
-        # Check if bill is editable based on timing (60 minutes from creation) and user role
-        current_time = datetime.datetime.now()
-        time_diff = current_time - bill.bill_date
+        # Check if bill is editable based on timing (60 minutes from creation) and user role - Use IST
+        import pytz
+        ist = pytz.timezone('Asia/Kolkata')
+        current_time_ist = datetime.datetime.now(ist)
+        
+        # Ensure bill_date is timezone-aware in IST
+        if bill.bill_date.tzinfo is None:
+            # If bill_date is naive, assume it's in IST
+            bill_date_ist = ist.localize(bill.bill_date)
+        else:
+            # Convert to IST if it has timezone info
+            bill_date_ist = bill.bill_date.astimezone(ist)
+            
+        time_diff = current_time_ist - bill_date_ist
         is_time_editable = time_diff.total_seconds() <= 3600  # 60 minutes = 3600 seconds
         
-        # Final editability check: must be within time limit AND user must be the shopkeeper owner
+        # Final editability check: must be within time limit AND user must be the shopkeeper owner AND Gold member
         is_editable = False
         remaining_edit_time = None
         
         if current_user.role == 'shopkeeper' and bill.shopkeeper.user_id == current_user.user_id:
-            is_editable = is_time_editable
-            if is_editable:
-                remaining_seconds = 3600 - int(time_diff.total_seconds())
-                remaining_edit_time = {
-                    'minutes': remaining_seconds // 60,
-                    'seconds': remaining_seconds % 60
-                }
+            # Check if user has Gold subscription for edit functionality
+            if shopkeeper.subscription_plan == 'gold':
+                is_editable = is_time_editable
+                if is_editable:
+                    remaining_seconds = 3600 - int(time_diff.total_seconds())
+                    remaining_edit_time = {
+                        'minutes': remaining_seconds // 60,
+                        'seconds': remaining_seconds % 60
+                    }
 
         return render_template('shopkeeper/bill_receipt.html',
             bill=bill,
@@ -525,14 +550,26 @@ def register_routes(bp):
             overall_grand_total=overall_grand_total,
             is_editable=is_editable,
             remaining_edit_time=remaining_edit_time,
-            current_time=current_time,
+            current_time=current_time_ist.replace(tzinfo=None),  # Pass as naive for template
+            subscription_plan=shopkeeper.subscription_plan,  # Add for frontend restrictions
             back_url=url_for('shopkeeper.sales_bills'))
 
     @bp.route('/bill/<int:bill_id>/edit')
     @login_required
     @shopkeeper_required
     def edit_bill(bill_id):
-        """Edit bill page - separate UI for editing."""
+        """Edit bill page - separate UI for editing - Gold members only."""
+        # Get shopkeeper info
+        shopkeeper = get_current_shopkeeper()
+        if not shopkeeper:
+            flash('Shopkeeper profile not found', 'error')
+            return redirect(url_for('shopkeeper.dashboard'))
+        
+        # Check if user has Gold subscription for edit functionality
+        if shopkeeper.subscription_plan != 'gold':
+            flash('Edit bill feature is available only for Gold members. Upgrade your plan to access this feature.', 'warning')
+            return redirect(url_for('shopkeeper.sales_bills'))
+        
         bill = Bill.query.get_or_404(bill_id)
         if bill.shopkeeper.user_id != current_user.user_id:
             flash('Access denied.', 'danger')
@@ -975,8 +1012,19 @@ def register_routes(bp):
     @bp.route('/bill/<int:bill_id>/edit', methods=['POST'])
     @login_required
     def update_bill(bill_id):
-        """Updated method to handle comprehensive edit bill form data"""
+        """Updated method to handle comprehensive edit bill form data - Gold members only"""
         try:
+            # Get shopkeeper info first
+            shopkeeper = get_current_shopkeeper()
+            if not shopkeeper:
+                flash('Shopkeeper profile not found', 'error')
+                return redirect(url_for('shopkeeper.dashboard'))
+            
+            # Check if user has Gold subscription for edit functionality
+            if shopkeeper.subscription_plan != 'gold':
+                flash('Edit bill feature is available only for Gold members. Upgrade your plan to access this feature.', 'warning')
+                return redirect(url_for('shopkeeper.sales_bills'))
+            
             bill = Bill.query.get_or_404(bill_id)
             
             # Check permissions - only shopkeepers can edit bills
@@ -1599,9 +1647,20 @@ def register_routes(bp):
         if bill_gst_type == 'GST':
             SubscriptionService.increment_gst_bill_counter(shopkeeper)
         
-        # Check if bill is editable based on timing (60 minutes from creation) and user role
-        current_time = datetime.datetime.now()
-        time_diff = current_time - bill.bill_date
+        # Check if bill is editable based on timing (60 minutes from creation) and user role - Use IST
+        import pytz
+        ist = pytz.timezone('Asia/Kolkata')
+        current_time_ist = datetime.datetime.now(ist)
+        
+        # Ensure bill_date is timezone-aware in IST
+        if bill.bill_date.tzinfo is None:
+            # If bill_date is naive, assume it's in IST
+            bill_date_ist = ist.localize(bill.bill_date)
+        else:
+            # Convert to IST if it has timezone info
+            bill_date_ist = bill.bill_date.astimezone(ist)
+            
+        time_diff = current_time_ist - bill_date_ist
         is_time_editable = time_diff.total_seconds() <= 3600  # 60 minutes = 3600 seconds
         
         # Final editability check: must be within time limit AND user must be the shopkeeper owner

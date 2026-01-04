@@ -244,6 +244,37 @@
       font-size: 0.875rem;
     }
   </style>
+  
+  <!-- Global CSRF Token for AJAX requests -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <script src="{{ url_for('static', filename='js/csrf_helper.js') }}"></script>
+  <script>
+      // Global CSRF token available to all JavaScript
+      window.csrfToken = '{{ csrf_token() }}';
+      
+      // Global AJAX setup for all fetch requests
+      (function() {
+          const originalFetch = window.fetch;
+          window.fetch = function(url, options = {}) {
+              if (!url.startsWith('http') || url.startsWith(window.location.origin)) {
+                  options.headers = options.headers || {};
+                  
+                  const method = (options.method || 'GET').toUpperCase();
+                  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+                      if (!options.headers['X-CSRFToken'] && !options.headers['X-CSRF-Token']) {
+                          const token = window.csrfToken || document.querySelector('meta[name="csrf-token"]')?.content;
+                          if (token) {
+                              options.headers['X-CSRFToken'] = token;
+                          }
+                      }
+                  }
+              }
+              return originalFetch(url, options);
+          };
+          
+          console.log('Global CSRF protection enabled for CA interface');
+      })();
+  </script>
 </head>
 
 <body class="no-scroll-x">

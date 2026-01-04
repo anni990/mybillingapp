@@ -411,6 +411,7 @@ def register_routes(bp):
     @login_required
     @shopkeeper_required
     def update_invoice_config():
+        """Update invoice configuration with CSRF support."""
         """API endpoint to update invoice configuration."""
         try:
             shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
@@ -466,6 +467,7 @@ def register_routes(bp):
     @login_required
     @shopkeeper_required
     def update_template_config():
+        """Update template configuration with CSRF support."""
         """API endpoint to update template configuration."""
         try:
             shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
@@ -667,35 +669,103 @@ def register_routes(bp):
     @shopkeeper_required
     def update_watermark_settings():
         """Update watermark settings from profile page."""
-        shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
-        
         try:
-            watermark_enabled = request.json.get('watermark_enabled', True)
-            watermark_type = request.json.get('watermark_type', 'diagonal')
+            # Debug: Log request information
+            # logger.info(f"Watermark update request - Headers: {dict(request.headers)}")
+            # logger.info(f"Content-Type: {request.content_type}, Is JSON: {request.is_json}")
             
-            # Validate watermark settings with business rules
-            validation = WatermarkService.validate_watermark_update(shopkeeper, watermark_enabled, watermark_type)
-            
-            if validation['valid']:
-                shopkeeper.watermark_enabled = watermark_enabled
-                shopkeeper.watermark_type = watermark_type
-                db.session.commit()
-                
-                return jsonify({
-                    'success': True,
-                    'message': 'Watermark settings updated successfully!'
-                })
-            else:
+            shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+            if not shopkeeper:
+                logger.error(f"Shopkeeper not found for user {current_user.user_id}")
                 return jsonify({
                     'success': False,
-                    'message': validation['message']
-                })
+                    'message': 'Shopkeeper not found'
+                }), 404
+            
+            # Handle both JSON and form data
+            if request.is_json:
+                data = request.get_json()
+                if not data:
+                    logger.error("No JSON data provided in request")
+                    return jsonify({
+                        'success': False,
+                        'message': 'No data provided'
+                    }), 400
+                
+                watermark_enabled = data.get('watermark_enabled')
+                watermark_type = data.get('watermark_type', shopkeeper.watermark_type or 'diagonal')
+                
+                # Debug: Log received data
+                # logger.info(f"JSON data received: {data}")
+            else:
+                watermark_enabled = request.form.get('watermark_enabled')
+                watermark_type = request.form.get('watermark_type', shopkeeper.watermark_type or 'diagonal')
+                
+                # Debug: Log form data
+                logger.info(f"Form data received: watermark_enabled={watermark_enabled}, watermark_type={watermark_type}")
+            
+            # Convert string 'true'/'false' to boolean if needed
+            if isinstance(watermark_enabled, str):
+                watermark_enabled = watermark_enabled.lower() == 'true'
+            elif watermark_enabled is None:
+                watermark_enabled = shopkeeper.watermark_enabled  # Keep current setting
+            
+            logger.info(f"Watermark update request - User: {current_user.user_id}, Plan: {shopkeeper.subscription_plan}, Enabled: {watermark_enabled}, Type: {watermark_type}")
+            
+            # Special handling for free users - they can change style but not disable watermark
+            if shopkeeper.subscription_plan == 'free':
+                if not watermark_enabled:
+                    logger.warning(f"Free user {shopkeeper.shopkeeper_id} tried to disable watermark")
+                    return jsonify({
+                        'success': False,
+                        'message': 'Free users cannot disable watermark. Upgrade to Lite or Gold plan to remove watermarks.',
+                        'upgrade_required': True
+                    }), 400
+                
+                # Free users can change watermark type, so force enabled = True
+                watermark_enabled = True
+            
+            # Validate watermark type
+            valid_types = ['diagonal', 'bottom', 'centered']
+            if watermark_type not in valid_types:
+                logger.error(f"Invalid watermark type provided: {watermark_type}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Invalid watermark type. Available types: {", ".join(valid_types)}'
+                }), 400
+            
+            # Update shopkeeper settings
+            old_enabled = shopkeeper.watermark_enabled
+            old_type = shopkeeper.watermark_type
+            
+            shopkeeper.watermark_enabled = watermark_enabled
+            shopkeeper.watermark_type = watermark_type
+            db.session.commit()
+            
+            # Determine success message
+            if old_type != watermark_type and old_enabled == watermark_enabled:
+                message = f'Watermark style updated to {watermark_type.title()}'
+            elif old_enabled != watermark_enabled and old_type == watermark_type:
+                message = f'Watermark {"enabled" if watermark_enabled else "disabled"}'
+            else:
+                message = f'Watermark updated: {watermark_type.title()} style, {"enabled" if watermark_enabled else "disabled"}'
+            
+            logger.info(f"Watermark settings updated successfully for shopkeeper {shopkeeper.shopkeeper_id}")
+            
+            return jsonify({
+                'success': True,
+                'message': message,
+                'watermark_enabled': watermark_enabled,
+                'watermark_type': watermark_type,
+                'subscription_plan': shopkeeper.subscription_plan
+            })
                 
         except Exception as e:
             db.session.rollback()
+            logger.error(f"Error updating watermark settings: {str(e)}")
             return jsonify({
                 'success': False,
-                'message': f'An error occurred: {str(e)}'
+                'message': f'An error occurred while updating watermark settings. Please try again.'
             }), 500
 
 

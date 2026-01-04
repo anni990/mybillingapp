@@ -472,6 +472,99 @@
             feather.replace();
         }
     </script>
+    
+    <!-- Global CSRF Token for AJAX requests -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ url_for('static', filename='js/csrf_helper.js') }}"></script>
+    <script>
+        // Enterprise-level Global CSRF configuration
+        window.MyBillingApp = window.MyBillingApp || {};
+        window.MyBillingApp.csrfToken = '{{ csrf_token() }}';
+        window.csrfToken = '{{ csrf_token() }}'; // Backward compatibility
+        
+        // Enterprise CSRF protection with comprehensive handling
+        (function() {
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                const isSameOrigin = !url.startsWith('http') || url.startsWith(window.location.origin);
+                
+                if (isSameOrigin) {
+                    const method = (options.method || 'GET').toUpperCase();
+                    
+                    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+                        options.headers = options.headers || {};
+                        
+                        // Add CSRF token if not present
+                        if (!options.headers['X-CSRFToken'] && !options.headers['X-CSRF-Token']) {
+                            const token = window.MyBillingApp.csrfToken;
+                            if (token) {
+                                options.headers['X-CSRFToken'] = token;
+                            }
+                        }
+                        
+                        // Handle FormData
+                        if (options.body instanceof FormData && !options.body.has('csrf_token')) {
+                            const token = window.MyBillingApp.csrfToken;
+                            if (token) {
+                                options.body.append('csrf_token', token);
+                            }
+                        }
+                        
+                        // Handle JSON payloads  
+                        if (options.headers['Content-Type'] === 'application/json' && options.body) {
+                            try {
+                                const jsonData = JSON.parse(options.body);
+                                if (!jsonData.csrf_token && window.MyBillingApp.csrfToken) {
+                                    jsonData.csrf_token = window.MyBillingApp.csrfToken;
+                                    options.body = JSON.stringify(jsonData);
+                                }
+                            } catch (e) {
+                                // Not JSON, skip
+                            }
+                        }
+                    }
+                }
+                
+                return originalFetch(url, options)
+                    .then(response => {
+                        // Handle CSRF errors globally
+                        if (response.status === 400) {
+                            const contentType = response.headers.get('content-type');
+                            if (contentType && contentType.includes('application/json')) {
+                                return response.clone().json().then(data => {
+                                    if (data.csrf_error) {
+                                        console.warn('CSRF error detected, page will refresh...');
+                                        if (typeof showFlashMessage === 'function') {
+                                            showFlashMessage('Session expired, refreshing...', 'warning');
+                                        }
+                                        setTimeout(() => window.location.reload(), 2000);
+                                    }
+                                    return response;
+                                }).catch(() => response);
+                            }
+                        }
+                        return response;
+                    });
+            };
+            
+            console.log('Enterprise CSRF protection enabled for Shopkeeper interface');
+        })();
+        
+        // Auto-inject CSRF tokens into forms on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const forms = document.querySelectorAll('form[method="post"], form[method="POST"]');
+            forms.forEach(form => {
+                if (!form.querySelector('input[name="csrf_token"]') && window.MyBillingApp.csrfToken) {
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = 'csrf_token';
+                    tokenInput.value = window.MyBillingApp.csrfToken;
+                    form.appendChild(tokenInput);
+                    console.log('CSRF token injected into form:', form.action || form.id || 'unnamed');
+                }
+            });
+        });
+    </script>
 </head>
 
 <body class="no-scroll-x">

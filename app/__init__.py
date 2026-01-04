@@ -1,4 +1,5 @@
 from flask import Flask, redirect, url_for
+from flask_wtf.csrf import generate_csrf
 from .config import Config
 from .extensions import db, login_manager, bcrypt, session, csrf
 
@@ -11,7 +12,61 @@ def create_app():
     login_manager.init_app(app)
     bcrypt.init_app(app)
     session.init_app(app)
+    
+    # Configure CSRF protection globally with enterprise settings
     csrf.init_app(app)
+    app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 hour token validity
+    app.config['WTF_CSRF_SSL_STRICT'] = False  # Allow HTTP for development
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = True  # Enable by default
+    
+    # Global CSRF error handler for enterprise-level error management
+    @app.errorhandler(400)
+    def handle_csrf_error(e):
+        """Global CSRF error handler for all requests."""
+        from flask import request, jsonify, render_template
+        from flask_wtf.csrf import CSRFError
+        
+        # Check if this is specifically a CSRF error
+        if isinstance(e.description, CSRFError) or 'CSRF' in str(e.description):
+            if request.is_json or request.path.startswith('/api/'):
+                # Return JSON response for API calls
+                return jsonify({
+                    'success': False,
+                    'error': 'CSRF token missing or invalid',
+                    'message': 'Security token expired. Please refresh the page and try again.',
+                    'csrf_error': True
+                }), 400
+            else:
+                # Return HTML response for form submissions
+                return render_template('errors/csrf_error.html', 
+                                     message='Security token expired. Please refresh the page and try again.'), 400
+        else:
+            # Handle other 400 errors normally
+            return e
+    
+    # Specific CSRF error handler (more reliable)
+    from flask_wtf.csrf import CSRFError
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        """Handle CSRF errors specifically."""
+        from flask import request, jsonify, render_template
+        
+        if request.is_json or request.path.startswith('/api/'):
+            return jsonify({
+                'success': False,
+                'error': 'CSRF token missing or invalid',
+                'message': 'Security token expired. Please refresh the page and try again.',
+                'csrf_error': True
+            }), 400
+        else:
+            return render_template('errors/csrf_error.html', 
+                                 message='Security token expired. Please refresh the page and try again.'), 400
+    
+    # Global template context processor to inject CSRF token
+    @app.context_processor
+    def inject_csrf_token():
+        """Inject CSRF token into all templates globally."""
+        return dict(csrf_token=generate_csrf)
 
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'

@@ -9,9 +9,13 @@ import traceback
 
 from app.utils.gst import calc_line, generate_gst_summary, calculate_bill_totals, validate_gst_rate
 from ..shopkeeper.utils import shopkeeper_required
+from ..extensions import csrf
 
 # Create blueprint for preview endpoints
 preview_bp = Blueprint('preview', __name__, url_prefix='/api/preview')
+
+# Exempt preview API from CSRF protection for internal calculations
+csrf.exempt(preview_bp)
 
 
 @preview_bp.route('/gst', methods=['POST'])

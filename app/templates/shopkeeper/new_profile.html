@@ -5,6 +5,10 @@
 <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free/css/all.min.css">
 <script src="https://unpkg.com/feather-icons"></script>
 
+<!-- CSRF Token for AJAX requests -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
 <style>
   @keyframes fadeInUp {
     from {
@@ -1718,33 +1722,124 @@
     // Send watermark update to server
     async function updateWatermarkSetting(enabled, type) {
         try {
+            console.log('Updating watermark settings:', { enabled, type });
+            
+            // Get CSRF token with priority on meta tag first
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                             document.querySelector('input[name="csrf_token"]')?.value;
+            
+            console.log('CSRF Token found:', csrfToken ? 'Yes' : 'No');
+            
+            if (!csrfToken) {
+                throw new Error('CSRF token not found. Please refresh the page and try again.');
+            }
+            
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken  // Flask-WTF expects this header
+            };
+            
+            const requestBody = {
+                watermark_enabled: enabled,
+                watermark_type: type,
+                csrf_token: csrfToken  // Also send in body as fallback
+            };
+            
             const response = await fetch('/shopkeeper/update-watermark-settings', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    watermark_enabled: enabled,
-                    watermark_type: type
-                })
+                headers: headers,
+                body: JSON.stringify(requestBody)
             });
 
-            const result = await response.json();
+            // Handle response - check if it's JSON
+            let result;
+            const contentType = response.headers.get('content-type');
             
-            if (result.success) {
-                showFlashMessage(result.message, 'success');
-                // Refresh page to show updated settings
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
+            if (contentType && contentType.includes('application/json')) {
+                result = await response.json();
             } else {
-                showFlashMessage(result.message, 'error');
+                const text = await response.text();
+                console.error('Non-JSON response received:', text);
+                throw new Error('Server returned an unexpected response. Please try again.');
+            }
+            
+            console.log('Watermark update result:', result);
+            
+            if (response.ok && result.success) {
+                showFlashMessage(result.message, 'success');
+                // Update UI immediately without page refresh
+                updateWatermarkUI(result.watermark_enabled, result.watermark_type);
+            } else {
+                if (result.upgrade_required) {
+                    // Show upgrade modal for free users trying to disable watermark
+                    showFlashMessage(result.message + ' <a href="/shopkeeper/subscription" class="underline font-bold">Upgrade Now</a>', 'error');
+                } else {
+                    showFlashMessage(result.message || 'Failed to update watermark settings', 'error');
+                }
+                console.error('Watermark update failed:', result.message);
+                
+                // Revert UI changes on error
+                revertWatermarkUI();
             }
         } catch (error) {
-            console.error('Error:', error);
-            showFlashMessage('An error occurred while updating watermark settings', 'error');
+            console.error('Error updating watermark settings:', error);
+            
+            let errorMessage = 'An error occurred while updating watermark settings. Please try again.';
+            
+            // More specific error messages
+            if (error.message.includes('CSRF token not found')) {
+                errorMessage = 'Security token missing. Please refresh the page and try again.';
+            } else if (error.message.includes('Server returned an unexpected response')) {
+                errorMessage = 'Server error occurred. Please refresh the page and try again.';
+            } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                errorMessage = 'Network error. Please check your connection and try again.';
+            }
+            
+            showFlashMessage(errorMessage, 'error');
+            
+            // Revert UI changes on error
+            revertWatermarkUI();
         }
+    }
+    
+    // Update watermark UI without page reload
+    function updateWatermarkUI(enabled, type) {
+        // Update toggle switch
+        const toggle = document.querySelector('input[name="watermark_enabled"]');
+        if (toggle) {
+            toggle.checked = enabled;
+        }
+        
+        // Update watermark type display
+        const typeButtons = document.querySelectorAll('input[name="watermark_type"]');
+        typeButtons.forEach(btn => {
+            btn.checked = btn.value === type;
+            // Update parent div appearance
+            const parentDiv = btn.closest('.watermark-type-option');
+            if (parentDiv) {
+                if (btn.checked) {
+                    parentDiv.classList.add('ring-2', 'ring-orange-500');
+                } else {
+                    parentDiv.classList.remove('ring-2', 'ring-orange-500');
+                }
+            }
+        });
+        
+        // Update modal watermark type
+        const modalTypeButtons = document.querySelectorAll('input[name="modal_watermark_type"]');
+        modalTypeButtons.forEach(btn => {
+            btn.checked = btn.value === type;
+        });
+    }
+    
+    // Revert UI changes on error
+    function revertWatermarkUI() {
+        // Get current server state and revert to it
+        const currentEnabled = {{ 'true' if shopkeeper.watermark_enabled else 'false' }};
+        const currentType = '{{ shopkeeper.watermark_type }}';
+        
+        updateWatermarkUI(currentEnabled, currentType);
     }
 
     // Upgrade Modal Functions

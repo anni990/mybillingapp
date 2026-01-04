@@ -36,20 +36,36 @@ def register_routes(bp):
         shopkeeper_id = shopkeeper.shopkeeper_id
         shop_name = shopkeeper.shop_name
 
-        # Today's Sales summary
+        # Today's Sales summary - Include full current day
         today = datetime.date.today()
-        bills_today = Bill.query.filter_by(shopkeeper_id=shopkeeper_id, bill_date=today).all()
+        # Use datetime range to include full day
+        today_start = datetime.datetime.combine(today, datetime.time.min)
+        today_end = datetime.datetime.combine(today, datetime.time.max)
+        bills_today = Bill.query.filter_by(shopkeeper_id=shopkeeper_id)\
+            .filter(Bill.bill_date >= today_start, Bill.bill_date <= today_end).all()
         total_amount = sum(float(b.total_amount) for b in bills_today)
         paid = sum(1 for b in bills_today if b.payment_status == 'Paid')
         unpaid = sum(1 for b in bills_today if b.payment_status == 'Unpaid')
         partial = sum(1 for b in bills_today if b.payment_status == 'Partial')
         
-        # Monthly Sales Summary
+        # Monthly Sales Summary - Include full current day
         first_day_of_current_month = today.replace(day=1)
+        # Include full current day by using next day as upper bound
+        next_day = today + datetime.timedelta(days=1)
         bills_this_month = Bill.query.filter_by(shopkeeper_id=shopkeeper_id)\
-            .filter(Bill.bill_date >= first_day_of_current_month, Bill.bill_date <= today).all()
+            .filter(Bill.bill_date >= first_day_of_current_month, Bill.bill_date < next_day).all()
+        
+        # Debug: Log the query results
+        print(f"Debug - Shopkeeper ID: {shopkeeper_id}")
+        print(f"Debug - Date range: {first_day_of_current_month} to {next_day} (exclusive)")
+        print(f"Debug - Bills this month count: {len(bills_this_month)}")
+        
         monthly_total = sum(float(b.total_amount) for b in bills_this_month)
         monthly_bills_count = len(bills_this_month)
+        
+        # Debug: Log calculated values
+        print(f"Debug - Monthly total: {monthly_total}")
+        print(f"Debug - Monthly bills count: {monthly_bills_count}")
 
         # Calculate growth percentage from last month
         last_month_start = first_day_of_current_month - relativedelta(months=1)
@@ -120,5 +136,6 @@ def register_routes(bp):
             connected_employees=connected_employees,
             monthly_sales_labels=monthly_sales_labels,
             monthly_sales_data=monthly_sales_data,
-            show_walkthrough=show_walkthrough
+            show_walkthrough=show_walkthrough,
+            subscription_plan=shopkeeper.subscription_plan  # Add for frontend restrictions
         )
