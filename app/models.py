@@ -74,6 +74,9 @@ class Shopkeeper(db.Model):
     subscription_plan = db.Column(db.Enum('free', 'lite', 'gold', name='plan_types'), default='free', nullable=False)
     daily_gst_bill_count = db.Column(db.Integer, default=0)
     last_bill_date = db.Column(db.Date, default=None)
+    # Payment tracking fields
+    last_payment_id = db.Column(db.Integer, nullable=True)
+    subscription_expires_at = db.Column(db.DateTime, nullable=True)
     # Watermark fields
     watermark_enabled = db.Column(db.Boolean, default=True)  # Whether watermark is enabled
     watermark_type = db.Column(db.String(20), default='diagonal')  # Type: diagonal, bottom, centered
@@ -366,4 +369,75 @@ class Message(db.Model):
         db.Index('idx_conversation', 'sender_id', 'receiver_id', 'timestamp'),
         db.Index('idx_bill_messages', 'bill_id', 'message_type'),
         db.Index('idx_unread_messages', 'receiver_id', 'read', 'timestamp'),
+    )
+
+class SubscriptionPayment(db.Model):
+    """Subscription payment transactions through Razorpay."""
+    __tablename__ = 'subscription_payments'
+    
+    payment_id = db.Column(db.Integer, primary_key=True)
+    shopkeeper_id = db.Column(db.Integer, db.ForeignKey('shopkeepers.shopkeeper_id', ondelete='CASCADE'), nullable=False)
+    
+    # Razorpay identifiers
+    razorpay_payment_id = db.Column(db.String(255), unique=True, nullable=True)
+    razorpay_order_id = db.Column(db.String(255), nullable=False)
+    razorpay_signature = db.Column(db.String(512), nullable=True)
+    
+    # Payment details
+    plan_type = db.Column(db.Enum('lite', 'gold', name='payment_plan_types'), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    currency = db.Column(db.String(3), default='INR', nullable=False)
+    
+    # Payment status and verification
+    status = db.Column(db.Enum('created', 'authorized', 'captured', 'failed', 'cancelled', name='payment_status_types'), 
+                      default='created', nullable=False)
+    webhook_verified = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Additional details
+    failure_reason = db.Column(db.Text, nullable=True)
+    payment_method = db.Column(db.String(50), nullable=True)
+    payment_metadata = db.Column(db.JSON, nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    shopkeeper = db.relationship('Shopkeeper', backref='payments')
+    audit_logs = db.relationship('PaymentAuditLog', backref='payment', cascade='all, delete-orphan')
+    
+    # Indexes for performance
+    __table_args__ = (
+        db.Index('idx_shopkeeper_payments', 'shopkeeper_id'),
+        db.Index('idx_razorpay_order', 'razorpay_order_id'),
+        db.Index('idx_payment_status', 'status'),
+        db.Index('idx_created_at', 'created_at'),
+    )
+    
+    def is_successful(self):
+        """Check if payment is successfully captured."""
+        return self.status == 'captured' and self.webhook_verified
+    
+    def can_upgrade_plan(self):
+        """Check if payment allows plan upgrade."""
+        return self.is_successful() and self.plan_type in ['lite', 'gold']
+
+class PaymentAuditLog(db.Model):
+    """Audit log for payment state changes."""
+    __tablename__ = 'payment_audit_log'
+    
+    log_id = db.Column(db.Integer, primary_key=True)
+    payment_id = db.Column(db.Integer, db.ForeignKey('subscription_payments.payment_id', ondelete='CASCADE'), nullable=False)
+    
+    old_status = db.Column(db.Enum('created', 'authorized', 'captured', 'failed', 'cancelled', name='audit_old_status_types'), nullable=True)
+    new_status = db.Column(db.Enum('created', 'authorized', 'captured', 'failed', 'cancelled', name='audit_new_status_types'), nullable=False)
+    
+    change_reason = db.Column(db.String(255), nullable=True)
+    webhook_event_id = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Indexes for performance
+    __table_args__ = (
+        db.Index('idx_payment_audit', 'payment_id'),
+        db.Index('idx_audit_timestamp', 'created_at'),
     )

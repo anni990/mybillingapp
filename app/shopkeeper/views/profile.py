@@ -6,12 +6,19 @@ from flask import render_template, request, flash, redirect, url_for, current_ap
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os
+import logging
+import json
+from datetime import datetime, timedelta
 
 from ..utils import shopkeeper_required, update_shopkeeper_verification
 from app.models import Shopkeeper, CharteredAccountant, CAConnection, ShopConnection
 from app.extensions import db
 from ..services.watermark_service import WatermarkService
+from ..services.payment_service import PaymentService
 from ..services.watermark_service import WatermarkService
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 def generate_next_invoice_number(shopkeeper):
@@ -509,18 +516,116 @@ def register_routes(bp):
         from ..services import SubscriptionService
         usage_stats = SubscriptionService.get_usage_stats(shopkeeper)
         
+        # Get payment history for the subscription page
+        payment_history = PaymentService.get_shopkeeper_payment_history(shopkeeper, limit=5)
+        
         return render_template('shopkeeper/subscription.html',
                              shopkeeper=shopkeeper,
                              shop_name=shopkeeper.shop_name,
                              usage_stats=usage_stats,
+                             payment_history=payment_history,
                              plan_features=SubscriptionService.PLAN_FEATURES)
+    
+    @bp.route('/initiate-payment', methods=['POST'])
+    @login_required
+    @shopkeeper_required
+    def initiate_payment():
+        """Initiate Razorpay payment for subscription upgrade."""
+        try:
+            shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
+            if not shopkeeper:
+                return jsonify({'success': False, 'error': 'Shopkeeper not found'}), 404
+            
+            plan_type = request.json.get('plan_type')
+            if not plan_type or plan_type not in ['lite', 'gold']:
+                return jsonify({'success': False, 'error': 'Invalid plan type'}), 400
+            
+            # Prevent downgrade payments (business logic)
+            current_plan_hierarchy = {'free': 0, 'lite': 1, 'gold': 2}
+            if current_plan_hierarchy.get(shopkeeper.subscription_plan, 0) >= current_plan_hierarchy.get(plan_type, 0):
+                return jsonify({
+                    'success': False, 
+                    'error': f'Cannot upgrade from {shopkeeper.subscription_plan} to {plan_type}'
+                }), 400
+            
+            # Create Razorpay order
+            order_result = PaymentService.create_razorpay_order(shopkeeper, plan_type)
+            
+            if order_result['success']:
+                logger.info(f"Payment initiated for shopkeeper {shopkeeper.shopkeeper_id}, plan: {plan_type}")
+                return jsonify(order_result)
+            else:
+                logger.error(f"Payment initiation failed: {order_result.get('error')}")
+                return jsonify(order_result), 500
+                
+        except Exception as e:
+            logger.error(f"Error in initiate_payment: {str(e)}")
+            return jsonify({'success': False, 'error': 'Payment initiation failed'}), 500
+    
+    @bp.route('/payment-success', methods=['POST'])
+    @login_required
+    @shopkeeper_required
+    def payment_success():
+        """Handle successful payment callback from Razorpay."""
+        try:
+            data = request.json
+            razorpay_order_id = data.get('razorpay_order_id')
+            razorpay_payment_id = data.get('razorpay_payment_id')
+            razorpay_signature = data.get('razorpay_signature')
+            
+            if not all([razorpay_order_id, razorpay_payment_id, razorpay_signature]):
+                return jsonify({'success': False, 'error': 'Missing payment details'}), 400
+            
+            # Process the successful payment
+            result = PaymentService.process_successful_payment(
+                razorpay_order_id, razorpay_payment_id, razorpay_signature
+            )
+            
+            if result['success']:
+                logger.info(f"Payment success processed for order {razorpay_order_id}")
+                return jsonify({
+                    'success': True,
+                    'message': f'Payment successful! Your plan has been upgraded to {result["plan_upgraded"].upper()}',
+                    'redirect': url_for('shopkeeper.subscription')
+                })
+            else:
+                logger.error(f"Payment processing failed: {result.get('error')}")
+                return jsonify(result), 400
+                
+        except Exception as e:
+            logger.error(f"Error in payment_success: {str(e)}")
+            return jsonify({'success': False, 'error': 'Payment processing failed'}), 500
+    
+    @bp.route('/payment-failure', methods=['POST'])
+    @login_required
+    @shopkeeper_required
+    def payment_failure():
+        """Handle failed payment callback from Razorpay."""
+        try:
+            data = request.json
+            razorpay_order_id = data.get('razorpay_order_id')
+            failure_reason = data.get('error', {}).get('description', 'Payment failed')
+            
+            if razorpay_order_id:
+                PaymentService.handle_payment_failure(razorpay_order_id, failure_reason)
+                logger.info(f"Payment failure handled for order {razorpay_order_id}")
+            
+            return jsonify({
+                'success': False,
+                'error': 'Payment was cancelled or failed. Please try again.',
+                'redirect': url_for('shopkeeper.subscription')
+            })
+            
+        except Exception as e:
+            logger.error(f"Error in payment_failure: {str(e)}")
+            return jsonify({'success': False, 'error': 'Error handling payment failure'}), 500
     
     
     @bp.route('/update-subscription', methods=['POST'])
     @login_required
     @shopkeeper_required
     def update_subscription():
-        """Update shopkeeper subscription plan."""
+        """Update shopkeeper subscription plan - now redirects paid plans to payment."""
         shopkeeper = Shopkeeper.query.filter_by(user_id=current_user.user_id).first()
         new_plan = request.form.get('plan')
         
@@ -530,6 +635,19 @@ def register_routes(bp):
             flash('Invalid plan selected.', 'error')
             return redirect(url_for('shopkeeper.subscription'))
         
+        # For paid plans (lite/gold), redirect to payment process
+        if new_plan in ['lite', 'gold']:
+            if request.is_json:
+                return jsonify({
+                    'success': False, 
+                    'message': 'Payment required for this plan',
+                    'require_payment': True,
+                    'plan_type': new_plan
+                })
+            flash(f'Payment required to upgrade to {new_plan.upper()} plan.', 'info')
+            return redirect(url_for('shopkeeper.subscription'))
+        
+        # Only allow free plan changes without payment
         from ..services import SubscriptionService
         success = SubscriptionService.update_plan(shopkeeper, new_plan)
         
@@ -579,3 +697,180 @@ def register_routes(bp):
                 'success': False,
                 'message': f'An error occurred: {str(e)}'
             }), 500
+
+
+
+    @bp.route('/payment-webhook', methods=['POST'])
+    def payment_webhook():
+        """
+        Production-level Razorpay webhook handler.
+        Handles payment status updates with proper security and idempotency.
+        """
+        try:
+            # Get raw payload and signature
+            payload = request.get_data(as_text=True)
+            signature = request.headers.get('X-Razorpay-Signature', '')
+            
+            # Validate webhook signature
+            if not PaymentService.validate_webhook_signature(payload, signature):
+                logger.warning("Invalid webhook signature received")
+                return jsonify({'error': 'Invalid signature'}), 401
+            
+            # Parse webhook data
+            import json
+            webhook_data = json.loads(payload)
+            event_type = webhook_data.get('event')
+            
+            # Use IST for webhook ID timestamp
+            from ..services.payment_service import PaymentService
+            ist_timestamp = int(PaymentService._get_ist_now().timestamp())
+            webhook_id = webhook_data.get('event_id', f"webhook_{ist_timestamp}")
+            
+            logger.info(f"Received webhook event: {event_type}, ID: {webhook_id}")
+            
+            # Handle different event types
+            if event_type == 'payment.captured':
+                return handle_payment_captured_webhook(webhook_data, webhook_id)
+            elif event_type == 'payment.failed':
+                return handle_payment_failed_webhook(webhook_data, webhook_id)
+            elif event_type == 'order.paid':
+                return handle_order_paid_webhook(webhook_data, webhook_id)
+            else:
+                logger.info(f"Unhandled webhook event type: {event_type}")
+                return jsonify({'status': 'ignored'}), 200
+                
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON in webhook payload")
+            return jsonify({'error': 'Invalid JSON'}), 400
+        except Exception as e:
+            logger.error(f"Error processing webhook: {str(e)}")
+            return jsonify({'error': 'Webhook processing failed'}), 500
+    
+    def handle_payment_captured_webhook(webhook_data, webhook_id):
+        """Handle payment.captured webhook event."""
+        try:
+            payment_entity = webhook_data.get('payload', {}).get('payment', {}).get('entity', {})
+            order_id = payment_entity.get('order_id')
+            payment_id = payment_entity.get('id')
+            
+            if not order_id:
+                return jsonify({'error': 'Missing order_id'}), 400
+            
+            # Find payment record
+            from app.models import SubscriptionPayment
+            payment_record = SubscriptionPayment.query.filter_by(
+                razorpay_order_id=order_id
+            ).first()
+            
+            if not payment_record:
+                logger.warning(f"Payment record not found for order {order_id}")
+                return jsonify({'error': 'Payment record not found'}), 404
+            
+            # Check for duplicate processing (idempotency)
+            from app.models import PaymentAuditLog
+            existing_log = PaymentAuditLog.query.filter_by(
+                payment_id=payment_record.payment_id,
+                webhook_event_id=webhook_id
+            ).first()
+            
+            if existing_log:
+                logger.info(f"Webhook {webhook_id} already processed")
+                return jsonify({'status': 'already_processed'}), 200
+            
+            # Update payment status if not already captured
+            if payment_record.status != 'captured':
+                old_status = payment_record.status
+                payment_record.status = 'captured'
+                payment_record.webhook_verified = True
+                payment_record.razorpay_payment_id = payment_id
+                payment_record.updated_at = PaymentService._get_ist_naive_now()
+                
+                # Update shopkeeper subscription
+                shopkeeper = payment_record.shopkeeper
+                if shopkeeper:
+                    from ..services import SubscriptionService
+                    SubscriptionService.update_plan_with_payment_validation(shopkeeper, payment_record.plan_type)
+                    shopkeeper.subscription_expires_at = PaymentService._get_ist_naive_now() + timedelta(days=30)
+                    shopkeeper.last_payment_id = payment_record.payment_id
+                
+                db.session.commit()
+                
+                # Create audit log
+                PaymentService._create_audit_log(
+                    payment_record.payment_id,
+                    old_status=old_status,
+                    new_status='captured',
+                    change_reason='Payment captured via webhook',
+                    webhook_event_id=webhook_id
+                )
+                
+                logger.info(f"Payment {payment_id} captured via webhook")
+            
+            return jsonify({'status': 'success'}), 200
+            
+        except Exception as e:
+            logger.error(f"Error in payment captured webhook: {str(e)}")
+            db.session.rollback()
+            return jsonify({'error': 'Processing failed'}), 500
+    
+    def handle_payment_failed_webhook(webhook_data, webhook_id):
+        """Handle payment.failed webhook event."""
+        try:
+            payment_entity = webhook_data.get('payload', {}).get('payment', {}).get('entity', {})
+            order_id = payment_entity.get('order_id')
+            error_description = payment_entity.get('error_description', 'Payment failed')
+            
+            if not order_id:
+                return jsonify({'error': 'Missing order_id'}), 400
+            
+            # Process the failure
+            result = PaymentService.handle_payment_failure(order_id, error_description)
+            
+            if result['success']:
+                # Create audit log with webhook info
+                from app.models import SubscriptionPayment
+                payment_record = SubscriptionPayment.query.filter_by(
+                    razorpay_order_id=order_id
+                ).first()
+                
+                if payment_record:
+                    PaymentService._create_audit_log(
+                        payment_record.payment_id,
+                        old_status='created',
+                        new_status='failed',
+                        change_reason=f'Payment failed via webhook: {error_description}',
+                        webhook_event_id=webhook_id
+                    )
+                
+                logger.info(f"Payment failure processed for order {order_id}")
+                return jsonify({'status': 'success'}), 200
+            else:
+                return jsonify({'error': 'Failed to process payment failure'}), 500
+                
+        except Exception as e:
+            logger.error(f"Error in payment failed webhook: {str(e)}")
+            return jsonify({'error': 'Processing failed'}), 500
+    
+    def handle_order_paid_webhook(webhook_data, webhook_id):
+        """Handle order.paid webhook event (backup verification)."""
+        try:
+            order_entity = webhook_data.get('payload', {}).get('order', {}).get('entity', {})
+            order_id = order_entity.get('id')
+            
+            if not order_id:
+                return jsonify({'error': 'Missing order_id'}), 400
+            
+            # This is a backup check - the payment.captured event is the primary handler
+            from app.models import SubscriptionPayment
+            payment_record = SubscriptionPayment.query.filter_by(
+                razorpay_order_id=order_id
+            ).first()
+            
+            if payment_record and payment_record.status == 'created':
+                logger.info(f"Order {order_id} paid but payment not captured yet - waiting for payment.captured event")
+            
+            return jsonify({'status': 'acknowledged'}), 200
+            
+        except Exception as e:
+            logger.error(f"Error in order paid webhook: {str(e)}")
+            return jsonify({'error': 'Processing failed'}), 500

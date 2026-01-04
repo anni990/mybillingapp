@@ -48,3 +48,35 @@ class Config:
     
     # AI Service Configuration
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    
+    # Razorpay Payment Gateway Configuration
+    RAZORPAY_KEY_ID_TEST = os.environ.get('RAZORPAY_KEY_ID_TEST')
+    RAZORPAY_SECRET_KEY_TEST = os.environ.get('RAZORPAY_SECRET_KEY_TEST')
+    RAZORPAY_KEY_ID_LIVE = os.environ.get('RAZORPAY_KEY_ID_LIVE')
+    RAZORPAY_SECRET_KEY_LIVE = os.environ.get('RAZORPAY_SECRET_KEY_LIVE')
+    RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET')
+    
+    # Use test keys by default, switch based on environment
+    RAZORPAY_KEY_ID = RAZORPAY_KEY_ID_TEST if os.environ.get('FLASK_ENV') != 'production' else RAZORPAY_KEY_ID_LIVE
+    RAZORPAY_SECRET_KEY = RAZORPAY_SECRET_KEY_TEST if os.environ.get('FLASK_ENV') != 'production' else RAZORPAY_SECRET_KEY_LIVE
+    
+    # Subscription Plan Pricing (in INR)
+    SUBSCRIPTION_PLANS = {
+        'lite': {
+            'name': 'MBA Lite',
+            'price': 499,  # ₹499
+            'currency': 'INR'
+        },
+        'gold': {
+            'name': 'MBA Gold', 
+            'price': 699,  # ₹699
+            'currency': 'INR'
+        }
+    }
+    
+    @property
+    def RAZORPAY_KEY_ID_ACTIVE(self):
+        """Get the appropriate Razorpay key based on environment"""
+        if os.environ.get('FLASK_ENV') == 'production':
+            return self.RAZORPAY_KEY_ID_LIVE
+        return self.RAZORPAY_KEY_ID_TEST

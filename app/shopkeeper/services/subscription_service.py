@@ -130,9 +130,22 @@ class SubscriptionService:
         return messages.get(required_plan, "Please upgrade your plan to access this feature.")
     
     @staticmethod
-    def update_plan(shopkeeper: Shopkeeper, new_plan: str) -> bool:
-        """Update shopkeeper's subscription plan and adjust watermark settings."""
+    def update_plan(shopkeeper: Shopkeeper, new_plan: str, payment_validated: bool = False) -> bool:
+        """
+        Update shopkeeper's subscription plan with payment validation.
+        
+        Args:
+            shopkeeper: Shopkeeper instance
+            new_plan: Target subscription plan
+            payment_validated: Whether payment has been validated for paid plans
+        """
         if new_plan not in SubscriptionService.PLAN_FEATURES:
+            return False
+        
+        # Payment validation for paid plans
+        if new_plan in ['lite', 'gold'] and not payment_validated:
+            # For paid plans, require payment validation
+            # This prevents direct plan upgrades without payment
             return False
             
         old_plan = shopkeeper.subscription_plan
@@ -155,10 +168,27 @@ class SubscriptionService:
         
         try:
             db.session.commit()
+            
+            # Log subscription change for audit trail
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Subscription updated for shopkeeper {shopkeeper.shopkeeper_id}: {old_plan} -> {new_plan}, payment_validated: {payment_validated}")
+            
             return True
-        except Exception:
+        except Exception as e:
             db.session.rollback()
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to update subscription for shopkeeper {shopkeeper.shopkeeper_id}: {str(e)}")
             return False
+    
+    @staticmethod
+    def update_plan_with_payment_validation(shopkeeper: Shopkeeper, new_plan: str) -> bool:
+        """
+        Update plan with payment validation - used by PaymentService.
+        This method bypasses the payment check since it's called after successful payment.
+        """
+        return SubscriptionService.update_plan(shopkeeper, new_plan, payment_validated=True)
     
     @staticmethod
     def get_usage_stats(shopkeeper: Shopkeeper) -> Dict:
