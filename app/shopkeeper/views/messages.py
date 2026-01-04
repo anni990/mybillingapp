@@ -7,12 +7,14 @@ from flask_login import login_required, current_user
 
 from app.models import Shopkeeper, CAConnection, CharteredAccountant, Message, Bill
 from app.extensions import db
+from  ..utils  import require_gold_plan
 
 def register_routes(bp):
     """Register messages routes to the blueprint."""
     
     @bp.route('/messages')
     @login_required
+    @require_gold_plan
     def messages():
         """Messages page for Shopkeeper - chat interface with connected CA."""
         if current_user.role != 'shopkeeper':
@@ -43,6 +45,7 @@ def register_routes(bp):
     
     @bp.route('/bills/<int:bill_id>/remark', methods=['POST'])
     @login_required
+    @require_gold_plan
     def add_bill_remark(bill_id):
         """Add a remark to a specific bill (shopkeeper to CA)."""
         if current_user.role != 'shopkeeper':

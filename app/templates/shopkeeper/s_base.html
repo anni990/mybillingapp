@@ -864,7 +864,7 @@
                     </li>
                     <li>
                         <!-- Messages Dropdown -->
-                         {% if current_subscription_plan == 'free' %}
+                         {% if current_subscription_plan != 'gold' %}
                         <div class="relative">
                             <a href="javascript:void(0)" onclick="showUpgradeAlert('Messenger', 'gold')"
                                 class="flex items-center px-3 py-3 rounded-xl transition duration-300 hover:bg-white/10 group  cursor-not-allowed">
