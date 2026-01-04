@@ -158,21 +158,23 @@
                                         title="View Bill">
                                         <i data-feather="eye" class="w-4 h-4"></i>
                                     </a>
-                                    {% if bill.is_editable and subscription_plan == 'gold' %}
-                                    <a href="{{ url_for('shopkeeper.edit_bill', bill_id=bill.bill_id) }}"
-                                        class="text-green-600 hover:text-green-900 transition duration-200"
-                                        title="Edit Bill ({{ bill.remaining_edit_time.minutes }}m {{ bill.remaining_edit_time.seconds }}s left)">
-                                        <i data-feather="edit" class="w-4 h-4"></i>
-                                    </a>
-                                    {% elif bill.is_editable and subscription_plan != 'gold' %}
-                                    <button class="text-orange-500 hover:text-orange-700 transition duration-200"
-                                        title="Edit feature available for Gold members only" 
-                                        onclick="showUpgradeModal('edit')">
-                                        <i data-feather="edit" class="w-4 h-4"></i>
-                                    </button>
+                                    {% if bill.is_time_editable %}
+                                        {% if subscription_plan == 'gold' %}
+                                        <a href="{{ url_for('shopkeeper.edit_bill', bill_id=bill.bill_id) }}"
+                                            class="text-green-600 hover:text-green-900 transition duration-200"
+                                            title="Edit Bill ({{ bill.remaining_edit_time.minutes }}m {{ bill.remaining_edit_time.seconds }}s left)">
+                                            <i data-feather="edit" class="w-4 h-4"></i>
+                                        </a>
+                                        {% else %}
+                                        <button class="text-orange-500 hover:text-orange-700 transition duration-200"
+                                            title="Edit feature available for Gold members only" 
+                                            onclick="showUpgradeModal('edit')">
+                                            <i data-feather="edit" class="w-4 h-4"></i>
+                                        </button>
+                                        {% endif %}
                                     {% else %}
                                     <span class="text-gray-400 cursor-not-allowed"
-                                        title="Edit time expired (60 minutes)">
+                                        title="Edit time expired (60 minutes from creation)">
                                         <i data-feather="edit" class="w-4 h-4"></i>
                                     </span>
                                     {% endif %}
@@ -233,21 +235,23 @@
                         class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-center py-2 rounded-lg transition duration-300 text-sm font-medium">
                         View
                     </a>
-                    {% if bill.is_editable and subscription_plan == 'gold' %}
-                    <a href="{{ url_for('shopkeeper.edit_bill', bill_id=bill.bill_id) }}"
-                        class="flex-1 bg-green-100 hover:bg-green-200 text-green-700 text-center py-2 rounded-lg transition duration-300 text-sm font-medium"
-                        title="Edit ({{ bill.remaining_edit_time.minutes }}m {{ bill.remaining_edit_time.seconds }}s left)">
-                        Edit
-                    </a>
-                    {% elif bill.is_editable and subscription_plan != 'gold' %}
-                    <button class="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-700 text-center py-2 rounded-lg transition duration-300 text-sm font-medium"
-                        title="Edit feature available for Gold members only" 
-                        onclick="showUpgradeModal('edit')">
-                        Edit 🔒
-                    </button>
+                    {% if bill.is_time_editable %}
+                        {% if subscription_plan == 'gold' %}
+                        <a href="{{ url_for('shopkeeper.edit_bill', bill_id=bill.bill_id) }}"
+                            class="flex-1 bg-green-100 hover:bg-green-200 text-green-700 text-center py-2 rounded-lg transition duration-300 text-sm font-medium"
+                            title="Edit ({{ bill.remaining_edit_time.minutes }}m {{ bill.remaining_edit_time.seconds }}s left)">
+                            Edit
+                        </a>
+                        {% else %}
+                        <button class="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-700 text-center py-2 rounded-lg transition duration-300 text-sm font-medium"
+                            title="Edit feature available for Gold members only" 
+                            onclick="showUpgradeModal('edit')">
+                            Edit 🔒
+                        </button>
+                        {% endif %}
                     {% else %}
                     <span class="flex-1 bg-gray-100 text-gray-400 text-center py-2 rounded-lg text-sm font-medium cursor-not-allowed"
-                        title="Edit time expired (60 minutes)">
+                        title="Edit time expired (60 minutes from creation)">
                         Edit
                     </span>
                     {% endif %}
